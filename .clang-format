@@ -1,0 +1,10 @@
+---
+BasedOnStyle: Chromium
+AlignConsecutiveMacros: AcrossComments
+ColumnLimit: '0'
+ContinuationIndentWidth: '8'
+IndentWidth: '8'
+TabWidth: '8'
+UseTab: ForContinuationAndIndentation
+
+...

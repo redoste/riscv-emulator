@@ -1,0 +1,15 @@
+# clangd
+.cache/
+compile_commands.json
+
+# python
+__pycache__/
+
+# Build artifacts
+riscv-assembler
+riscv-emulator
+*.o
+
+# Tests artifacts
+*.hex
+*.bin
