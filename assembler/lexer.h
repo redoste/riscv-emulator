@@ -51,8 +51,7 @@ typedef struct token_t {
 		ins_mnemonic_t as_ins_mnemonic;
 		reg_t as_reg_operand;
 		reg_t as_reg_deref_operand;
-		int64_t as_signed_int_literal;
-		uint64_t as_unsigned_int_literal;
+		int64_t as_int_literal;
 	};
 	pos_t pos;
 } token_t;

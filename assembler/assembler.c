@@ -58,7 +58,7 @@ static bool assembler_parse_i_ins(lexer_t* lexer, reg_t* rd, reg_t* rs1, int64_t
 	*rs1 = token.as_reg_operand;
 	RETURN_IF_LEXER_UNEXPECTED(lexer, &token, TT_COMMA);
 	RETURN_IF_LEXER_UNEXPECTED(lexer, &token, TT_INT_LITERAL);
-	*imm = token.as_signed_int_literal;
+	*imm = token.as_int_literal;
 	if (!assembler_bound_check_imm(&token, *imm, 12, false)) {
 		return false;
 	}
@@ -74,7 +74,7 @@ static bool assembler_parse_s_ins(lexer_t* lexer, reg_t* rs1, reg_t* rs2, int64_
 	*rs2 = token.as_reg_operand;
 	RETURN_IF_LEXER_UNEXPECTED(lexer, &token, TT_COMMA);
 	RETURN_IF_LEXER_UNEXPECTED(lexer, &token, TT_INT_LITERAL);
-	*imm = token.as_signed_int_literal;
+	*imm = token.as_int_literal;
 	if (!assembler_bound_check_imm(&token, *imm, 12, false)) {
 		return false;
 	}
@@ -95,7 +95,7 @@ static bool assembler_parse_b_ins(lexer_t* lexer, reg_t* rs1, reg_t* rs2, int64_
 	*rs2 = token.as_reg_operand;
 	RETURN_IF_LEXER_UNEXPECTED(lexer, &token, TT_COMMA);
 	RETURN_IF_LEXER_UNEXPECTED(lexer, &token, TT_INT_LITERAL);
-	*imm = token.as_signed_int_literal;
+	*imm = token.as_int_literal;
 	if (!assembler_bound_check_imm(&token, *imm, 13, true)) {
 		return false;
 	}
@@ -111,7 +111,7 @@ static bool assembler_parse_j_ins(lexer_t* lexer, reg_t* rd, int64_t* imm) {
 	*rd = token.as_reg_operand;
 	RETURN_IF_LEXER_UNEXPECTED(lexer, &token, TT_COMMA);
 	RETURN_IF_LEXER_UNEXPECTED(lexer, &token, TT_INT_LITERAL);
-	*imm = token.as_signed_int_literal;
+	*imm = token.as_int_literal;
 	if (!assembler_bound_check_imm(&token, *imm, 21, true)) {
 		return false;
 	}
@@ -125,7 +125,7 @@ static bool assembler_assemble_pseudo_instruction(ins_mnemonic_t mnemonic, lexer
 		case INS_J: {
 			token_t token;
 			RETURN_IF_LEXER_UNEXPECTED(lexer, &token, TT_INT_LITERAL);
-			int64_t imm = token.as_signed_int_literal;
+			int64_t imm = token.as_int_literal;
 			if (!assembler_bound_check_imm(&token, imm, 21, true)) {
 				return false;
 			}
@@ -140,7 +140,7 @@ static bool assembler_assemble_pseudo_instruction(ins_mnemonic_t mnemonic, lexer
 			reg_t rd = token.as_reg_operand;
 			RETURN_IF_LEXER_UNEXPECTED(lexer, &token, TT_COMMA);
 			RETURN_IF_LEXER_UNEXPECTED(lexer, &token, TT_INT_LITERAL);
-			int64_t imm = token.as_signed_int_literal;
+			int64_t imm = token.as_int_literal;
 			if (!assembler_bound_check_imm(&token, imm, 12, false)) {
 				return false;
 			}

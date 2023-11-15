@@ -112,20 +112,21 @@ static bool lexer_next_integer(lexer_t* lexer, token_t* token) {
 	}
 
 	char* endptr;
-	// TODO : better overflow detection
 	uint64_t integer = strtoull(&word[prefix], &endptr, base);
 	if ((size_t)(endptr - word) != strlen(word)) {
 		diag_error(token->pos, "invalid integer literal '%s'\n", word);
 		return false;
 	}
 
-	token->type = TT_INT_LITERAL;
-	if (negative) {
-		// TODO : detect underflow
-		token->as_signed_int_literal = -integer;
-	} else {
-		token->as_unsigned_int_literal = integer;
+	/* NOTE : we saturate to INT64_MAX because if it's out of the acceptable range
+	 *        it will be caught by assembler_bound_check_imm anyway
+	 */
+	if (integer > INT64_MAX) {
+		integer = INT64_MAX;
 	}
+
+	token->type = TT_INT_LITERAL;
+	token->as_int_literal = negative ? -integer : integer;
 	return true;
 }
 
@@ -282,7 +283,7 @@ void lexer_debug_print_token(const token_t* token) {
 			break;
 		case TT_INT_LITERAL:
 			fprintf(stderr, POS_T_FMT_STR " INT LITERAL 0x%016lx\n", POS_T_FMT_ARG(token->pos),
-				token->as_unsigned_int_literal);
+				token->as_int_literal);
 			break;
 		case TT_COMMA:
 			fprintf(stderr, POS_T_FMT_STR " COMMA\n", POS_T_FMT_ARG(token->pos));
