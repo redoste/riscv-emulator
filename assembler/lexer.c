@@ -8,10 +8,11 @@
 #include "isa.h"
 #include "lexer.h"
 
-void lexer_create(lexer_t* lexer, FILE* input_stream) {
+void lexer_create(lexer_t* lexer, FILE* input_stream, const char* filename) {
 	lexer->input_stream = input_stream;
-	lexer->line = 1;
-	lexer->col = 1;
+	lexer->pos.filename = filename;
+	lexer->pos.line = 1;
+	lexer->pos.col = 1;
 	lexer->peek_buffer_valid = false;
 }
 
@@ -35,14 +36,14 @@ static int lexer_peek_char(lexer_t* lexer) {
 
 static int lexer_read_char(lexer_t* lexer) {
 	if (lexer->peek_buffer_valid) {
-		lexer->col++;
+		lexer->pos.col++;
 		lexer->peek_buffer_valid = false;
 		return lexer->peek_buffer;
 	}
 
 	int c = fgetc(lexer->input_stream);
 	if (c > 0) {
-		lexer->col++;
+		lexer->pos.col++;
 		return c;
 	} else {
 		if (!feof(lexer->input_stream)) {
@@ -57,7 +58,7 @@ static void lexer_consume_peek(lexer_t* lexer) {
 		fprintf(stderr, "ICE : Peek buffer isn't supposed to be empty\n");
 		abort();
 	}
-	lexer->col++;
+	lexer->pos.col++;
 	lexer->peek_buffer_valid = false;
 }
 
@@ -143,7 +144,7 @@ static bool lexer_next_reg_deref(lexer_t* lexer, token_t* token) {
 	int c = lexer_peek_char(lexer);
 	if (c != ')') {
 		fprintf(stderr, "Expected ')' at %zu:%zu\n",
-			lexer->line, lexer->col);
+			lexer->pos.line, lexer->pos.col);
 		return false;
 	}
 	lexer_consume_peek(lexer);
@@ -178,8 +179,7 @@ static bool lexer_next_word(lexer_t* lexer, token_t* token) {
 
 bool lexer_next(lexer_t* lexer, token_t* token) {
 	while (true) {
-		token->pos.col = lexer->col;
-		token->pos.line = lexer->line;
+		token->pos = lexer->pos;
 
 		int c = lexer_peek_char(lexer);
 		if (c < 0) {
@@ -196,15 +196,15 @@ bool lexer_next(lexer_t* lexer, token_t* token) {
 			do {
 				c = lexer_read_char(lexer);
 			} while (c > 0 && c != '\n');
-			lexer->line++;
-			lexer->col = 1;
+			lexer->pos.line++;
+			lexer->pos.col = 1;
 			token->type = TT_EOI;
 			return true;
 		} else if (c == '\n') {
 			// New line
 			lexer_consume_peek(lexer);
-			lexer->line++;
-			lexer->col = 1;
+			lexer->pos.line++;
+			lexer->pos.col = 1;
 			token->type = TT_EOI;
 			return true;
 		} else if (c == ';') {
@@ -232,7 +232,7 @@ bool lexer_next(lexer_t* lexer, token_t* token) {
 		} else {
 			// TODO : better diag infrastructure (l:c at the start)
 			fprintf(stderr, "Unexpected character '%c' at %zu:%zu\n",
-				c, lexer->line, lexer->col);
+				c, lexer->pos.line, lexer->pos.col);
 			return false;
 		}
 	}

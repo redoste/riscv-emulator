@@ -13,10 +13,15 @@
 // (Un)define to enable lexer debug logging
 #define DEBUG_LEXER
 
-typedef struct lexer_t {
-	FILE* input_stream;
+typedef struct pos_t {
+	const char* filename;
 	size_t line;
 	size_t col;
+} pos_t;
+
+typedef struct lexer_t {
+	FILE* input_stream;
+	pos_t pos;
 
 	/* NOTE : for now the peek buffer is only one char deep
 	 *        we can make it an array if required later
@@ -46,13 +51,10 @@ typedef struct token_t {
 		int64_t as_signed_int_literal;
 		uint64_t as_unsigned_int_literal;
 	};
-	struct {
-		size_t line;
-		size_t col;
-	} pos;
+	pos_t pos;
 } token_t;
 
-void lexer_create(lexer_t* lexer, FILE* input_stream);
+void lexer_create(lexer_t* lexer, FILE* input_stream, const char* filename);
 bool lexer_next(lexer_t* lexer, token_t* token);
 bool lexer_next_expected(lexer_t* lexer, token_t* token, token_type_t expected_type, bool or_eox);
 

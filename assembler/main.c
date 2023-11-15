@@ -39,7 +39,7 @@ int main(int argc, char** argv) {
 	}
 
 	lexer_t lexer;
-	lexer_create(&lexer, input_file);
+	lexer_create(&lexer, input_file, asm_input_filename);
 
 	token_t token;
 	int res = 0;
