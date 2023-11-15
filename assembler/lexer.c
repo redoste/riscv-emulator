@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "diag.h"
 #include "isa.h"
 #include "lexer.h"
 
@@ -114,8 +115,7 @@ static bool lexer_next_integer(lexer_t* lexer, token_t* token) {
 	// TODO : better overflow detection
 	uint64_t integer = strtoull(&word[prefix], &endptr, base);
 	if ((size_t)(endptr - word) != strlen(word)) {
-		fprintf(stderr, "Invalid integer literal '%s' at %zu:%zu\n",
-			word, token->pos.line, token->pos.col);
+		diag_error(token->pos, "invalid integer literal '%s'\n", word);
 		return false;
 	}
 
@@ -136,15 +136,13 @@ static bool lexer_next_reg_deref(lexer_t* lexer, token_t* token) {
 	lexer_read_word(lexer, word, LEXER_WORD_BUFFER_CAP - 1);
 	int reg = lexer_parse_register(word);
 	if (reg < 0) {
-		fprintf(stderr, "Invalid register dereference '%s' at %zu:%zu\n",
-			word, token->pos.line, token->pos.col);
+		diag_error(token->pos, "invalid register dereference '%s'\n", word);
 		return false;
 	}
 
 	int c = lexer_peek_char(lexer);
 	if (c != ')') {
-		fprintf(stderr, "Expected ')' at %zu:%zu\n",
-			lexer->pos.line, lexer->pos.col);
+		diag_error(lexer->pos, "expected ')'\n");
 		return false;
 	}
 	lexer_consume_peek(lexer);
@@ -172,7 +170,7 @@ static bool lexer_next_word(lexer_t* lexer, token_t* token) {
 		token->as_reg_operand = reg;
 		return true;
 	} else {
-		fprintf(stderr, "Unexpected word '%s' at %zu:%zu\n", word, token->pos.line, token->pos.col);
+		diag_error(token->pos, "unexpected word '%s'\n", word);
 		return false;
 	}
 }
@@ -230,9 +228,7 @@ bool lexer_next(lexer_t* lexer, token_t* token) {
 			// Instruction mnemonic or register operand
 			return lexer_next_word(lexer, token);
 		} else {
-			// TODO : better diag infrastructure (l:c at the start)
-			fprintf(stderr, "Unexpected character '%c' at %zu:%zu\n",
-				c, lexer->pos.line, lexer->pos.col);
+			diag_error(lexer->pos, "unexpected character '%c'\n", c);
 			return false;
 		}
 	}
@@ -263,9 +259,8 @@ bool lexer_next_expected(lexer_t* lexer, token_t* token, token_type_t expected_t
 		   (or_eox && token->type == TT_EOI)) {
 		return true;
 	} else {
-		fprintf(stderr, or_eox ? "Expected %s, EOF or EOI but got %s at %zu:%zu\n" : "Expected %s but got %s at %zu:%zu\n",
-			TT_NAMES[expected_type], TT_NAMES[token->type],
-			token->pos.line, token->pos.col);
+		const char* fmtstr = or_eox ? "expected %s, end of file or end of instruction but got %s\n" : "expected %s but got %s\n";
+		diag_error(token->pos, fmtstr, TT_NAMES[expected_type], TT_NAMES[token->type]);
 		return false;
 	}
 }
@@ -274,29 +269,29 @@ bool lexer_next_expected(lexer_t* lexer, token_t* token, token_type_t expected_t
 void lexer_debug_print_token(const token_t* token) {
 	switch (token->type) {
 		case TT_INS_MNEMONIC:
-			fprintf(stderr, "%zu:%zu INS MNEMONIC %s\n", token->pos.line, token->pos.col,
+			fprintf(stderr, POS_T_FMT_STR " INS MNEMONIC %s\n", POS_T_FMT_ARG(token->pos),
 				INS_NAMES[token->as_ins_mnemonic]);
 			break;
 		case TT_REG_OPERAND:
-			fprintf(stderr, "%zu:%zu REG OPERAND x%d\n", token->pos.line, token->pos.col,
+			fprintf(stderr, POS_T_FMT_STR " REG OPERAND x%d\n", POS_T_FMT_ARG(token->pos),
 				token->as_reg_operand);
 			break;
 		case TT_REG_DEREF_OPERAND:
-			fprintf(stderr, "%zu:%zu REG DEREF OPERAND (x%d)\n", token->pos.line, token->pos.col,
+			fprintf(stderr, POS_T_FMT_STR " REG DEREF OPERAND (x%d)\n", POS_T_FMT_ARG(token->pos),
 				token->as_reg_deref_operand);
 			break;
 		case TT_INT_LITERAL:
-			fprintf(stderr, "%zu:%zu INT LITERAL 0x%016lx\n", token->pos.line, token->pos.col,
+			fprintf(stderr, POS_T_FMT_STR " INT LITERAL 0x%016lx\n", POS_T_FMT_ARG(token->pos),
 				token->as_unsigned_int_literal);
 			break;
 		case TT_COMMA:
-			fprintf(stderr, "%zu:%zu COMMA\n", token->pos.line, token->pos.col);
+			fprintf(stderr, POS_T_FMT_STR " COMMA\n", POS_T_FMT_ARG(token->pos));
 			break;
 		case TT_EOI:
-			fprintf(stderr, "%zu:%zu EOI\n", token->pos.line, token->pos.col);
+			fprintf(stderr, POS_T_FMT_STR " EOI\n", POS_T_FMT_ARG(token->pos));
 			break;
 		case TT_EOF:
-			fprintf(stderr, "%zu:%zu EOF\n", token->pos.line, token->pos.col);
+			fprintf(stderr, POS_T_FMT_STR " EOF\n", POS_T_FMT_ARG(token->pos));
 			break;
 		default:
 			fprintf(stderr, "ICE : Invalid token type\n");

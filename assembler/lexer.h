@@ -19,6 +19,9 @@ typedef struct pos_t {
 	size_t col;
 } pos_t;
 
+#define POS_T_FMT_STR    "%s:%zu:%zu"
+#define POS_T_FMT_ARG(p) (p).filename, (p).line, (p).col
+
 typedef struct lexer_t {
 	FILE* input_stream;
 	pos_t pos;

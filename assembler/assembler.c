@@ -4,6 +4,7 @@
 #include <stdlib.h>
 
 #include "assembler.h"
+#include "diag.h"
 #include "isa.h"
 #include "lexer.h"
 
@@ -14,12 +15,10 @@ static bool assembler_bound_check_imm(const token_t* token, int64_t imm, size_t 
 	int64_t lower_bound = -(1 << (bits - 1));
 	int64_t upper_bound = (1 << (bits - 1)) - (even ? 2 : 1);
 	if (imm < lower_bound || imm > upper_bound) {
-		fprintf(stderr, "Immediate out of range at %zu:%zu : the immediate should be in the range [%ld:%ld]\n",
-			token->pos.line, token->pos.col, lower_bound, upper_bound);
+		diag_error(token->pos, "immediate out of range [%ld:%ld]\n", lower_bound, upper_bound);
 		return false;
 	} else if (even && (imm & 1) != 0) {
-		fprintf(stderr, "Immediate not even at %zu:%zu : the immediate should be even in B-type and J-type instructions\n",
-			token->pos.line, token->pos.col);
+		diag_error(token->pos, "immediate should be even\n");
 		return false;
 	} else {
 		return true;
