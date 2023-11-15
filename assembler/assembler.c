@@ -44,6 +44,7 @@ static bool assembler_parse_r_ins(lexer_t* lexer, reg_t* rd, reg_t* rs1, reg_t* 
 	RETURN_IF_LEXER_UNEXPECTED(lexer, &token, TT_COMMA);
 	RETURN_IF_LEXER_UNEXPECTED(lexer, &token, TT_REG_OPERAND);
 	*rs2 = token.as_reg_operand;
+	RETURN_IF_LEXER_UNEXPECTED(lexer, &token, TT_EOI);
 
 	return true;
 }
@@ -62,6 +63,7 @@ static bool assembler_parse_i_ins(lexer_t* lexer, reg_t* rd, reg_t* rs1, int64_t
 	if (!assembler_bound_check_imm(&token, *imm, 12, false)) {
 		return false;
 	}
+	RETURN_IF_LEXER_UNEXPECTED(lexer, &token, TT_EOI);
 
 	return true;
 }
@@ -79,6 +81,7 @@ static bool assembler_parse_s_ins(lexer_t* lexer, reg_t* rs1, reg_t* rs2, int64_
 	}
 	RETURN_IF_LEXER_UNEXPECTED(lexer, &token, TT_REG_DEREF_OPERAND);
 	*rs1 = token.as_reg_deref_operand;
+	RETURN_IF_LEXER_UNEXPECTED(lexer, &token, TT_EOI);
 
 	return true;
 }
@@ -97,6 +100,7 @@ static bool assembler_parse_b_ins(lexer_t* lexer, reg_t* rs1, reg_t* rs2, int64_
 	if (!assembler_bound_check_imm(&token, *imm, 13, true)) {
 		return false;
 	}
+	RETURN_IF_LEXER_UNEXPECTED(lexer, &token, TT_EOI);
 
 	return true;
 }
@@ -112,6 +116,7 @@ static bool assembler_parse_j_ins(lexer_t* lexer, reg_t* rd, int64_t* imm) {
 	if (!assembler_bound_check_imm(&token, *imm, 21, true)) {
 		return false;
 	}
+	RETURN_IF_LEXER_UNEXPECTED(lexer, &token, TT_EOI);
 
 	return true;
 }
@@ -125,6 +130,7 @@ static bool assembler_assemble_pseudo_instruction(ins_mnemonic_t mnemonic, lexer
 			if (!assembler_bound_check_imm(&token, imm, 21, true)) {
 				return false;
 			}
+			RETURN_IF_LEXER_UNEXPECTED(lexer, &token, TT_EOI);
 			// emit `jal x0, imm`
 			*instruction = ENCODE_J_INSTRUCTION(OPCODE_JAL, 0, imm);
 			return true;
@@ -139,6 +145,7 @@ static bool assembler_assemble_pseudo_instruction(ins_mnemonic_t mnemonic, lexer
 			if (!assembler_bound_check_imm(&token, imm, 12, false)) {
 				return false;
 			}
+			RETURN_IF_LEXER_UNEXPECTED(lexer, &token, TT_EOI);
 			// emit `addi rd, x0, imm`
 			*instruction = ENCODE_I_INSTRUCTION(OPCODE_ALUI, F3_ADDI, rd, 0, imm);
 			return true;
@@ -150,6 +157,7 @@ static bool assembler_assemble_pseudo_instruction(ins_mnemonic_t mnemonic, lexer
 			RETURN_IF_LEXER_UNEXPECTED(lexer, &token, TT_COMMA);
 			RETURN_IF_LEXER_UNEXPECTED(lexer, &token, TT_REG_OPERAND);
 			reg_t rs = token.as_reg_operand;
+			RETURN_IF_LEXER_UNEXPECTED(lexer, &token, TT_EOI);
 			// emit `addi rd, rs, 0`
 			*instruction = ENCODE_I_INSTRUCTION(OPCODE_ALUI, F3_ADDI, rd, rs, 0);
 			return true;

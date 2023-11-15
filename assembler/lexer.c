@@ -198,12 +198,20 @@ bool lexer_next(lexer_t* lexer, token_t* token) {
 			} while (c > 0 && c != '\n');
 			lexer->line++;
 			lexer->col = 1;
+			token->type = TT_EOI;
+			return true;
 		} else if (c == '\n') {
-			// TODO : Token end of instruction ?
 			// New line
 			lexer_consume_peek(lexer);
 			lexer->line++;
 			lexer->col = 1;
+			token->type = TT_EOI;
+			return true;
+		} else if (c == ';') {
+			// Semicolon
+			lexer_consume_peek(lexer);
+			token->type = TT_EOI;
+			return true;
 		} else if (c == ',') {
 			// Comma
 			lexer_consume_peek(lexer);
@@ -230,16 +238,17 @@ bool lexer_next(lexer_t* lexer, token_t* token) {
 	}
 }
 
-static const char* const TT_NAMES[] = {
+static const char* const TT_NAMES[TT_COUNT] = {
 	[TT_INS_MNEMONIC] = "instruction mnemonic",
 	[TT_REG_OPERAND] = "register operand",
 	[TT_REG_DEREF_OPERAND] = "register dereference operand",
 	[TT_INT_LITERAL] = "integer literal",
 	[TT_COMMA] = "comma",
-	[TT_EOF] = "EOF",
+	[TT_EOI] = "end of instruction",
+	[TT_EOF] = "end of file",
 };
 
-bool lexer_next_expected(lexer_t* lexer, token_t* token, token_type_t expected_type, bool or_eof) {
+bool lexer_next_expected(lexer_t* lexer, token_t* token, token_type_t expected_type, bool or_eox) {
 	bool ret = lexer_next(lexer, token);
 #ifdef DEBUG_LEXER
 	if (ret) {
@@ -249,10 +258,12 @@ bool lexer_next_expected(lexer_t* lexer, token_t* token, token_type_t expected_t
 
 	if (!ret) {
 		return false;
-	} else if (token->type == expected_type || (or_eof && token->type == TT_EOF)) {
+	} else if (token->type == expected_type ||
+		   (or_eox && token->type == TT_EOF) ||
+		   (or_eox && token->type == TT_EOI)) {
 		return true;
 	} else {
-		fprintf(stderr, or_eof ? "Expected %s or EOF but got %s at %zu:%zu\n" : "Expected %s but got %s at %zu:%zu\n",
+		fprintf(stderr, or_eox ? "Expected %s, EOF or EOI but got %s at %zu:%zu\n" : "Expected %s but got %s at %zu:%zu\n",
 			TT_NAMES[expected_type], TT_NAMES[token->type],
 			token->pos.line, token->pos.col);
 		return false;
@@ -280,6 +291,9 @@ void lexer_debug_print_token(const token_t* token) {
 			break;
 		case TT_COMMA:
 			fprintf(stderr, "%zu:%zu COMMA\n", token->pos.line, token->pos.col);
+			break;
+		case TT_EOI:
+			fprintf(stderr, "%zu:%zu EOI\n", token->pos.line, token->pos.col);
 			break;
 		case TT_EOF:
 			fprintf(stderr, "%zu:%zu EOF\n", token->pos.line, token->pos.col);

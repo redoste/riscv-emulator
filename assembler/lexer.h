@@ -31,7 +31,10 @@ typedef enum token_type_t {
 	TT_REG_DEREF_OPERAND,
 	TT_INT_LITERAL,
 	TT_COMMA,
+	TT_EOI,
 	TT_EOF,
+
+	TT_COUNT,
 } token_type_t;
 
 typedef struct token_t {
@@ -51,7 +54,7 @@ typedef struct token_t {
 
 void lexer_create(lexer_t* lexer, FILE* input_stream);
 bool lexer_next(lexer_t* lexer, token_t* token);
-bool lexer_next_expected(lexer_t* lexer, token_t* token, token_type_t expected_type, bool or_eof);
+bool lexer_next_expected(lexer_t* lexer, token_t* token, token_type_t expected_type, bool or_eox);
 
 #ifdef DEBUG_LEXER
 void lexer_debug_print_token(const token_t* token);
