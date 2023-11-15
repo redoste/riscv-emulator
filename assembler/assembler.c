@@ -10,7 +10,7 @@
 
 // TODO : it doesn't look nice to have bound check in "parse" functions
 static bool assembler_bound_check_imm(const token_t* token, int64_t imm, size_t bits, bool even) {
-	assert(bits < 63);
+	assert(bits < 64);
 
 	int64_t lower_bound = -(1 << (bits - 1));
 	int64_t upper_bound = (1 << (bits - 1)) - (even ? 2 : 1);
