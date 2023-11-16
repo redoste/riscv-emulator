@@ -8,7 +8,11 @@
 #include "isa.h"
 #include "lexer.h"
 
-// TODO : it doesn't look nice to have bound check in "parse" functions
+/* NOTE : it doesn't look nice to have bound checks in the "parse" functions
+ *        but this way we can point to the corrent token in the diagnostic
+ *        in case of error
+ */
+
 static bool assembler_bound_check_imm(const token_t* token, int64_t imm, size_t bits, bool even) {
 	assert(bits < 64);
 

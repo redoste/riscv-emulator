@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 
+/* RISC-V opcodes */
 enum {
 	OPCODE_ALU = 0x33,
 	OPCODE_ALUI = 0x13,
@@ -12,6 +13,7 @@ enum {
 	OPCODE_JAL = 0x6f,
 };
 
+/* RISC-V funct3 */
 enum {
 	/* OPCODE ALU */
 	F3_ADD = 0,
@@ -33,12 +35,23 @@ enum {
 	F3_BGE = 5,
 };
 
+/* RISC-V funct7 */
 enum {
 	/* OPCODE ALU / F3 ADD or F3 SUB */
 	F7_ADD = 0x00,
 	F7_SUB = 0x20,
 };
 
+/* X_INSTRUCTIONS : X-macro storing informations about all the instructions
+ *                  the assembler can assemble
+ *     X_R(MNEMONIC, OPCODE, FUNCT3, FUNCT7) : R-type instruction
+ *     X_I(MNEMONIC, OPCODE, FUNCT3)         : I-type instruction
+ *     X_I_S(MNEMONIC, OPCODE, FUNCT3)       : I-type instruction that is parsed like a S-type (i.e. `ld`)
+ *     X_S(MNEMONIC, OPCODE, FUNCT3)         : S-type instruction
+ *     X_B(MNEMONIC, OPCODE, FUNCT3)         : B-type instruction
+ *     X_J(MNEMONIC, OPCODE)                 : J-type instruction
+ *     X_P(MNEMONIC)                         : pseudo instruction
+ */
 #define X_INSTRUCTIONS                       \
 	X_R(ADD, OPCODE_ALU, F3_ADD, F7_ADD) \
 	X_R(SUB, OPCODE_ALU, F3_SUB, F7_SUB) \
@@ -54,6 +67,9 @@ enum {
 	X_P(LI)                              \
 	X_P(MV)
 
+/* ins_mnemonic_t : enumeration of instruction mnemonics that the assembler
+ *                  can parse
+ */
 typedef enum ins_mnemonic_t {
 #define X_R(MNEMONIC, O, F3, F7) INS_##MNEMONIC,
 #define X_I(MNEMONIC, O, F3)     INS_##MNEMONIC,
@@ -74,12 +90,26 @@ typedef enum ins_mnemonic_t {
 		INS_COUNT,
 } ins_mnemonic_t;
 
+/* REG_COUNT : maximum register number of RISC-V
+ */
 #define REG_COUNT 32
+
+/* reg_t : typedef used to declare a value storing a register number
+ */
 typedef uint8_t reg_t;
 
+/* INS_NAMES : string representation of the instruction mnemonics
+ */
 extern const char* const INS_NAMES[];
+
+/* REG_ALIAS : string representation of the register aliases
+ */
 extern const char* const REG_ALIAS[];
 
+/* ENCODE_x_INSTRUCTION : macros used to encode a single x-type instruction
+ *                        the arguments of the macros are used multiple times thus an
+ *                        expression with side-effects can have uninteded behaviour
+ */
 #define ENCODE_R_INSTRUCTION(opcode, f3, f7, rd, rs1, rs2)    \
 	(((opcode)&0x7f) << 0) |       /* [0:6]   : opcode */ \
 		(((rd)&0x1f) << 7) |   /* [7:11]  : rd */     \
