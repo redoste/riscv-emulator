@@ -151,6 +151,7 @@ enum {
 		JAL, OPCODE_JAL, do {                                           \
 			*rd = cpu->pc + 4;                                      \
 			cpu->pc += imm;                                         \
+			cpu->jump_pending = true;                               \
 		} while (0))
 
 extern ins_type_t INS_TYPES[0x20];
