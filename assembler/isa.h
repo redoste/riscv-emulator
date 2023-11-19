@@ -5,8 +5,8 @@
 
 /* RISC-V opcodes */
 enum {
-	OPCODE_ALU = 0x33,
-	OPCODE_ALUI = 0x13,
+	OPCODE_OP = 0x33,
+	OPCODE_OP_IMM = 0x13,
 	OPCODE_LOAD = 0x03,
 	OPCODE_STORE = 0x23,
 	OPCODE_BRANCH = 0x63,
@@ -15,11 +15,11 @@ enum {
 
 /* RISC-V funct3 */
 enum {
-	/* OPCODE ALU */
+	/* OPCODE OP */
 	F3_ADD = 0,
 	F3_SUB = 0,
 
-	/* OPCODE ALUI */
+	/* OPCODE OP_IMM */
 	F3_ADDI = 0,
 
 	/* OPCODE LOAD */
@@ -37,7 +37,7 @@ enum {
 
 /* RISC-V funct7 */
 enum {
-	/* OPCODE ALU / F3 ADD or F3 SUB */
+	/* OPCODE OP / F3 ADD or F3 SUB */
 	F7_ADD = 0x00,
 	F7_SUB = 0x20,
 };
@@ -52,19 +52,19 @@ enum {
  *     X_J(MNEMONIC, OPCODE)                 : J-type instruction
  *     X_P(MNEMONIC)                         : pseudo instruction
  */
-#define X_INSTRUCTIONS                       \
-	X_R(ADD, OPCODE_ALU, F3_ADD, F7_ADD) \
-	X_R(SUB, OPCODE_ALU, F3_SUB, F7_SUB) \
-	X_I(ADDI, OPCODE_ALUI, F3_ADDI)      \
-	X_I_S(LD, OPCODE_LOAD, F3_LD)        \
-	X_S(SD, OPCODE_STORE, F3_SD)         \
-	X_B(BEQ, OPCODE_BRANCH, F3_BEQ)      \
-	X_B(BNE, OPCODE_BRANCH, F3_BNE)      \
-	X_B(BLT, OPCODE_BRANCH, F3_BLT)      \
-	X_B(BGE, OPCODE_BRANCH, F3_BGE)      \
-	X_J(JAL, OPCODE_JAL)                 \
-	X_P(J)                               \
-	X_P(LI)                              \
+#define X_INSTRUCTIONS                      \
+	X_R(ADD, OPCODE_OP, F3_ADD, F7_ADD) \
+	X_R(SUB, OPCODE_OP, F3_SUB, F7_SUB) \
+	X_I(ADDI, OPCODE_OP_IMM, F3_ADDI)   \
+	X_I_S(LD, OPCODE_LOAD, F3_LD)       \
+	X_S(SD, OPCODE_STORE, F3_SD)        \
+	X_B(BEQ, OPCODE_BRANCH, F3_BEQ)     \
+	X_B(BNE, OPCODE_BRANCH, F3_BNE)     \
+	X_B(BLT, OPCODE_BRANCH, F3_BLT)     \
+	X_B(BGE, OPCODE_BRANCH, F3_BGE)     \
+	X_J(JAL, OPCODE_JAL)                \
+	X_P(J)                              \
+	X_P(LI)                             \
 	X_P(MV)
 
 /* ins_mnemonic_t : enumeration of instruction mnemonics that the assembler

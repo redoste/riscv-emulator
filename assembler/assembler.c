@@ -150,7 +150,7 @@ static bool assembler_assemble_pseudo_instruction(ins_mnemonic_t mnemonic, lexer
 			}
 			RETURN_IF_LEXER_UNEXPECTED(lexer, &token, TT_EOI);
 			// emit `addi rd, x0, imm`
-			*instruction = ENCODE_I_INSTRUCTION(OPCODE_ALUI, F3_ADDI, rd, 0, imm);
+			*instruction = ENCODE_I_INSTRUCTION(OPCODE_OP_IMM, F3_ADDI, rd, 0, imm);
 			return true;
 		};
 		case INS_MV: {
@@ -162,7 +162,7 @@ static bool assembler_assemble_pseudo_instruction(ins_mnemonic_t mnemonic, lexer
 			reg_t rs = token.as_reg_operand;
 			RETURN_IF_LEXER_UNEXPECTED(lexer, &token, TT_EOI);
 			// emit `addi rd, rs, 0`
-			*instruction = ENCODE_I_INSTRUCTION(OPCODE_ALUI, F3_ADDI, rd, rs, 0);
+			*instruction = ENCODE_I_INSTRUCTION(OPCODE_OP_IMM, F3_ADDI, rd, rs, 0);
 			return true;
 		};
 
