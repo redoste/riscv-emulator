@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -174,6 +175,9 @@ void cpu_execute(emulator_t* emu) {
 		abort();
 	}
 
+	// We check for x0: see the comment before clearing x0 at the end of the function
+	assert(emu->cpu.regs[0] == 0);
+
 	switch (instruction.type) {
 		case INS_TYPE_R:
 			cpu_execute_type_r(emu, &instruction);
@@ -202,4 +206,11 @@ void cpu_execute(emulator_t* emu) {
 	} else {
 		emu->cpu.pc += 4;
 	}
+
+	/* zero (i.e. x0) is always set to 0 in RISC-V, some previous instructions might
+	 * have tampered with this register for the sake of simplifying the emulation control
+	 * flow
+	 * (e.g. `j addr` == `jal x0, addr` might have set x0 to PC+4)
+	 */
+	emu->cpu.regs[0] = 0;
 }
