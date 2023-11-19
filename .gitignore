@@ -13,3 +13,4 @@ riscv-emulator
 # Tests artifacts
 *.hex
 *.bin
+*.state
