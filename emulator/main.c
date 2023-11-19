@@ -70,7 +70,7 @@ int main(int argc, char** argv) {
 	}
 
 	for (size_t i = 0; i < REG_COUNT; i++) {
-		fprintf(output_file, "x%zu: %ld\n", i, emu.cpu.regs[i]);
+		fprintf(output_file, "x%zu: 0x%lx\n", i, emu.cpu.regs[i]);
 	}
 	fclose(output_file);
 
