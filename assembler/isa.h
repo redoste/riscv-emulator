@@ -21,6 +21,7 @@ enum {
 
 	/* OPCODE OP_IMM */
 	F3_ADDI = 0,
+	F3_SLLI = 1,
 
 	/* OPCODE LOAD */
 	F3_LD = 3,
@@ -56,6 +57,7 @@ enum {
 	X_R(ADD, OPCODE_OP, F3_ADD, F7_ADD) \
 	X_R(SUB, OPCODE_OP, F3_SUB, F7_SUB) \
 	X_I(ADDI, OPCODE_OP_IMM, F3_ADDI)   \
+	X_I(SLLI, OPCODE_OP_IMM, F3_SLLI)   \
 	X_I_S(LD, OPCODE_LOAD, F3_LD)       \
 	X_S(SD, OPCODE_STORE, F3_SD)        \
 	X_B(BEQ, OPCODE_BRANCH, F3_BEQ)     \
