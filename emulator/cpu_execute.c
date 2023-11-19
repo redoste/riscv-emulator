@@ -14,12 +14,12 @@ static void cpu_execute_type_r(emulator_t* emu, const ins_t* instruction) {
 	guest_reg* rs1 = &cpu->regs[instruction->rs1];
 	guest_reg* rs2 = &cpu->regs[instruction->rs2];
 
-	switch (instruction->opcode | (instruction->funct3 << 7) |
-		(instruction->funct7 << 10)) {
-#define X_R(MNEMONIC, OPCODE, F3, F7, EXPR)         \
-	case ((OPCODE) | (F3 << 7) | (F7 << 10)): { \
-		EXPR;                               \
-		break;                              \
+	switch ((instruction->opcode >> 2) | (instruction->funct3 << 5) |
+		(instruction->funct7 << 8)) {
+#define X_R(MNEMONIC, OPCODE, F3, F7, EXPR)             \
+	case ((OPCODE >> 2) | (F3 << 5) | (F7 << 8)): { \
+		EXPR;                                   \
+		break;                                  \
 	}
 #define X_I(MNEMONIC, OPCODE, F3, EXPR)
 #define X_S(MNEMONIC, OPCODE, F3, EXPR)
@@ -48,12 +48,12 @@ static void cpu_execute_type_i(emulator_t* emu, const ins_t* instruction) {
 	guest_reg* rs1 = &cpu->regs[instruction->rs1];
 	int64_t imm = instruction->imm;
 
-	switch (instruction->opcode | (instruction->funct3 << 7)) {
+	switch ((instruction->opcode >> 2) | (instruction->funct3 << 5)) {
 #define X_R(MNEMONIC, OPCODE, F3, F7, EXPR)
-#define X_I(MNEMONIC, OPCODE, F3, EXPR) \
-	case ((OPCODE) | (F3 << 7)): {  \
-		EXPR;                   \
-		break;                  \
+#define X_I(MNEMONIC, OPCODE, F3, EXPR)     \
+	case ((OPCODE >> 2) | (F3 << 5)): { \
+		EXPR;                       \
+		break;                      \
 	}
 #define X_S(MNEMONIC, OPCODE, F3, EXPR)
 #define X_B(MNEMONIC, OPCODE, F3, EXPR)
@@ -81,13 +81,13 @@ static void cpu_execute_type_s(emulator_t* emu, const ins_t* instruction) {
 	guest_reg* rs2 = &cpu->regs[instruction->rs2];
 	int64_t imm = instruction->imm;
 
-	switch (instruction->opcode | (instruction->funct3 << 7)) {
+	switch ((instruction->opcode >> 2) | (instruction->funct3 << 5)) {
 #define X_R(MNEMONIC, OPCODE, F3, F7, EXPR)
 #define X_I(MNEMONIC, OPCODE, F3, EXPR)
-#define X_S(MNEMONIC, OPCODE, F3, EXPR) \
-	case ((OPCODE) | (F3 << 7)): {  \
-		EXPR;                   \
-		break;                  \
+#define X_S(MNEMONIC, OPCODE, F3, EXPR)     \
+	case ((OPCODE >> 2) | (F3 << 5)): { \
+		EXPR;                       \
+		break;                      \
 	}
 #define X_B(MNEMONIC, OPCODE, F3, EXPR)
 #define X_J(MNEMONIC, OPCODE, EXPR)
@@ -114,14 +114,14 @@ static void cpu_execute_type_b(emulator_t* emu, const ins_t* instruction) {
 	guest_reg* rs2 = &cpu->regs[instruction->rs2];
 	int64_t imm = instruction->imm;
 
-	switch (instruction->opcode | (instruction->funct3 << 7)) {
+	switch ((instruction->opcode >> 2) | (instruction->funct3 << 5)) {
 #define X_R(MNEMONIC, OPCODE, F3, F7, EXPR)
 #define X_I(MNEMONIC, OPCODE, F3, EXPR)
 #define X_S(MNEMONIC, OPCODE, F3, EXPR)
-#define X_B(MNEMONIC, OPCODE, F3, EXPR) \
-	case ((OPCODE) | (F3 << 7)): {  \
-		EXPR;                   \
-		break;                  \
+#define X_B(MNEMONIC, OPCODE, F3, EXPR)     \
+	case ((OPCODE >> 2) | (F3 << 5)): { \
+		EXPR;                       \
+		break;                      \
 	}
 #define X_J(MNEMONIC, OPCODE, EXPR)
 
