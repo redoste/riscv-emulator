@@ -24,6 +24,7 @@ static void cpu_execute_type_r(emulator_t* emu, const ins_t* instruction) {
 #define X_I(MNEMONIC, OPCODE, F3, EXPR)
 #define X_S(MNEMONIC, OPCODE, F3, EXPR)
 #define X_B(MNEMONIC, OPCODE, F3, EXPR)
+#define X_U(MNEMONIC, OPCODE, EXPR)
 #define X_J(MNEMONIC, OPCODE, EXPR)
 
 		X_INSTRUCTIONS
@@ -32,6 +33,7 @@ static void cpu_execute_type_r(emulator_t* emu, const ins_t* instruction) {
 #undef X_I
 #undef X_S
 #undef X_B
+#undef X_U
 #undef X_J
 		default:
 			fprintf(stderr, "Unsupported R instruction opcode=%hhx f3=%hhx f7=%hhx\n",
@@ -57,6 +59,7 @@ static void cpu_execute_type_i(emulator_t* emu, const ins_t* instruction) {
 	}
 #define X_S(MNEMONIC, OPCODE, F3, EXPR)
 #define X_B(MNEMONIC, OPCODE, F3, EXPR)
+#define X_U(MNEMONIC, OPCODE, EXPR)
 #define X_J(MNEMONIC, OPCODE, EXPR)
 
 		X_INSTRUCTIONS
@@ -65,6 +68,7 @@ static void cpu_execute_type_i(emulator_t* emu, const ins_t* instruction) {
 #undef X_I
 #undef X_S
 #undef X_B
+#undef X_U
 #undef X_J
 		default:
 			fprintf(stderr, "Unsupported I instruction opcode=%hhx f3=%hhx\n",
@@ -90,6 +94,7 @@ static void cpu_execute_type_s(emulator_t* emu, const ins_t* instruction) {
 		break;                      \
 	}
 #define X_B(MNEMONIC, OPCODE, F3, EXPR)
+#define X_U(MNEMONIC, OPCODE, EXPR)
 #define X_J(MNEMONIC, OPCODE, EXPR)
 
 		X_INSTRUCTIONS
@@ -98,6 +103,7 @@ static void cpu_execute_type_s(emulator_t* emu, const ins_t* instruction) {
 #undef X_I
 #undef X_S
 #undef X_B
+#undef X_U
 #undef X_J
 		default:
 			fprintf(stderr, "Unsupported S instruction opcode=%hhx f3=%hhx\n",
@@ -123,6 +129,7 @@ static void cpu_execute_type_b(emulator_t* emu, const ins_t* instruction) {
 		EXPR;                       \
 		break;                      \
 	}
+#define X_U(MNEMONIC, OPCODE, EXPR)
 #define X_J(MNEMONIC, OPCODE, EXPR)
 
 		X_INSTRUCTIONS
@@ -131,10 +138,46 @@ static void cpu_execute_type_b(emulator_t* emu, const ins_t* instruction) {
 #undef X_I
 #undef X_S
 #undef X_B
+#undef X_U
 #undef X_J
 		default:
 			fprintf(stderr, "Unsupported B instruction opcode=%hhx f3=%hhx\n",
 				instruction->opcode, instruction->funct3);
+			abort();
+			break;
+	}
+}
+
+static void cpu_execute_type_u(emulator_t* emu, const ins_t* instruction) {
+	cpu_t* cpu = &emu->cpu;
+
+	guest_reg* rd = &cpu->regs[instruction->rd];
+	int64_t imm = instruction->imm;
+
+	switch (instruction->opcode >> 2) {
+#define X_R(MNEMONIC, OPCODE, F3, F7, EXPR)
+#define X_I(MNEMONIC, OPCODE, F3, EXPR)
+#define X_S(MNEMONIC, OPCODE, F3, EXPR)
+#define X_B(MNEMONIC, OPCODE, F3, EXPR)
+#define X_U(MNEMONIC, OPCODE, EXPR) \
+	case (OPCODE >> 2): {       \
+		EXPR;               \
+		break;              \
+	}
+#define X_J(MNEMONIC, OPCODE, EXPR)
+
+		X_INSTRUCTIONS
+
+#undef X_R
+#undef X_I
+#undef X_S
+#undef X_B
+#undef X_U
+#undef X_J
+
+		default:
+			fprintf(stderr, "Unsupported U instruction opcode=%hhx\n",
+				instruction->opcode);
 			abort();
 			break;
 	}
@@ -150,6 +193,7 @@ static void cpu_execute_type_j(emulator_t* emu, const ins_t* instruction) {
 #define X_I(MNEMONIC, OPCODE, F3, EXPR)
 #define X_S(MNEMONIC, OPCODE, F3, EXPR)
 #define X_B(MNEMONIC, OPCODE, F3, EXPR)
+#define X_U(MNEMONIC, OPCODE, EXPR)
 #define X_J(MNEMONIC, OPCODE, EXPR) EXPR;
 
 	X_INSTRUCTIONS
@@ -158,6 +202,7 @@ static void cpu_execute_type_j(emulator_t* emu, const ins_t* instruction) {
 #undef X_I
 #undef X_S
 #undef X_B
+#undef X_U
 #undef X_J
 }
 
@@ -190,6 +235,9 @@ void cpu_execute(emulator_t* emu) {
 			break;
 		case INS_TYPE_B:
 			cpu_execute_type_b(emu, &instruction);
+			break;
+		case INS_TYPE_U:
+			cpu_execute_type_u(emu, &instruction);
 			break;
 		case INS_TYPE_J:
 			cpu_execute_type_j(emu, &instruction);

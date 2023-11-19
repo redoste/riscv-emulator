@@ -37,6 +37,10 @@ bool cpu_decode(uint32_t encoded_instruction, ins_t* decoded_instruction) {
 			decoded_instruction->rs2 = DECODE_GET_RS2(encoded_instruction);
 			decoded_instruction->imm = DECODE_GET_B_IMM(encoded_instruction);
 			break;
+		case INS_TYPE_U:
+			decoded_instruction->rd = DECODE_GET_RD(encoded_instruction);
+			decoded_instruction->imm = DECODE_GET_U_IMM(encoded_instruction);
+			break;
 		case INS_TYPE_J:
 			decoded_instruction->rd = DECODE_GET_RD(encoded_instruction);
 			decoded_instruction->imm = DECODE_GET_J_IMM(encoded_instruction);

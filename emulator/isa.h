@@ -20,6 +20,7 @@ typedef enum __attribute__((packed)) ins_type_t {
 	INS_TYPE_I,
 	INS_TYPE_S,
 	INS_TYPE_B,
+	INS_TYPE_U,
 	INS_TYPE_J,
 } ins_type_t;
 
@@ -56,6 +57,8 @@ typedef struct ins_t {
 		   (((insn) >> (25 - 5)) & 0x7e0) |                \
 		   (((insn) >> (8 - 1)) & 0x1e) |                  \
 		   ((((insn) >> 7) & 1) << 11)))
+#define DECODE_GET_U_IMM(insn) \
+	((int32_t)((insn)&0xfffff000))
 #define DECODE_GET_J_IMM(insn)                                     \
 	((int32_t)((((int32_t)(insn) >> (31 - 20)) & 0xfff00000) | \
 		   (((insn) >> (21 - 1)) & 0x7fe) |                \
@@ -161,6 +164,7 @@ enum {
  *     X_I(MNEMONIC, OPCODE, FUNCT3, EXPR)         : I-type instruction
  *     X_S(MNEMONIC, OPCODE, FUNCT3, EXPR)         : S-type instruction
  *     X_B(MNEMONIC, OPCODE, FUNCT3, EXPR)         : B-type instruction
+ *     X_U(MNEMONIC, OPCODE, EXPR)                 : U-type instruction
  *     X_J(MNEMONIC, OPCODE, EXPR)                 : J-type instruction
  */
 #define X_INSTRUCTIONS                                                          \
@@ -198,6 +202,8 @@ enum {
 				cpu->jump_pending = true;                       \
 			}                                                       \
 		} while (0))                                                    \
+	X_U(AUIPC, OPCODE_AUIPC, *rd = cpu->pc + imm)                           \
+	X_U(LUI, OPCODE_LUI, *rd = imm)                                         \
 	X_J(                                                                    \
 		JAL, OPCODE_JAL, do {                                           \
 			*rd = cpu->pc + 4;                                      \
