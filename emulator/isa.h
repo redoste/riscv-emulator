@@ -66,28 +66,66 @@ typedef struct ins_t {
 
 /* RISC-V opcodes */
 enum {
+	OPCODE_AUIPC = 0x17,
+	OPCODE_LUI = 0x37,
+
 	OPCODE_OP = 0x33,
+	OPCODE_OP_32 = 0x3b,
 	OPCODE_OP_IMM = 0x13,
+	OPCODE_OP_IMM_32 = 0x1b,
+
+	OPCODE_MISC_MEM = 0x0F,
+	OPCODE_SYSTEM = 0x73,
+
 	OPCODE_LOAD = 0x03,
 	OPCODE_STORE = 0x23,
+
 	OPCODE_BRANCH = 0x63,
+	OPCODE_JALR = 0x67,
 	OPCODE_JAL = 0x6f,
 };
 
 /* RISC-V funct3 */
 enum {
-	/* OPCODE OP */
+	/* OPCODE OP / OP-32 / OP-IMM / OP-IMM-32 */
 	F3_ADD = 0,
 	F3_SUB = 0,
+	F3_SLL = 1,
+	F3_SLT = 2,
+	F3_SLTU = 3,
+	F3_XOR = 4,
+	F3_SRL = 5,
+	F3_SRA = 5,
+	F3_OR = 6,
+	F3_AND = 7,
 
-	/* OPCODE OP_IMM */
-	F3_ADDI = 0,
-	F3_SLLI = 1,
+	/* OPCODE MISC-MEM */
+	F3_FENCE = 0,
+	F3_FENCE_I = 1,
+
+	/* OPCODE SYSTEM */
+	F3_ECALL = 0,
+	F3_EBREAK = 0,
+	F3_CSRRW = 1,
+	F3_CSRRS = 2,
+	F3_CSRRC = 3,
+	F3_CSRRWI = 5,
+	F3_CSRRSI = 6,
+	F3_CSRRCI = 7,
 
 	/* OPCODE LOAD */
+	F3_LB = 0,
+	F3_LH = 1,
+	F3_LW = 2,
 	F3_LD = 3,
+	F3_LBU = 4,
+	F3_LHU = 5,
+	F3_LWU = 6,
 
 	/* OPCODE STORE */
+	F3_SB = 0,
+	F3_SH = 1,
+	F3_SW = 2,
 	F3_SD = 3,
 
 	/* OPCODE BRANCH */
@@ -95,13 +133,26 @@ enum {
 	F3_BNE = 1,
 	F3_BLT = 4,
 	F3_BGE = 5,
+	F3_BLTU = 6,
+	F3_BGEU = 7,
+
+	/* OPCODE JALR */
+	F3_JALR = 0,
 };
 
 /* RISC-V funct7 */
 enum {
-	/* OPCODE OP / F3 ADD or F3 SUB */
+	/* OPCODE OP / OP-32 */
 	F7_ADD = 0x00,
 	F7_SUB = 0x20,
+	F7_SLL = 0x00,
+	F7_SLT = 0x00,
+	F7_SLTU = 0x00,
+	F7_XOR = 0x00,
+	F7_SRL = 0x00,
+	F7_SRA = 0x20,
+	F7_OR = 0x00,
+	F7_AND = 0x00,
 };
 
 /* X_INSTRUCTIONS : X-macro storing informations about all the instructions
@@ -115,8 +166,8 @@ enum {
 #define X_INSTRUCTIONS                                                          \
 	X_R(ADD, OPCODE_OP, F3_ADD, F7_ADD, *rd = *rs1 + *rs2)                  \
 	X_R(SUB, OPCODE_OP, F3_SUB, F7_SUB, *rd = *rs1 - *rs2)                  \
-	X_I(ADDI, OPCODE_OP_IMM, F3_ADDI, *rd = *rs1 + imm)                     \
-	X_I(SLLI, OPCODE_OP_IMM, F3_SLLI, *rd = *rs1 << imm)                    \
+	X_I(ADDI, OPCODE_OP_IMM, F3_ADD, *rd = *rs1 + imm)                      \
+	X_I(SLLI, OPCODE_OP_IMM, F3_SLL, *rd = *rs1 << imm)                     \
 	X_I(LD, OPCODE_LOAD, F3_LD, *rd = emu_r64(emu, *rs1 + imm))             \
 	X_S(SD, OPCODE_STORE, F3_SD, emu_w64(emu, *rs1 + imm, *rs2))            \
 	X_B(                                                                    \
