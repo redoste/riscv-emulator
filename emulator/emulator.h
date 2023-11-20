@@ -5,6 +5,7 @@
 #include <stdint.h>
 
 #include "cpu.h"
+#include "emulator_sdl.h"
 #include "isa.h"
 
 typedef struct mem_region_t {
@@ -21,6 +22,8 @@ typedef struct emulator_t {
 	 */
 	mem_region_t rom;
 	mem_region_t ram;
+
+	emu_sdl_data_t sdl_data;
 } emulator_t;
 
 void emu_create(emulator_t* emu, guest_paddr rom_base, size_t rom_size, guest_paddr ram_base, size_t ram_size);

@@ -3,9 +3,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
+#include <unistd.h>
 
 #include "cpu.h"
 #include "emulator.h"
+#include "emulator_sdl.h"
 
 void emu_create(emulator_t* emu, guest_paddr rom_base, size_t rom_size, guest_paddr ram_base, size_t ram_size) {
 	uint8_t* rom_pool = malloc(rom_size);
@@ -30,6 +33,8 @@ void emu_create(emulator_t* emu, guest_paddr rom_base, size_t rom_size, guest_pa
 	memset(&emu->cpu, 0, sizeof(emu->cpu));
 	// NOTE : we assume the entry point is at the start of the ROM
 	emu->cpu.pc = emu->rom.base;
+
+	memset(&emu->sdl_data, 0, sizeof(emu->sdl_data));
 }
 
 void emu_destroy(emulator_t* emu) {
@@ -95,5 +100,56 @@ void emu_ebreak(emulator_t* emu) {
 }
 
 void emu_ecall(emulator_t* emu) {
-	emu_ebreak(emu);
+	// Handle custom emulator calls
+	switch (emu->cpu.regs[10]) {
+		case 0x494e4954:  // "INIT"
+			emu_sdl_init(emu, emu->cpu.regs[11], emu->cpu.regs[12]);
+			break;
+		case 0x50555443:  // "PUTC"
+			fputc(emu->cpu.regs[11] & 0xff, stdout);
+			fflush(stdout);
+			break;
+		case 0x45584954:  // "EXIT"
+			fprintf(stderr, "guest exited\n");
+			exit(emu->cpu.regs[11]);
+			break;
+		case 0x4754494b: {  // "GTIK"
+			struct timespec tp;
+			clock_gettime(CLOCK_MONOTONIC, &tp);
+			emu->cpu.regs[10] = (tp.tv_sec * 1000) + (tp.tv_nsec / 1000000);
+			break;
+		}
+		case 0x534c4550:  // "SLEP"
+			usleep(emu->cpu.regs[11] * 1000);
+			break;
+		case 0x44524157: {  // "DRAW"
+			guest_paddr addr = emu->cpu.regs[11];
+			uint8_t* frame;
+			size_t max_frame_size;
+			if (addr - emu->rom.base < emu->rom.size) {
+				frame = &emu->rom.pool[addr - emu->rom.base];
+				max_frame_size = emu->rom.size - (addr - emu->rom.base);
+			} else if (addr - emu->ram.base < emu->ram.size) {
+				frame = &emu->ram.pool[addr - emu->ram.base];
+				max_frame_size = emu->ram.size - (addr - emu->ram.base);
+			} else {
+				fprintf(stderr, "invalid DRAW at %016lx PC=%016lx\n",
+					addr, emu->cpu.pc);
+				abort();
+			}
+			emu_sdl_draw(emu, frame, max_frame_size);
+			break;
+		}
+		case 0x474b4559: {  // "GKEY"
+			unsigned int pressed;
+			uint8_t key;
+			emu->cpu.regs[10] = emu_sdl_poll_events(emu, &pressed, &key);
+			emu->cpu.regs[11] = pressed;
+			emu->cpu.regs[12] = key;
+			break;
+		}
+		default:
+			emu_ebreak(emu);
+			break;
+	}
 }

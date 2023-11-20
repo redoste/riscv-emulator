@@ -10,13 +10,16 @@ TEST_DIR := tests/
 
 all: $(EXE_ASM) $(EXE_EMU)
 
-CFLAGS := -Wall -Wextra -Wpedantic -Wstrict-prototypes -Wvla -O0 -g
+# TODO : add build option to choose between debug (-O0 -g) and release (-O2 or -O3)
+CFLAGS := -Wall -Wextra -Wpedantic -Wstrict-prototypes -Wvla -O3 -g
+# TODO : add build option to disable SDL support
+LFLAGS_EMU := -lSDL2
 
 $(EXE_ASM): $(SRC_ASM) $(HDR_ASM)
 	gcc $(SRC_ASM) -o $@ $(CFLAGS)
 
 $(EXE_EMU): $(SRC_EMU) $(HDR_EMU)
-	gcc $(SRC_EMU) -o $@ $(CFLAGS)
+	gcc $(SRC_EMU) -o $@ $(CFLAGS) $(LFLAGS_EMU)
 
 .PHONY: all cleanall clean
 
