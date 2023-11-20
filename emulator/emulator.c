@@ -75,7 +75,25 @@ void emu_destroy(emulator_t* emu) {
 		abort();                                                               \
 	}
 
+EMU_RX(8, uint8_t)
+EMU_RX(16, uint16_t)
 EMU_RX(32, uint32_t)
 EMU_RX(64, uint64_t)
+EMU_WX(8, uint8_t)
+EMU_WX(16, uint16_t)
 EMU_WX(32, uint32_t)
 EMU_WX(64, uint64_t)
+
+void emu_ebreak(emulator_t* emu) {
+	fprintf(stderr, "EBREAK PC=%016lx\n", emu->cpu.pc);
+	for (size_t i = 0; i < REG_COUNT; i++) {
+		fprintf(stderr, "x%2zu=%016lx ", i, emu->cpu.regs[i]);
+		if ((i % 4) == 3) {
+			fprintf(stderr, "\n");
+		}
+	}
+}
+
+void emu_ecall(emulator_t* emu) {
+	emu_ebreak(emu);
+}

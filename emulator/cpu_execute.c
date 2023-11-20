@@ -13,6 +13,9 @@ static void cpu_execute_type_r(emulator_t* emu, const ins_t* instruction) {
 	guest_reg* rd = &cpu->regs[instruction->rd];
 	guest_reg* rs1 = &cpu->regs[instruction->rs1];
 	guest_reg* rs2 = &cpu->regs[instruction->rs2];
+	// TODO : support BE hosts
+	guest_word* rs1w = (guest_word*)&cpu->regs[instruction->rs1];
+	guest_word* rs2w = (guest_word*)&cpu->regs[instruction->rs2];
 
 	switch ((instruction->opcode >> 2) | (instruction->funct3 << 5) |
 		(instruction->funct7 << 8)) {
@@ -48,6 +51,8 @@ static void cpu_execute_type_i(emulator_t* emu, const ins_t* instruction) {
 
 	guest_reg* rd = &cpu->regs[instruction->rd];
 	guest_reg* rs1 = &cpu->regs[instruction->rs1];
+	// TODO : support BE hosts
+	guest_word* rs1w = (guest_word*)&cpu->regs[instruction->rs1];
 	int64_t imm = instruction->imm;
 
 	switch ((instruction->opcode >> 2) | (instruction->funct3 << 5)) {
