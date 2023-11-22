@@ -17,6 +17,11 @@ static void cpu_execute_type_r(emulator_t* emu, const ins_t* instruction) {
 	guest_word* rs1w = (guest_word*)&cpu->regs[instruction->rs1];
 	guest_word* rs2w = (guest_word*)&cpu->regs[instruction->rs2];
 
+	guest_reg_signed* rds = (guest_reg_signed*)&cpu->regs[instruction->rd];
+	guest_reg_signed* rs1s = (guest_reg_signed*)&cpu->regs[instruction->rs1];
+	guest_reg_signed* rs2s = (guest_reg_signed*)&cpu->regs[instruction->rs2];
+	guest_word_signed* rs1ws = (guest_word_signed*)&cpu->regs[instruction->rs1];
+
 	switch ((instruction->opcode >> 2) | (instruction->funct3 << 5) |
 		(instruction->funct7 << 8)) {
 #define X_R(MNEMONIC, OPCODE, F3, F7, EXPR)             \
@@ -53,6 +58,11 @@ static void cpu_execute_type_i(emulator_t* emu, const ins_t* instruction) {
 	guest_reg* rs1 = &cpu->regs[instruction->rs1];
 	// TODO : support BE hosts
 	guest_word* rs1w = (guest_word*)&cpu->regs[instruction->rs1];
+
+	guest_reg_signed* rds = (guest_reg_signed*)&cpu->regs[instruction->rd];
+	guest_reg_signed* rs1s = (guest_reg_signed*)&cpu->regs[instruction->rs1];
+	guest_word_signed* rs1ws = (guest_word_signed*)&cpu->regs[instruction->rs1];
+
 	int64_t imm = instruction->imm;
 
 	switch ((instruction->opcode >> 2) | (instruction->funct3 << 5)) {
@@ -123,6 +133,10 @@ static void cpu_execute_type_b(emulator_t* emu, const ins_t* instruction) {
 
 	guest_reg* rs1 = &cpu->regs[instruction->rs1];
 	guest_reg* rs2 = &cpu->regs[instruction->rs2];
+
+	guest_reg_signed* rs1s = (guest_reg_signed*)&cpu->regs[instruction->rs1];
+	guest_reg_signed* rs2s = (guest_reg_signed*)&cpu->regs[instruction->rs2];
+
 	int64_t imm = instruction->imm;
 
 	switch ((instruction->opcode >> 2) | (instruction->funct3 << 5)) {
