@@ -48,24 +48,34 @@ typedef struct ins_t {
 #define DECODE_GET_RS1(insn) (((insn) >> 15) & 0x1f)
 #define DECODE_GET_RS2(insn) (((insn) >> 20) & 0x1f)
 
-// NOTE : we cast to a signed integer the expression with the MSB to properly sign extend the value
-// TODO : comment the fields with more details
-#define DECODE_GET_I_IMM(insn) ((int32_t)(insn) >> 20)
-#define DECODE_GET_S_IMM(insn)                                    \
-	((int32_t)((((int32_t)(insn) >> (25 - 5)) & 0xffffffe0) | \
-		   (((insn) >> 7) & 0x1f)))
-#define DECODE_GET_B_IMM(insn)                                     \
-	((int32_t)((((int32_t)(insn) >> (31 - 12)) & 0xfffff000) | \
-		   (((insn) >> (25 - 5)) & 0x7e0) |                \
-		   (((insn) >> (8 - 1)) & 0x1e) |                  \
-		   ((((insn) >> 7) & 1) << 11)))
+/* NOTE : we cast to a signed integer the expression with the MSB to properly sign extend the value
+ *        and recast a second time on the parent expression to make sure the result is treated as
+ *        signed and will be sign extended regardless of the type of the lvalue
+ */
+
+#define DECODE_GET_I_IMM(insn) \
+	((int32_t)(insn) >> 20) /* [11:31] : insn[31] */
+				/* [0:10]  : insn[20:30] */
+
+#define DECODE_GET_S_IMM(insn)                                                                \
+	((int32_t)((((int32_t)(insn) >> (25 - 5)) & 0xffffffe0) | /* [11:31] : insn[31]       \
+								     [5:10]  : insn[25:30] */ \
+		   (((insn) >> 7) & 0x1f)))                       /* [0:4]   : insn[7:11] */
+
+#define DECODE_GET_B_IMM(insn)                                                                 \
+	((int32_t)((((int32_t)(insn) >> (31 - 12)) & 0xfffff000) | /* [12:31] : insn[31] */    \
+		   ((((insn) >> 7) & 1) << 11) |                   /* [11]    : insn[7] */     \
+		   (((insn) >> (25 - 5)) & 0x7e0) |                /* [5:10]  : insn[25:30] */ \
+		   (((insn) >> (8 - 1)) & 0x1e)))                  /* [1:4]   : insn[8:11] */
+
 #define DECODE_GET_U_IMM(insn) \
-	((int32_t)((insn)&0xfffff000))
-#define DECODE_GET_J_IMM(insn)                                     \
-	((int32_t)((((int32_t)(insn) >> (31 - 20)) & 0xfff00000) | \
-		   (((insn) >> (21 - 1)) & 0x7fe) |                \
-		   ((((insn) >> 20) & 1) << 11) |                  \
-		   ((insn)&0xff000)))
+	((int32_t)((insn)&0xfffff000)) /* [12:31] : insn[12:13] */
+
+#define DECODE_GET_J_IMM(insn)                                                                 \
+	((int32_t)((((int32_t)(insn) >> (31 - 20)) & 0xfff00000) | /* [20:31] : insn[31] */    \
+		   ((insn)&0xff000) |                              /* [12:19] : insn[12:19] */ \
+		   ((((insn) >> 20) & 1) << 11) |                  /* [11]    : insn[20] */    \
+		   (((insn) >> (21 - 1)) & 0x7fe)))                /* [1:10]  : insn[21:30] */
 
 // TODO : make a common header for both the assembler and the emulator
 
