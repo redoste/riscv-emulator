@@ -96,6 +96,9 @@ enum {
 
 /* RISC-V funct12 */
 enum {
+	/* OPCODE OP-IMM / OP-IMM-32 */
+	F12_SRA = 0x400,
+
 	/* OPCODE SYSTEM */
 	F12_ECALL = 0,
 	F12_EBREAK = 1,
@@ -110,7 +113,8 @@ enum {
  *     X_B(MNEMONIC, OPCODE, FUNCT3)         : B-type instruction
  *     X_U(MNEMONIC, OPCODE)                 : U-type instruction
  *     X_J(MNEMONIC, OPCODE)                 : J-type instruction
- *     X_P(MNEMONIC)                         : pseudo instruction
+ *     X_P(MNEMONIC)                         : pseudo instruction or instructions that require specific parsing
+ *                                             or encoding
  */
 #define X_INSTRUCTIONS                                \
 	X_R(ADD, OPCODE_OP, F3_ADD, F7_ADD)           \
@@ -149,13 +153,11 @@ enum {
 	X_I(SLTI, OPCODE_OP_IMM, F3_SLT)              \
 	X_I(SLTIU, OPCODE_OP_IMM, F3_SLTU)            \
 	X_I(XORI, OPCODE_OP_IMM, F3_XOR)              \
-	/* TODO : add SRAI */                         \
 	X_I(SRLI, OPCODE_OP_IMM, F3_SRL)              \
 	X_I(ORI, OPCODE_OP_IMM, F3_OR)                \
 	X_I(ANDI, OPCODE_OP_IMM, F3_AND)              \
                                                       \
 	X_I(ADDIW, OPCODE_OP_IMM_32, F3_ADD)          \
-	/* TODO : add SRAIW */                        \
 	X_I(SLLIW, OPCODE_OP_IMM_32, F3_SLL)          \
 	X_I(SRLIW, OPCODE_OP_IMM_32, F3_SRL)          \
                                                       \
@@ -188,6 +190,9 @@ enum {
 	X_P(J)                                        \
 	X_P(LI)                                       \
 	X_P(MV)                                       \
+                                                      \
+	X_P(SRAI)                                     \
+	X_P(SRAIW)                                    \
                                                       \
 	X_P(ECALL)                                    \
 	X_P(EBREAK)

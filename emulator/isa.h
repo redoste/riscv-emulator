@@ -162,6 +162,9 @@ enum {
 
 /* RISC-V funct12 */
 enum {
+	/* OPCODE OP-IMM / OP-IMM-32 */
+	F12_SRA = 0x400,
+
 	/* OPCODE SYSTEM */
 	F12_ECALL = 0,
 	F12_EBREAK = 1,
@@ -211,14 +214,14 @@ enum {
 	X_I(SLTI, OPCODE_OP_IMM, F3_SLT, *rd = ((guest_reg_signed)*rs1 < imm) ? 1 : 0)                                                                                          \
 	X_I(SLTIU, OPCODE_OP_IMM, F3_SLTU, *rd = (*rs1 < (uint64_t)imm) ? 1 : 0)                                                                                                \
 	X_I(XORI, OPCODE_OP_IMM, F3_XOR, *rd = *rs1 ^ imm)                                                                                                                      \
-	X_I(SRLI, OPCODE_OP_IMM, F3_SRL, *rd = (imm & 0x400) ? ((guest_reg_signed)*rs1 >> (imm & 0x3f)) : (guest_reg_signed)(*rs1 >> (imm & 0x3f)))                             \
+	X_I(SRLI, OPCODE_OP_IMM, F3_SRL, *rd = (imm & F12_SRA) ? ((guest_reg_signed)*rs1 >> (imm & 0x3f)) : (guest_reg_signed)(*rs1 >> (imm & 0x3f)))                             \
 	X_I(ORI, OPCODE_OP_IMM, F3_OR, *rd = *rs1 | imm)                                                                                                                        \
 	X_I(ANDI, OPCODE_OP_IMM, F3_AND, *rd = *rs1 & imm)                                                                                                                      \
                                                                                                                                                                                 \
 	/* TODO : streamline & test sign extension */                                                                                                                           \
 	X_I(ADDIW, OPCODE_OP_IMM_32, F3_ADD, *rd = (guest_reg_signed)(guest_word_signed)(*rs1w + imm))                                                                          \
 	X_I(SLLIW, OPCODE_OP_IMM_32, F3_SLL, *rd = (guest_reg_signed)(guest_word_signed)(*rs1w << (imm & 0x1f)))                                                                \
-	X_I(SRLIW, OPCODE_OP_IMM_32, F3_SRL, *rd = (guest_reg_signed)((imm & 0x400) ? ((guest_word_signed)*rs1w >> (imm & 0x1f)) : (guest_word_signed)(*rs1w >> (imm & 0x1f)))) \
+	X_I(SRLIW, OPCODE_OP_IMM_32, F3_SRL, *rd = (guest_reg_signed)((imm & F12_SRA) ? ((guest_word_signed)*rs1w >> (imm & 0x1f)) : (guest_word_signed)(*rs1w >> (imm & 0x1f)))) \
                                                                                                                                                                                 \
 	X_I(                                                                                                                                                                    \
 		JALR, OPCODE_JALR, F3_JALR, do {                                                                                                                                \

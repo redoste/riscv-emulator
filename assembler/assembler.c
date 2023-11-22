@@ -200,6 +200,18 @@ static bool assembler_assemble_pseudo_instruction(ins_mnemonic_t mnemonic, lexer
 			*instruction = ENCODE_I_INSTRUCTION(OPCODE_SYSTEM, F3_EBREAK, 0, 0, F12_EBREAK);
 			return true;
 		};
+		case INS_SRAI:
+		case INS_SRAIW: {
+			reg_t rd, rs1;
+			int64_t imm;
+			// TODO : bound check the immediate in shift instructions
+			if (!assembler_parse_i_ins(lexer, &rd, &rs1, &imm)) {
+				return false;
+			}
+			*instruction = ENCODE_I_INSTRUCTION(mnemonic == INS_SRAIW ? OPCODE_OP_IMM_32 : OPCODE_OP_IMM,
+							    F3_SRA, rd, rs1, imm | F12_SRA);
+			return true;
+		};
 
 		default:
 			fprintf(stderr, "ICE : Invalid pseudo-instruction mnemonic\n");
