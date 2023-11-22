@@ -8,7 +8,9 @@ __pycache__/
 # Build artifacts
 riscv-assembler
 riscv-emulator
+Makefile.config
 *.o
+*.d
 
 # Tests artifacts
 *.hex

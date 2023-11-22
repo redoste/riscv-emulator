@@ -1,37 +1,24 @@
 EXE_ASM := riscv-assembler
-SRC_ASM := $(wildcard assembler/*.c)
-HDR_ASM := $(wildcard assembler/*.h)
-
 EXE_EMU := riscv-emulator
-SRC_EMU := $(wildcard emulator/*.c)
-HDR_EMU := $(wildcard emulator/*.h)
-
-TEST_DIR := tests/
-
-all: $(EXE_ASM) $(EXE_EMU)
-
-# TODO : add build option to choose between debug (-O0 -g) and release (-O2 or -O3)
-CFLAGS := -Wall -Wextra -Wpedantic -Wstrict-prototypes -Wvla -O2 -g
-LFLAGS_EMU :=
-
-ifdef SDL
-	LFLAGS_EMU += -lSDL2
-	CFLAGS += -DRISCV_EMULATOR_SDL_SUPPORT
-endif
-
-$(EXE_ASM): $(SRC_ASM) $(HDR_ASM)
-	gcc $(SRC_ASM) -o $@ $(CFLAGS)
-
-$(EXE_EMU): $(SRC_EMU) $(HDR_EMU)
-	gcc $(SRC_EMU) -o $@ $(CFLAGS) $(LFLAGS_EMU)
 
 .PHONY: all cleanall clean
+all: $(EXE_ASM) $(EXE_EMU)
+
+.PHONY: $(EXE_ASM)
+$(EXE_ASM):
+	$(MAKE) -C assembler/
+
+.PHONY: $(EXE_EMU)
+$(EXE_EMU):
+	$(MAKE) -C emulator/
 
 cleanall: clean
 	@ rm -f $(EXE_EMU) $(EXE_ASM)
 
 clean:
 	@ find tests \( -name '*.o' -o -name '*.bin' -o -name '*.hex' -o -name '*.state' \) -delete
+	$(MAKE) -C assembler/ clean
+	$(MAKE) -C emulator/ clean
 
 .PHONY: format
 format:

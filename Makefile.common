@@ -1,0 +1,17 @@
+-include ../Makefile.config
+
+CC := gcc
+
+CFLAGS := -Wall -Wextra -Wpedantic -Wstrict-prototypes -Wvla
+LDFLAGS :=
+
+ifdef RELEASE
+	CFLAGS += -O2
+else
+	CFLAGS += -O0 -g
+endif
+
+ifdef LTO
+	CFLAGS += -flto
+	LDFLAGS += -flto
+endif
