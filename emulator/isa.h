@@ -160,6 +160,13 @@ enum {
 	F7_AND = 0x00,
 };
 
+/* RISC-V funct12 */
+enum {
+	/* OPCODE SYSTEM */
+	F12_ECALL = 0,
+	F12_EBREAK = 1,
+};
+
 /* X_INSTRUCTIONS : X-macro storing informations about all the instructions
  *                  the emulator can emulate
  *     X_R(MNEMONIC, OPCODE, FUNCT3, FUNCT7, EXPR) : R-type instruction
@@ -221,7 +228,7 @@ enum {
 			cpu->jump_pending = true;                                                                                                                               \
 		} while (0))                                                                                                                                                    \
                                                                                                                                                                                 \
-	X_I(ECALL, OPCODE_SYSTEM, F3_ECALL, imm ? emu_ebreak(emu) : emu_ecall(emu))                                                                                             \
+	X_I(ECALL, OPCODE_SYSTEM, F3_ECALL, (imm == F12_EBREAK) ? emu_ebreak(emu) : emu_ecall(emu))                                                                             \
 	X_I(CSRRW, OPCODE_SYSTEM, F3_CSRRW, abort() /*TODO*/)                                                                                                                   \
 	X_I(CSRRS, OPCODE_SYSTEM, F3_CSRRS, abort() /*TODO*/)                                                                                                                   \
 	X_I(CSRRC, OPCODE_SYSTEM, F3_CSRRC, abort() /*TODO*/)                                                                                                                   \
