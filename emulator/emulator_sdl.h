@@ -1,6 +1,8 @@
 #ifndef EMULATOR_SDL_H
 #define EMULATOR_SDL_H
 
+#ifdef RISCV_EMULATOR_SDL_SUPPORT
+
 #include <stddef.h>
 #include <stdint.h>
 #include <time.h>
@@ -21,5 +23,7 @@ typedef struct emu_sdl_data_t {
 void emu_sdl_init(emulator_t* emu, int width, int height);
 void emu_sdl_draw(emulator_t* emu, uint8_t* frame, size_t max_frame_size);
 unsigned int emu_sdl_poll_events(emulator_t* emu, unsigned int* pressed, uint8_t* key);
+
+#endif
 
 #endif

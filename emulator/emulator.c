@@ -34,7 +34,9 @@ void emu_create(emulator_t* emu, guest_paddr rom_base, size_t rom_size, guest_pa
 	// NOTE : we assume the entry point is at the start of the ROM
 	emu->cpu.pc = emu->rom.base;
 
+#ifdef RISCV_EMULATOR_SDL_SUPPORT
 	memset(&emu->sdl_data, 0, sizeof(emu->sdl_data));
+#endif
 }
 
 void emu_destroy(emulator_t* emu) {
@@ -102,9 +104,6 @@ void emu_ebreak(emulator_t* emu) {
 void emu_ecall(emulator_t* emu) {
 	// Handle custom emulator calls
 	switch (emu->cpu.regs[10]) {
-		case 0x494e4954:  // "INIT"
-			emu_sdl_init(emu, emu->cpu.regs[11], emu->cpu.regs[12]);
-			break;
 		case 0x50555443:  // "PUTC"
 			fputc(emu->cpu.regs[11] & 0xff, stdout);
 			fflush(stdout);
@@ -121,6 +120,10 @@ void emu_ecall(emulator_t* emu) {
 		}
 		case 0x534c4550:  // "SLEP"
 			usleep(emu->cpu.regs[11] * 1000);
+			break;
+#ifdef RISCV_EMULATOR_SDL_SUPPORT
+		case 0x494e4954:  // "INIT"
+			emu_sdl_init(emu, emu->cpu.regs[11], emu->cpu.regs[12]);
 			break;
 		case 0x44524157: {  // "DRAW"
 			guest_paddr addr = emu->cpu.regs[11];
@@ -148,6 +151,14 @@ void emu_ecall(emulator_t* emu) {
 			emu->cpu.regs[12] = key;
 			break;
 		}
+#else
+		case 0x494e4954:  // "INIT"
+		case 0x44524157:  // "DRAW"
+		case 0x474b4559:  // "GKEY"
+			fprintf(stderr, "SDL ecalls require RISCV_EMULATOR_SDL_SUPPORT\n");
+			emu_ebreak(emu);
+			break;
+#endif
 		default:
 			emu_ebreak(emu);
 			break;

@@ -1,3 +1,5 @@
+#ifdef RISCV_EMULATOR_SDL_SUPPORT
+
 #include <assert.h>
 #include <stdint.h>
 #include <time.h>
@@ -135,3 +137,5 @@ unsigned int emu_sdl_poll_events(emulator_t* emu, unsigned int* pressed, uint8_t
 	}
 	return 0;
 }
+
+#endif

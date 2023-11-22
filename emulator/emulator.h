@@ -23,7 +23,9 @@ typedef struct emulator_t {
 	mem_region_t rom;
 	mem_region_t ram;
 
+#ifdef RISCV_EMULATOR_SDL_SUPPORT
 	emu_sdl_data_t sdl_data;
+#endif
 } emulator_t;
 
 void emu_create(emulator_t* emu, guest_paddr rom_base, size_t rom_size, guest_paddr ram_base, size_t ram_size);

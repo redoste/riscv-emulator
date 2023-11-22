@@ -11,9 +11,13 @@ TEST_DIR := tests/
 all: $(EXE_ASM) $(EXE_EMU)
 
 # TODO : add build option to choose between debug (-O0 -g) and release (-O2 or -O3)
-CFLAGS := -Wall -Wextra -Wpedantic -Wstrict-prototypes -Wvla -O3 -g
-# TODO : add build option to disable SDL support
-LFLAGS_EMU := -lSDL2
+CFLAGS := -Wall -Wextra -Wpedantic -Wstrict-prototypes -Wvla -O2 -g
+LFLAGS_EMU :=
+
+ifdef SDL
+	LFLAGS_EMU += -lSDL2
+	CFLAGS += -DRISCV_EMULATOR_SDL_SUPPORT
+endif
 
 $(EXE_ASM): $(SRC_ASM) $(HDR_ASM)
 	gcc $(SRC_ASM) -o $@ $(CFLAGS)
