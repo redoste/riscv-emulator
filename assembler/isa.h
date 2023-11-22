@@ -98,26 +98,90 @@ enum {
  *                  the assembler can assemble
  *     X_R(MNEMONIC, OPCODE, FUNCT3, FUNCT7) : R-type instruction
  *     X_I(MNEMONIC, OPCODE, FUNCT3)         : I-type instruction
- *     X_I_S(MNEMONIC, OPCODE, FUNCT3)       : I-type instruction that is parsed like a S-type (i.e. `ld`)
+ *     X_I_S(MNEMONIC, OPCODE, FUNCT3)       : I-type instruction that is parsed like a S-type (e.g. loads)
  *     X_S(MNEMONIC, OPCODE, FUNCT3)         : S-type instruction
  *     X_B(MNEMONIC, OPCODE, FUNCT3)         : B-type instruction
+ *     X_U(MNEMONIC, OPCODE)                 : U-type instruction
  *     X_J(MNEMONIC, OPCODE)                 : J-type instruction
  *     X_P(MNEMONIC)                         : pseudo instruction
  */
-#define X_INSTRUCTIONS                      \
-	X_R(ADD, OPCODE_OP, F3_ADD, F7_ADD) \
-	X_R(SUB, OPCODE_OP, F3_SUB, F7_SUB) \
-	X_I(ADDI, OPCODE_OP_IMM, F3_ADD)    \
-	X_I(SLLI, OPCODE_OP_IMM, F3_SLL)    \
-	X_I_S(LD, OPCODE_LOAD, F3_LD)       \
-	X_S(SD, OPCODE_STORE, F3_SD)        \
-	X_B(BEQ, OPCODE_BRANCH, F3_BEQ)     \
-	X_B(BNE, OPCODE_BRANCH, F3_BNE)     \
-	X_B(BLT, OPCODE_BRANCH, F3_BLT)     \
-	X_B(BGE, OPCODE_BRANCH, F3_BGE)     \
-	X_J(JAL, OPCODE_JAL)                \
-	X_P(J)                              \
-	X_P(LI)                             \
+#define X_INSTRUCTIONS                                \
+	X_R(ADD, OPCODE_OP, F3_ADD, F7_ADD)           \
+	X_R(SUB, OPCODE_OP, F3_SUB, F7_SUB)           \
+	X_R(SLL, OPCODE_OP, F3_SLL, F7_SLL)           \
+	X_R(SLT, OPCODE_OP, F3_SLT, F7_SLT)           \
+	X_R(SLTU, OPCODE_OP, F3_SLTU, F7_SLTU)        \
+	X_R(XOR, OPCODE_OP, F3_XOR, F7_XOR)           \
+	X_R(SRL, OPCODE_OP, F3_SRL, F7_SRL)           \
+	X_R(SRA, OPCODE_OP, F3_SRA, F7_SRA)           \
+	X_R(OR, OPCODE_OP, F3_OR, F7_OR)              \
+	X_R(AND, OPCODE_OP, F3_AND, F7_AND)           \
+                                                      \
+	X_R(ADDW, OPCODE_OP_32, F3_ADD, F7_ADD)       \
+	X_R(SUBW, OPCODE_OP_32, F3_SUB, F7_SUB)       \
+	X_R(SLLW, OPCODE_OP_32, F3_SLL, F7_SLL)       \
+	X_R(SRLW, OPCODE_OP_32, F3_SRL, F7_SRL)       \
+	X_R(SRAW, OPCODE_OP_32, F3_SRA, F7_SRA)       \
+                                                      \
+	X_I_S(LB, OPCODE_LOAD, F3_LB)                 \
+	X_I_S(LH, OPCODE_LOAD, F3_LH)                 \
+	X_I_S(LW, OPCODE_LOAD, F3_LW)                 \
+	X_I_S(LD, OPCODE_LOAD, F3_LD)                 \
+	X_I_S(LBU, OPCODE_LOAD, F3_LBU)               \
+	X_I_S(LHU, OPCODE_LOAD, F3_LHU)               \
+	X_I_S(LWU, OPCODE_LOAD, F3_LWU)               \
+                                                      \
+	/* TODO : parse properly fence and fence.i */ \
+	/* e.g. : 0f 00 30 0d  fence   iow, rw */     \
+	/*        0f 10 00 00  fence.i */             \
+	X_I(FENCE, OPCODE_MISC_MEM, F3_FENCE)         \
+	X_I(FENCE_I, OPCODE_MISC_MEM, F3_FENCE_I)     \
+                                                      \
+	X_I(ADDI, OPCODE_OP_IMM, F3_ADD)              \
+	X_I(SLLI, OPCODE_OP_IMM, F3_SLL)              \
+	X_I(SLTI, OPCODE_OP_IMM, F3_SLT)              \
+	X_I(SLTIU, OPCODE_OP_IMM, F3_SLTU)            \
+	X_I(XORI, OPCODE_OP_IMM, F3_XOR)              \
+	/* TODO : add SRAI */                         \
+	X_I(SRLI, OPCODE_OP_IMM, F3_SRL)              \
+	X_I(ORI, OPCODE_OP_IMM, F3_OR)                \
+	X_I(ANDI, OPCODE_OP_IMM, F3_AND)              \
+                                                      \
+	X_I(ADDIW, OPCODE_OP_IMM_32, F3_ADD)          \
+	/* TODO : add SRAIW */                        \
+	X_I(SLLIW, OPCODE_OP_IMM_32, F3_SLL)          \
+	X_I(SRLIW, OPCODE_OP_IMM_32, F3_SRL)          \
+                                                      \
+	X_I_S(JALR, OPCODE_JALR, F3_JALR)             \
+                                                      \
+	/* TODO : support ecall & ebreak */           \
+	X_I(ECALL, OPCODE_SYSTEM, F3_ECALL)           \
+	/* TODO : support CSR instructions */         \
+	/* X_I(CSRRW, OPCODE_SYSTEM, F3_CSRRW)   */   \
+	/* X_I(CSRRS, OPCODE_SYSTEM, F3_CSRRS)   */   \
+	/* X_I(CSRRC, OPCODE_SYSTEM, F3_CSRRC)   */   \
+	/* X_I(CSRRWI, OPCODE_SYSTEM, F3_CSRRWI) */   \
+	/* X_I(CSRRSI, OPCODE_SYSTEM, F3_CSRRSI) */   \
+	/* X_I(CSRRCI, OPCODE_SYSTEM, F3_CSRRCI) */   \
+                                                      \
+	X_S(SB, OPCODE_STORE, F3_SB)                  \
+	X_S(SH, OPCODE_STORE, F3_SH)                  \
+	X_S(SW, OPCODE_STORE, F3_SW)                  \
+	X_S(SD, OPCODE_STORE, F3_SD)                  \
+	X_B(BEQ, OPCODE_BRANCH, F3_BEQ)               \
+	X_B(BNE, OPCODE_BRANCH, F3_BNE)               \
+	X_B(BLT, OPCODE_BRANCH, F3_BLT)               \
+	X_B(BGE, OPCODE_BRANCH, F3_BGE)               \
+	X_B(BLTU, OPCODE_BRANCH, F3_BLTU)             \
+	X_B(BGEU, OPCODE_BRANCH, F3_BGEU)             \
+                                                      \
+	X_U(AUIPC, OPCODE_AUIPC)                      \
+	X_U(LUI, OPCODE_LUI)                          \
+                                                      \
+	X_J(JAL, OPCODE_JAL)                          \
+                                                      \
+	X_P(J)                                        \
+	X_P(LI)                                       \
 	X_P(MV)
 
 /* ins_mnemonic_t : enumeration of instruction mnemonics that the assembler
@@ -129,6 +193,7 @@ typedef enum ins_mnemonic_t {
 #define X_I_S(MNEMONIC, O, F3)   INS_##MNEMONIC,
 #define X_S(MNEMONIC, O, F3)     INS_##MNEMONIC,
 #define X_B(MNEMONIC, O, F3)     INS_##MNEMONIC,
+#define X_U(MNEMONIC, O)         INS_##MNEMONIC,
 #define X_J(MNEMONIC, O)         INS_##MNEMONIC,
 #define X_P(MNEMONIC)            INS_##MNEMONIC,
 	X_INSTRUCTIONS
@@ -137,6 +202,7 @@ typedef enum ins_mnemonic_t {
 #undef X_I_S
 #undef X_S
 #undef X_B
+#undef X_U
 #undef X_J
 #undef X_P
 
@@ -195,6 +261,11 @@ extern const char* const REG_ALIAS[];
 		(((rs2)&0x1f) << 20) |          /* [20:24] : rs2 */       \
 		((((imm) >> 5) & 0x3f) << 25) | /* [25:30] : imm[5:10] */ \
 		((((imm) >> 12) & 0x1) << 31)   /* [31]    : imm[12] */
+
+#define ENCODE_U_INSTRUCTION(opcode, rd, imm)               \
+	(((opcode)&0x7f) << 0) |     /* [0:6]   : opcode */ \
+		(((rd)&0x1f) << 7) | /* [7:11]  : rd */     \
+		((imm)&0xfffff000)   /* [12:31] : imm[12:31] */
 
 #define ENCODE_J_INSTRUCTION(opcode, rd, imm)                               \
 	(((opcode)&0x7f) << 0) |                 /* [0:6]   : opcode */     \

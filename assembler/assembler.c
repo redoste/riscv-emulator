@@ -124,6 +124,27 @@ static bool assembler_parse_j_ins(lexer_t* lexer, reg_t* rd, int64_t* imm) {
 	return true;
 }
 
+static bool assembler_parse_u_ins(lexer_t* lexer, reg_t* rd, int64_t* imm) {
+	token_t token;
+
+	RETURN_IF_LEXER_UNEXPECTED(lexer, &token, TT_REG_OPERAND);
+	*rd = token.as_reg_operand;
+	RETURN_IF_LEXER_UNEXPECTED(lexer, &token, TT_COMMA);
+	RETURN_IF_LEXER_UNEXPECTED(lexer, &token, TT_INT_LITERAL);
+	int64_t imm_high_bits = token.as_int_literal;
+
+	const int64_t upper_bound = (1 << 20) - 1;
+	if (imm_high_bits < 0 || imm_high_bits > upper_bound) {
+		diag_error(token.pos, "immediate out of range [0:%ld]\n", upper_bound);
+		return false;
+	}
+	*imm = imm_high_bits << 12;
+
+	RETURN_IF_LEXER_UNEXPECTED(lexer, &token, TT_EOI);
+
+	return true;
+}
+
 static bool assembler_assemble_pseudo_instruction(ins_mnemonic_t mnemonic, lexer_t* lexer, uint32_t* instruction) {
 	switch (mnemonic) {
 		case INS_J: {
@@ -192,16 +213,16 @@ bool assembler_assemble_instruction(ins_mnemonic_t mnemonic, lexer_t* lexer, uin
 		}                                                             \
 		*instruction = ENCODE_I_INSTRUCTION((O), (F3), rd, rs1, imm); \
 		return true;
-#define X_I_S(MNEMONIC, O, F3)                                                   \
-	case INS_##MNEMONIC:                                                     \
-		/* NOTE : It's safe to use assembler_parse_s_ins for I-type */   \
-		/*        instructions that parses like S-type ones (i.e. ld) */ \
-		/*        as both I-type and S-type instructions have 12 bits */ \
-		/*        immediates. */                                         \
-		if (!assembler_parse_s_ins(lexer, &rs1, &rd, &imm)) {            \
-			return false;                                            \
-		}                                                                \
-		*instruction = ENCODE_I_INSTRUCTION((O), (F3), rd, rs1, imm);    \
+#define X_I_S(MNEMONIC, O, F3)                                                      \
+	case INS_##MNEMONIC:                                                        \
+		/* NOTE : It's safe to use assembler_parse_s_ins for I-type */      \
+		/*        instructions that parses like S-type ones (e.g. loads) */ \
+		/*        as both I-type and S-type instructions have 12 bits */    \
+		/*        immediates. */                                            \
+		if (!assembler_parse_s_ins(lexer, &rs1, &rd, &imm)) {               \
+			return false;                                               \
+		}                                                                   \
+		*instruction = ENCODE_I_INSTRUCTION((O), (F3), rd, rs1, imm);       \
 		return true;
 #define X_S(MNEMONIC, O, F3)                                                   \
 	case INS_##MNEMONIC:                                                   \
@@ -216,6 +237,13 @@ bool assembler_assemble_instruction(ins_mnemonic_t mnemonic, lexer_t* lexer, uin
 			return false;                                          \
 		}                                                              \
 		*instruction = ENCODE_B_INSTRUCTION((O), (F3), rs1, rs2, imm); \
+		return true;
+#define X_U(MNEMONIC, O)                                           \
+	case INS_##MNEMONIC:                                       \
+		if (!assembler_parse_u_ins(lexer, &rd, &imm)) {    \
+			return false;                              \
+		}                                                  \
+		*instruction = ENCODE_U_INSTRUCTION((O), rd, imm); \
 		return true;
 #define X_J(MNEMONIC, O)                                           \
 	case INS_##MNEMONIC:                                       \
@@ -235,6 +263,7 @@ bool assembler_assemble_instruction(ins_mnemonic_t mnemonic, lexer_t* lexer, uin
 #undef X_I_S
 #undef X_S
 #undef X_B
+#undef X_U
 #undef X_J
 #undef X_P
 

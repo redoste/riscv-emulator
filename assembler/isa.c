@@ -6,6 +6,7 @@ const char* const INS_NAMES[INS_COUNT] = {
 #define X_I_S(MNEMONIC, O, F3)   [INS_##MNEMONIC] = #MNEMONIC,
 #define X_S(MNEMONIC, O, F3)     [INS_##MNEMONIC] = #MNEMONIC,
 #define X_B(MNEMONIC, O, F3)     [INS_##MNEMONIC] = #MNEMONIC,
+#define X_U(MNEMONIC, O)         [INS_##MNEMONIC] = #MNEMONIC,
 #define X_J(MNEMONIC, O)         [INS_##MNEMONIC] = #MNEMONIC,
 #define X_P(MNEMONIC)            [INS_##MNEMONIC] = #MNEMONIC,
 	X_INSTRUCTIONS
@@ -14,6 +15,7 @@ const char* const INS_NAMES[INS_COUNT] = {
 #undef X_I_S
 #undef X_S
 #undef X_B
+#undef X_U
 #undef X_J
 #undef X_P
 };
