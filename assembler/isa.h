@@ -94,6 +94,13 @@ enum {
 	F7_AND = 0x00,
 };
 
+/* RISC-V funct12 */
+enum {
+	/* OPCODE SYSTEM */
+	F12_ECALL = 0,
+	F12_EBREAK = 1,
+};
+
 /* X_INSTRUCTIONS : X-macro storing informations about all the instructions
  *                  the assembler can assemble
  *     X_R(MNEMONIC, OPCODE, FUNCT3, FUNCT7) : R-type instruction
@@ -154,8 +161,6 @@ enum {
                                                       \
 	X_I_S(JALR, OPCODE_JALR, F3_JALR)             \
                                                       \
-	/* TODO : support ecall & ebreak */           \
-	X_I(ECALL, OPCODE_SYSTEM, F3_ECALL)           \
 	/* TODO : support CSR instructions */         \
 	/* X_I(CSRRW, OPCODE_SYSTEM, F3_CSRRW)   */   \
 	/* X_I(CSRRS, OPCODE_SYSTEM, F3_CSRRS)   */   \
@@ -182,7 +187,10 @@ enum {
                                                       \
 	X_P(J)                                        \
 	X_P(LI)                                       \
-	X_P(MV)
+	X_P(MV)                                       \
+                                                      \
+	X_P(ECALL)                                    \
+	X_P(EBREAK)
 
 /* ins_mnemonic_t : enumeration of instruction mnemonics that the assembler
  *                  can parse

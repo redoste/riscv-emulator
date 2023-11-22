@@ -186,6 +186,20 @@ static bool assembler_assemble_pseudo_instruction(ins_mnemonic_t mnemonic, lexer
 			*instruction = ENCODE_I_INSTRUCTION(OPCODE_OP_IMM, F3_ADD, rd, rs, 0);
 			return true;
 		};
+		case INS_ECALL: {
+			token_t token;
+			RETURN_IF_LEXER_UNEXPECTED(lexer, &token, TT_EOI);
+			// emit `ecall x0, x0, 0`
+			*instruction = ENCODE_I_INSTRUCTION(OPCODE_SYSTEM, F3_ECALL, 0, 0, F12_ECALL);
+			return true;
+		};
+		case INS_EBREAK: {
+			token_t token;
+			RETURN_IF_LEXER_UNEXPECTED(lexer, &token, TT_EOI);
+			// emit `ebreak x0, x0, 1`
+			*instruction = ENCODE_I_INSTRUCTION(OPCODE_SYSTEM, F3_EBREAK, 0, 0, F12_EBREAK);
+			return true;
+		};
 
 		default:
 			fprintf(stderr, "ICE : Invalid pseudo-instruction mnemonic\n");
