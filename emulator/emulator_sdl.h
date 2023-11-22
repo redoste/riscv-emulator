@@ -3,6 +3,7 @@
 
 #include <stddef.h>
 #include <stdint.h>
+#include <time.h>
 
 #include <SDL2/SDL.h>
 
@@ -14,6 +15,7 @@ typedef struct emu_sdl_data_t {
 	SDL_Texture* texture;
 	unsigned int width;
 	unsigned int height;
+	struct timespec previous_frame_time;
 } emu_sdl_data_t;
 
 void emu_sdl_init(emulator_t* emu, int width, int height);

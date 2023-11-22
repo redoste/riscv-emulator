@@ -1,5 +1,6 @@
 #include <assert.h>
 #include <stdint.h>
+#include <time.h>
 
 #include <SDL2/SDL.h>
 
@@ -67,6 +68,20 @@ void emu_sdl_draw(emulator_t* emu, uint8_t* frame, size_t max_frame_size) {
 	ret = SDL_RenderCopy(emu->sdl_data.renderer, emu->sdl_data.texture, NULL, NULL);
 	assert(ret == 0);
 	SDL_RenderPresent(emu->sdl_data.renderer);
+
+	struct timespec current_time;
+	clock_gettime(CLOCK_MONOTONIC, &current_time);
+	unsigned long long frame_time = (current_time.tv_sec - emu->sdl_data.previous_frame_time.tv_sec) * 1000 +
+					(current_time.tv_nsec - emu->sdl_data.previous_frame_time.tv_nsec) / 1000000;
+	emu->sdl_data.previous_frame_time = current_time;
+
+	if (frame_time > 0) {
+		char title_buffer[64] = {0};
+		snprintf(title_buffer, sizeof(title_buffer) - 1, "riscv-emulator (FPS:%3llu)", 1000 / frame_time);
+		SDL_SetWindowTitle(emu->sdl_data.window, title_buffer);
+	} else {
+		SDL_SetWindowTitle(emu->sdl_data.window, "riscv-emulator (FPS: inf)");
+	}
 }
 
 unsigned int emu_sdl_poll_events(emulator_t* emu, unsigned int* pressed, uint8_t* key) {
