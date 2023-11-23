@@ -94,6 +94,30 @@ static int lexer_parse_register(const char* word) {
 	return -1;
 }
 
+static int lexer_parse_fence_operand(const char* word) {
+	size_t word_len = strlen(word);
+	int res = 0;
+	for (size_t i = 0; i < word_len; i++) {
+		switch (tolower(word[i])) {
+			case 'i':
+				res |= FENCE_OPERAND_I;
+				break;
+			case 'o':
+				res |= FENCE_OPERAND_O;
+				break;
+			case 'r':
+				res |= FENCE_OPERAND_R;
+				break;
+			case 'w':
+				res |= FENCE_OPERAND_W;
+				break;
+			default:
+				return -1;
+		}
+	}
+	return res;
+}
+
 static bool lexer_next_integer(lexer_t* lexer, token_t* token) {
 	char minus = lexer_peek_char(lexer);
 	bool negative = minus == '-';
@@ -170,6 +194,13 @@ static bool lexer_next_word(lexer_t* lexer, token_t* token) {
 		token->type = TT_REG_OPERAND;
 		token->as_reg_operand = reg;
 		return true;
+	}
+
+	int fence_operand = lexer_parse_fence_operand(word);
+	if (fence_operand >= 0) {
+		token->type = TT_FENCE_OPERAND;
+		token->as_fence_operand = fence_operand;
+		return true;
 	} else {
 		diag_error(token->pos, "unexpected word '%s'\n", word);
 		return false;
@@ -240,6 +271,7 @@ static const char* const TT_NAMES[TT_COUNT] = {
 	[TT_REG_OPERAND] = "register operand",
 	[TT_REG_DEREF_OPERAND] = "register dereference operand",
 	[TT_INT_LITERAL] = "integer literal",
+	[TT_FENCE_OPERAND] = "fence operand",
 	[TT_COMMA] = "comma",
 	[TT_EOI] = "end of instruction",
 	[TT_EOF] = "end of file",
@@ -284,6 +316,10 @@ void lexer_debug_print_token(const token_t* token) {
 		case TT_INT_LITERAL:
 			fprintf(stderr, POS_T_FMT_STR " INT LITERAL 0x%016lx\n", POS_T_FMT_ARG(token->pos),
 				token->as_int_literal);
+			break;
+		case TT_FENCE_OPERAND:
+			fprintf(stderr, POS_T_FMT_STR " FENCE OPERAND 0x%x\n", POS_T_FMT_ARG(token->pos),
+				token->as_fence_operand);
 			break;
 		case TT_COMMA:
 			fprintf(stderr, POS_T_FMT_STR " COMMA\n", POS_T_FMT_ARG(token->pos));

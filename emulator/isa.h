@@ -173,6 +173,14 @@ enum {
 	F12_EBREAK = 1,
 };
 
+/* RISC-V FENCE operand bits */
+enum {
+	FENCE_OPERAND_I = (1 << 3),
+	FENCE_OPERAND_O = (1 << 2),
+	FENCE_OPERAND_R = (1 << 1),
+	FENCE_OPERAND_W = (1 << 0),
+};
+
 /* X_INSTRUCTIONS : X-macro storing informations about all the instructions
  *                  the emulator can emulate
  *     X_R(MNEMONIC, OPCODE, FUNCT3, FUNCT7, EXPR) : R-type instruction

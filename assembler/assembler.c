@@ -212,6 +212,20 @@ static bool assembler_assemble_pseudo_instruction(ins_mnemonic_t mnemonic, lexer
 							    F3_SRA, rd, rs1, imm | F12_SRA);
 			return true;
 		};
+		case INS_FENCE: {
+			// TODO : support `0` operand in `fence` instruction
+			token_t token;
+			int64_t imm = 0;
+			RETURN_IF_LEXER_UNEXPECTED(lexer, &token, TT_FENCE_OPERAND);
+			imm |= (token.as_fence_operand & 0xf) << 4;
+			RETURN_IF_LEXER_UNEXPECTED(lexer, &token, TT_COMMA);
+			RETURN_IF_LEXER_UNEXPECTED(lexer, &token, TT_FENCE_OPERAND);
+			imm |= (token.as_fence_operand & 0xf);
+			RETURN_IF_LEXER_UNEXPECTED(lexer, &token, TT_EOI);
+			// emit `fence x0, x0, imm`
+			*instruction = ENCODE_I_INSTRUCTION(OPCODE_MISC_MEM, F3_FENCE, 0, 0, imm);
+			return true;
+		};
 
 		default:
 			fprintf(stderr, "ICE : Invalid pseudo-instruction mnemonic\n");
