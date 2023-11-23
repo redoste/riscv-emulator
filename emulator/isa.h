@@ -116,17 +116,10 @@ enum {
 
 	/* OPCODE MISC-MEM */
 	F3_FENCE = 0,
-	F3_FENCE_I = 1,
 
 	/* OPCODE SYSTEM */
 	F3_ECALL = 0,
 	F3_EBREAK = 0,
-	F3_CSRRW = 1,
-	F3_CSRRS = 2,
-	F3_CSRRC = 3,
-	F3_CSRRWI = 5,
-	F3_CSRRSI = 6,
-	F3_CSRRCI = 7,
 
 	/* OPCODE LOAD */
 	F3_LB = 0,
@@ -216,7 +209,6 @@ enum {
 	X_I(LWU, OPCODE_LOAD, F3_LWU, *rd = (uint32_t)emu_r32(emu, *rs1 + imm))                                                                            \
                                                                                                                                                            \
 	X_I(FENCE, OPCODE_MISC_MEM, F3_FENCE, /* nop */)                                                                                                   \
-	X_I(FENCE_I, OPCODE_MISC_MEM, F3_FENCE_I, /* nop */)                                                                                               \
                                                                                                                                                            \
 	X_I(ADDI, OPCODE_OP_IMM, F3_ADD, *rd = *rs1 + imm)                                                                                                 \
 	X_I(SLLI, OPCODE_OP_IMM, F3_SLL, *rd = *rs1 << (imm & 0x3f))                                                                                       \
@@ -240,12 +232,6 @@ enum {
 		} while (0))                                                                                                                               \
                                                                                                                                                            \
 	X_I(ECALL, OPCODE_SYSTEM, F3_ECALL, (imm == F12_EBREAK) ? emu_ebreak(emu) : emu_ecall(emu))                                                        \
-	X_I(CSRRW, OPCODE_SYSTEM, F3_CSRRW, abort() /*TODO*/)                                                                                              \
-	X_I(CSRRS, OPCODE_SYSTEM, F3_CSRRS, abort() /*TODO*/)                                                                                              \
-	X_I(CSRRC, OPCODE_SYSTEM, F3_CSRRC, abort() /*TODO*/)                                                                                              \
-	X_I(CSRRWI, OPCODE_SYSTEM, F3_CSRRWI, abort() /*TODO*/)                                                                                            \
-	X_I(CSRRSI, OPCODE_SYSTEM, F3_CSRRSI, abort() /*TODO*/)                                                                                            \
-	X_I(CSRRCI, OPCODE_SYSTEM, F3_CSRRCI, abort() /*TODO*/)                                                                                            \
                                                                                                                                                            \
 	X_S(SB, OPCODE_STORE, F3_SB, emu_w8(emu, *rs1 + imm, *rs2))                                                                                        \
 	X_S(SH, OPCODE_STORE, F3_SH, emu_w16(emu, *rs1 + imm, *rs2))                                                                                       \
