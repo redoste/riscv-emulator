@@ -121,6 +121,9 @@ void emu_ecall(emulator_t* emu) {
 		case 0x534c4550:  // "SLEP"
 			usleep(emu->cpu.regs[11] * 1000);
 			break;
+		case 0x50494e47:                         // "PING"
+			emu->cpu.regs[10] = 0x504f4e47;  // "PONG"
+			break;
 #ifdef RISCV_EMULATOR_SDL_SUPPORT
 		case 0x494e4954:  // "INIT"
 			emu_sdl_init(emu, emu->cpu.regs[11], emu->cpu.regs[12]);
