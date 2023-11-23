@@ -127,7 +127,7 @@ static int main_advanced(int argc, char** argv) {
 	}
 	assert(rom_file != NULL);
 
-	FILE* input_file = fopen(rom_file, "r");
+	FILE* input_file = fopen(rom_file, "rb");
 	if (input_file == NULL) {
 		perror("fopen");
 		return 1;
