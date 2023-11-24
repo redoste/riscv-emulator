@@ -16,7 +16,7 @@ cleanall: clean
 	@ rm -f $(EXE_EMU) $(EXE_ASM)
 
 clean:
-	@ find tests \( -name '*.o' -o -name '*.bin' -o -name '*.hex' -o -name '*.state' \) -delete
+	@ find tests \( -name '*.o' -o -name '*.bin' -o -name '*.hex' -o -name '*.state' -o -name '*.state_uc' \) -delete
 	$(MAKE) -C assembler/ clean
 	$(MAKE) -C emulator/ clean
 
