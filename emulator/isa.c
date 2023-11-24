@@ -5,7 +5,7 @@
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Woverride-init"
 
-ins_type_t INS_TYPES[0x20] = {
+const ins_type_t INS_TYPES[0x20] = {
 #define X_R(MNEMONIC, OPCODE, F3, F7, EXPR) [OPCODE >> 2] = INS_TYPE_R,
 #define X_I(MNEMONIC, OPCODE, F3, EXPR)     [OPCODE >> 2] = INS_TYPE_I,
 #define X_S(MNEMONIC, OPCODE, F3, EXPR)     [OPCODE >> 2] = INS_TYPE_S,

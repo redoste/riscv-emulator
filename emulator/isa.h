@@ -299,6 +299,6 @@ enum {
 			cpu->jump_pending = true;                                                                                                          \
 		} while (0))
 
-extern ins_type_t INS_TYPES[0x20];
+extern const ins_type_t INS_TYPES[0x20];
 
 #endif
