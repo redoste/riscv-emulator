@@ -20,6 +20,18 @@ slli s3, a3, 56
 slli s4, a3, 57
 slli s5, a3, 63
 
+# SLTI
+slti s6, a0, 200
+slti s7, a2, 0
+slti s8, a0, 5
+slti s9, a0, 100
+
+# SLTIU
+sltiu s10, a0, 200
+sltiu s11, a2, 0
+sltiu t6, a0, -5
+sltiu a7, a2, -2047
+
 # EXPECTED
 # a0: 100
 # a1: 2048
@@ -37,3 +49,11 @@ slli s5, a3, 63
 # s3: 0xaa00000000000000
 # s4: 0x5400000000000000
 # s5: 0
+# s6: 1
+# s7: 1
+# s8: 0
+# s9: 0
+# s10: 1
+# s11: 0
+# t6: 1
+# a7: 0

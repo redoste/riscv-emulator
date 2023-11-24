@@ -20,6 +20,16 @@ sub s2, a0, a1
 sub s3, a4, a1
 sub s4, a0, a5
 
+# SLT
+slt s5, a1, a2
+slt s6, a2, a1
+slt s7, a5, s2
+
+# SLTU
+sltu s8, a1, a2
+sltu s9, a2, a1
+sltu s10, a5, s2
+
 # EXPECTED
 # a0: 0
 # a1: -1
@@ -37,3 +47,9 @@ sub s4, a0, a5
 # s2: 1
 # s3: -0x7fffffffffffffff
 # s4: -1
+# s5: 1
+# s6: 0
+# s7: 0
+# s8: 0
+# s9: 1
+# s10: 0
