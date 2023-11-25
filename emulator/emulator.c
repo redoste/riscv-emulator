@@ -15,7 +15,12 @@ void emu_create(emulator_t* emu, guest_paddr rom_base, size_t rom_size, guest_pa
 	uint8_t* ram_pool = malloc(ram_size);
 	assert(rom_pool != NULL && ram_pool != NULL);
 
-	// TODO : check for overlap
+	if ((ram_base >= rom_base && ram_base < rom_base + rom_size) ||
+	    (rom_base >= ram_base && rom_base < ram_base + ram_size)) {
+		fprintf(stderr, "ROM and RAM overlap\n");
+		abort();
+	}
+
 	mem_region_t rom = {
 		.pool = rom_pool,
 		.base = rom_base,
