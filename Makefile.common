@@ -2,7 +2,7 @@
 
 CC := gcc
 
-CFLAGS := -Wall -Wextra -Wpedantic -Wstrict-prototypes -Wvla
+CFLAGS := -Wall -Wextra -Wpedantic -Wstrict-prototypes -Wvla -I../common
 LDFLAGS :=
 
 ifdef RELEASE
