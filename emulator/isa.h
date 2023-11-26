@@ -5,7 +5,8 @@
 
 #include <rv64_isa.h>
 
-/* NOTE : we pack the enumeration to make sure ins_type_t values are encoded on one byte and
+/* ins_type_t : enumeration of the types of RISC-V instructions
+ * NOTE : we pack the enumeration to make sure ins_type_t values are encoded on one byte and
  *        prevent the INS_TYPES array to have 3/4 of its space wasted
  */
 typedef enum __attribute__((packed)) ins_type_t {
@@ -19,6 +20,9 @@ typedef enum __attribute__((packed)) ins_type_t {
 	INS_TYPE_J,
 } ins_type_t;
 
+/* ins_t : structure representing a decoded RISC-V instruction
+ */
+// TODO : add a decoded instructions cache
 typedef struct ins_t {
 	ins_type_t type;
 
@@ -41,6 +45,21 @@ typedef struct ins_t {
  *     X_B(MNEMONIC, OPCODE, FUNCT3, EXPR)         : B-type instruction
  *     X_U(MNEMONIC, OPCODE, EXPR)                 : U-type instruction
  *     X_J(MNEMONIC, OPCODE, EXPR)                 : J-type instruction
+ *
+ * EXPR is the expression used in cpu_execute to execute the instruction
+ * the following variables can be set (depending on the type of the instruction)
+ *
+ * cpu_t* cpu        : CPU state
+ * guest_reg* rd     : destination register
+ * guest_reg* rs1    : first source register
+ * guest_reg* rs2    : second source register
+ * guest_word* rs1w  : first source register as a word
+ * guest_word* rs2w  : second source register as a word
+ * guest_reg* rds    : destination register signed
+ * guest_reg* rs1s   : first source register signed
+ * guest_reg* rs2s   : second source register signed
+ * guest_word* rs1ws : first source register as a signed word
+ * int64_t imm       : immediate
  */
 #define X_INSTRUCTIONS                                                                                                                                     \
 	X_R(ADD, OPCODE_OP, F3_ADD, F7_ADD, *rd = *rs1 + *rs2)                                                                                             \
@@ -151,6 +170,10 @@ typedef struct ins_t {
 			cpu->jump_pending = true;                                                                                                          \
 		} while (0))
 
+/* INS_TYPES : look-up-table from the opcode of the instruction to its type
+ *             as the opcode is assumed to have its two LSBs set (only 4 bytes instructions are supported)
+ *             the index in the table should be shifted 2 bits to the right
+ */
 extern const ins_type_t INS_TYPES[0x20];
 
 #endif

@@ -50,7 +50,7 @@ typedef struct lexer_t {
 	bool peek_buffer_valid;
 } lexer_t;
 
-/* token_type_t : enumeration of the kind of tokens
+/* token_type_t : enumeration of the kinds of tokens
  */
 typedef enum token_type_t {
 	TT_INS_MNEMONIC,       // instruction mnemonic (e.g. `ld` `mv` `addi`)
@@ -82,7 +82,7 @@ typedef struct token_t {
 /* lexer_create : create a lexer
  *     lexer_t* lexer       : pointer to the lexer_t struct to initialize
  *     FILE* input_stream   : input stream
- *     const char* filename : input stream filename (used for diagnostics only)
+ *     const char* filename : input stream filename (only used for diagnostics)
  */
 void lexer_create(lexer_t* lexer, FILE* input_stream, const char* filename);
 
@@ -95,7 +95,7 @@ void lexer_create(lexer_t* lexer, FILE* input_stream, const char* filename);
  */
 bool lexer_next(lexer_t* lexer, token_t* token);
 
-/* lexer_next_expected : lex the next token in the input_stream but accept only a specific kind of token
+/* lexer_next_expected : lex the next token in the input_stream but accept only a specific kind of tokens
  *                       returns true if the new token is valid and of the correct kind
  *                       returns false if lexing the next token generated an error or if the new token is
  *                       of an unexpected kind

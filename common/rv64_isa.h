@@ -5,8 +5,8 @@
 
 /* NOTE : while this header is common to both the assembler and the emulator
  *        the main X_INSTRUCTIONS macro is still separated
- *        we need to find a clean way to make it common while keeping something
- *        usable for both (i.e. without a lot of unused parameter for one of the
+ *        we need to find a clean way to make it common while keeping it usable
+ *        for both party (i.e. without a lot of unused parameters for one of the
  *        party)
  */
 
@@ -112,6 +112,10 @@ enum {
 	FENCE_OPERAND_W = (1 << 0),
 };
 
+/* DECODE_GET_x : macros to get a specific field from an encoded instruction
+ *                it's up to the caller to make sure the encoded instruction type has the asked
+ *                field
+ */
 #define DECODE_GET_OPCODE(insn) ((insn)&0x7f)
 #define DECODE_GET_F3(insn)     (((insn) >> 12) & 0x7)
 #define DECODE_GET_F7(insn)     (((insn) >> 25) & 0x7f)
@@ -120,11 +124,13 @@ enum {
 #define DECODE_GET_RS1(insn) (((insn) >> 15) & 0x1f)
 #define DECODE_GET_RS2(insn) (((insn) >> 20) & 0x1f)
 
-/* NOTE : we cast to a signed integer the expression with the MSB to properly sign extend the value
+/* DECODE_GET_x_IMM : macros to get the immediate from a x-type encoded instruction
+ *                    the argument of the macros is used multiple times thus an
+ *                    expression with side-effects can have unintended behaviour
+ * NOTE : we cast to a signed integer the expression with the MSB to properly sign extend the value
  *        and recast a second time on the parent expression to make sure the result is treated as
  *        signed and will be sign extended regardless of the type of the lvalue
  */
-
 #define DECODE_GET_I_IMM(insn) \
 	((int32_t)(insn) >> 20) /* [11:31] : insn[31] */
 				/* [0:10]  : insn[20:30] */
@@ -151,7 +157,7 @@ enum {
 
 /* ENCODE_x_INSTRUCTION : macros used to encode a single x-type instruction
  *                        the arguments of the macros are used multiple times thus an
- *                        expression with side-effects can have uninteded behaviour
+ *                        expression with side-effects can have unintended behaviour
  */
 #define ENCODE_R_INSTRUCTION(opcode, f3, f7, rd, rs1, rs2)    \
 	(((opcode)&0x7f) << 0) |       /* [0:6]   : opcode */ \
@@ -199,10 +205,24 @@ enum {
 		((((imm) >> 1) & 0x3ff) << 21) | /* [21:30] : imm[1:10] */  \
 		((((imm) >> 20) & 0x1) << 31)    /* [31]    : imm[20] */
 
+/* guest_paddr : typedef used to declare a value storing a guest physical address
+ */
 typedef uint64_t guest_paddr;
+
+/* guest_reg : typedef used to declare a value storing an unsigned guest register
+ */
 typedef uint64_t guest_reg;
+
+/* guest_reg_signed : typedef used to declare a value storing a signed guest register
+ */
 typedef int64_t guest_reg_signed;
+
+/* guest_word : typedef used to declare a value storing an unsigned guest word
+ */
 typedef uint32_t guest_word;
+
+/* guest_word_signed : typedef used to declare a value storing a signed guest word
+ */
 typedef int32_t guest_word_signed;
 
 /* REG_COUNT : maximum register number of RISC-V
