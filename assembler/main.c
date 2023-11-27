@@ -1,3 +1,4 @@
+#include <inttypes.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -55,7 +56,7 @@ int main(int argc, char** argv) {
 				res = 1;
 				break;
 			}
-			fprintf(output_file, "%08x\n", instruction);
+			fprintf(output_file, "%08" PRIx32 "\n", instruction);
 		}
 	} while (token.type != TT_EOF);
 

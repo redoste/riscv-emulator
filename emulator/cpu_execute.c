@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <inttypes.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -44,7 +45,7 @@ static void cpu_execute_type_r(emulator_t* emu, const ins_t* instruction) {
 #undef X_U
 #undef X_J
 		default:
-			fprintf(stderr, "Unsupported R instruction opcode=%hhx f3=%hhx f7=%hhx\n",
+			fprintf(stderr, "Unsupported R instruction opcode=%" PRIx8 " f3=%" PRIx8 " f7=%" PRIx8 "\n",
 				instruction->opcode, instruction->funct3, instruction->funct7);
 			abort();
 			break;
@@ -86,7 +87,7 @@ static void cpu_execute_type_i(emulator_t* emu, const ins_t* instruction) {
 #undef X_U
 #undef X_J
 		default:
-			fprintf(stderr, "Unsupported I instruction opcode=%hhx f3=%hhx\n",
+			fprintf(stderr, "Unsupported I instruction opcode=%" PRIx8 " f3=%" PRIx8 "\n",
 				instruction->opcode, instruction->funct3);
 			abort();
 			break;
@@ -121,7 +122,7 @@ static void cpu_execute_type_s(emulator_t* emu, const ins_t* instruction) {
 #undef X_U
 #undef X_J
 		default:
-			fprintf(stderr, "Unsupported S instruction opcode=%hhx f3=%hhx\n",
+			fprintf(stderr, "Unsupported S instruction opcode=%" PRIx8 " f3=%" PRIx8 "\n",
 				instruction->opcode, instruction->funct3);
 			abort();
 			break;
@@ -160,7 +161,7 @@ static void cpu_execute_type_b(emulator_t* emu, const ins_t* instruction) {
 #undef X_U
 #undef X_J
 		default:
-			fprintf(stderr, "Unsupported B instruction opcode=%hhx f3=%hhx\n",
+			fprintf(stderr, "Unsupported B instruction opcode=%" PRIx8 " f3=%" PRIx8 "\n",
 				instruction->opcode, instruction->funct3);
 			abort();
 			break;
@@ -195,7 +196,7 @@ static void cpu_execute_type_u(emulator_t* emu, const ins_t* instruction) {
 #undef X_J
 
 		default:
-			fprintf(stderr, "Unsupported U instruction opcode=%hhx\n",
+			fprintf(stderr, "Unsupported U instruction opcode=%" PRIx8 "\n",
 				instruction->opcode);
 			abort();
 			break;
@@ -227,14 +228,14 @@ static void cpu_execute_type_j(emulator_t* emu, const ins_t* instruction) {
 
 void cpu_execute(emulator_t* emu) {
 	if ((emu->cpu.pc & 0x3) != 0) {
-		fprintf(stderr, "Unaligned PC=%016lx\n", emu->cpu.pc);
+		fprintf(stderr, "Unaligned PC=%016" PRIx64 "\n", emu->cpu.pc);
 		abort();
 	}
 
 	uint32_t encoded_instruction = emu_r32(emu, emu->cpu.pc);
 	ins_t instruction;
 	if (!cpu_decode(encoded_instruction, &instruction)) {
-		fprintf(stderr, "Invalid instruction %08x at PC=%016lx\n",
+		fprintf(stderr, "Invalid instruction %08" PRIx32 " at PC=%016" PRIx64 "\n",
 			encoded_instruction, emu->cpu.pc);
 		abort();
 	}

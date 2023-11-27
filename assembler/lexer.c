@@ -1,5 +1,6 @@
 #include <assert.h>
 #include <ctype.h>
+#include <inttypes.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -306,19 +307,19 @@ void lexer_debug_print_token(const token_t* token) {
 				INS_NAMES[token->as_ins_mnemonic]);
 			break;
 		case TT_REG_OPERAND:
-			fprintf(stderr, POS_T_FMT_STR " REG OPERAND x%d\n", POS_T_FMT_ARG(token->pos),
+			fprintf(stderr, POS_T_FMT_STR " REG OPERAND x%" PRId8 "\n", POS_T_FMT_ARG(token->pos),
 				token->as_reg_operand);
 			break;
 		case TT_REG_DEREF_OPERAND:
-			fprintf(stderr, POS_T_FMT_STR " REG DEREF OPERAND (x%d)\n", POS_T_FMT_ARG(token->pos),
+			fprintf(stderr, POS_T_FMT_STR " REG DEREF OPERAND (x%" PRId8 ")\n", POS_T_FMT_ARG(token->pos),
 				token->as_reg_deref_operand);
 			break;
 		case TT_INT_LITERAL:
-			fprintf(stderr, POS_T_FMT_STR " INT LITERAL 0x%016lx\n", POS_T_FMT_ARG(token->pos),
+			fprintf(stderr, POS_T_FMT_STR " INT LITERAL 0x%016" PRIx64 "\n", POS_T_FMT_ARG(token->pos),
 				token->as_int_literal);
 			break;
 		case TT_FENCE_OPERAND:
-			fprintf(stderr, POS_T_FMT_STR " FENCE OPERAND 0x%x\n", POS_T_FMT_ARG(token->pos),
+			fprintf(stderr, POS_T_FMT_STR " FENCE OPERAND 0x%" PRIx8 "\n", POS_T_FMT_ARG(token->pos),
 				token->as_fence_operand);
 			break;
 		case TT_COMMA:

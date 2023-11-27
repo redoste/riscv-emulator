@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <inttypes.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -78,7 +79,7 @@ static int main_simple(const char* hex_input_filename, const char* emu_output_fi
 	}
 
 	for (size_t i = 0; i < REG_COUNT; i++) {
-		fprintf(output_file, "x%zu: 0x%lx\n", i, emu.cpu.regs[i]);
+		fprintf(output_file, "x%zu: 0x%" PRIx64 "\n", i, emu.cpu.regs[i]);
 	}
 	fclose(output_file);
 
@@ -86,12 +87,12 @@ static int main_simple(const char* hex_input_filename, const char* emu_output_fi
 	return 0;
 }
 
-static bool parse_hex_argv(const char* argv, unsigned long* res) {
+static bool parse_hex_argv(const char* argv, uint64_t* res) {
 	if (strncmp(argv, "0x", 2) != 0) {
 		return false;
 	}
 	char* endptr;
-	*res = strtoul(&argv[2], &endptr, 16);
+	*res = strtoull(&argv[2], &endptr, 16);
 	return endptr == argv + strlen(argv);
 }
 
@@ -108,13 +109,15 @@ static int main_advanced(int argc, char** argv) {
 			argc_iter++;
 			rom_file = argv[argc_iter++];
 		}
-#define PARSE_HEX_ARG(ARG_NAME, VALUE)                             \
-	else if (strcmp(argv[argc_iter], (ARG_NAME)) == 0) {       \
-		argc_iter++;                                       \
-		if (argc_iter >= argc ||                           \
-		    !parse_hex_argv(argv[argc_iter++], (VALUE))) { \
-			return usage(argv[0]);                     \
-		}                                                  \
+#define PARSE_HEX_ARG(ARG_NAME, VALUE)                                \
+	else if (strcmp(argv[argc_iter], (ARG_NAME)) == 0) {          \
+		argc_iter++;                                          \
+		uint64_t value_u64;                                   \
+		if (argc_iter >= argc ||                              \
+		    !parse_hex_argv(argv[argc_iter++], &value_u64)) { \
+			return usage(argv[0]);                        \
+		}                                                     \
+		*(VALUE) = value_u64;                                 \
 	}
 		PARSE_HEX_ARG("--rom-base", &rom_base)
 		PARSE_HEX_ARG("--rom-size", &rom_size)

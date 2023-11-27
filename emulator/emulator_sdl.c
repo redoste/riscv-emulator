@@ -16,7 +16,7 @@ void emu_sdl_init(emulator_t* emu, int width, int height) {
 	}
 
 	/* NOTE : By default SDL will catch SIGINT, we want to keep the default
-	 *        esignal handler to be able to asily kill the emulator in case
+	 *        signal handler to be able to easily kill the emulator in case
 	 *        the guest code crashed
 	 */
 	SDL_SetHint(SDL_HINT_NO_SIGNAL_HANDLERS, "1");

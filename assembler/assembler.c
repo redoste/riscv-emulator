@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <inttypes.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -19,7 +20,7 @@ static bool assembler_bound_check_imm(const token_t* token, int64_t imm, size_t 
 	int64_t lower_bound = -(1 << (bits - 1));
 	int64_t upper_bound = (1 << (bits - 1)) - (even ? 2 : 1);
 	if (imm < lower_bound || imm > upper_bound) {
-		diag_error(token->pos, "immediate out of range [%ld:%ld]\n", lower_bound, upper_bound);
+		diag_error(token->pos, "immediate out of range [%" PRId64 ":%" PRId64 "]\n", lower_bound, upper_bound);
 		return false;
 	} else if (even && (imm & 1) != 0) {
 		diag_error(token->pos, "immediate should be even\n");
@@ -135,7 +136,7 @@ static bool assembler_parse_u_ins(lexer_t* lexer, reg_t* rd, int64_t* imm) {
 
 	const int64_t upper_bound = (1 << 20) - 1;
 	if (imm_high_bits < 0 || imm_high_bits > upper_bound) {
-		diag_error(token.pos, "immediate out of range [0:%ld]\n", upper_bound);
+		diag_error(token.pos, "immediate out of range [0:%" PRId64 "]\n", upper_bound);
 		return false;
 	}
 	*imm = imm_high_bits << 12;

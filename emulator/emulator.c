@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <inttypes.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -97,9 +98,9 @@ EMU_WX(32, uint32_t)
 EMU_WX(64, uint64_t)
 
 void emu_ebreak(emulator_t* emu) {
-	fprintf(stderr, "EBREAK PC=%016lx\n", emu->cpu.pc);
+	fprintf(stderr, "EBREAK PC=%016" PRIx64 "\n", emu->cpu.pc);
 	for (size_t i = 0; i < REG_COUNT; i++) {
-		fprintf(stderr, "x%2zu=%016lx ", i, emu->cpu.regs[i]);
+		fprintf(stderr, "x%2zu=%016" PRIx64 " ", i, emu->cpu.regs[i]);
 		if ((i % 4) == 3) {
 			fprintf(stderr, "\n");
 		}
@@ -144,7 +145,7 @@ void emu_ecall(emulator_t* emu) {
 				frame = &emu->ram.pool[addr - emu->ram.base];
 				max_frame_size = emu->ram.size - (addr - emu->ram.base);
 			} else {
-				fprintf(stderr, "invalid DRAW at %016lx PC=%016lx\n",
+				fprintf(stderr, "invalid DRAW at %016" PRIx64 " PC=%016" PRIx64 "\n",
 					addr, emu->cpu.pc);
 				abort();
 			}
