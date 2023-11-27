@@ -36,13 +36,14 @@ typedef struct emulator_t {
 } emulator_t;
 
 /* emu_create : create an emulator
- *     emulator_t* emu      : pointer to the emulator_t struct to initialize
- *     guest_paddr rom_base : base guest phyisical address of the ROM
- *     size_t rom_size      : size of the ROM
- *     guest_paddr ram_base : base guest phyisical address of the RAM
- *     size_t ram_size      : size of the RAM
+ *     emulator_t* emu               : pointer to the emulator_t struct to initialize
+ *     guest_paddr rom_base          : base guest phyisical address of the ROM
+ *     size_t rom_size               : size of the ROM
+ *     guest_paddr ram_base          : base guest phyisical address of the RAM
+ *     size_t ram_size               : size of the RAM
+ *     size_t instruction_cache_bits : number of significant bits for the instruction cache
  */
-void emu_create(emulator_t* emu, guest_paddr rom_base, size_t rom_size, guest_paddr ram_base, size_t ram_size);
+void emu_create(emulator_t* emu, guest_paddr rom_base, size_t rom_size, guest_paddr ram_base, size_t ram_size, size_t instruction_cache_bits);
 
 /* emu_destroy : destory an emulator and free its associated ressources
  *     emulator_t* emu : pointer to the emulator_t struct to destroy

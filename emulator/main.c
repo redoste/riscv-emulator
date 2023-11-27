@@ -10,10 +10,11 @@
 #include "emulator.h"
 #include "isa.h"
 
-#define DEFAULT_ROM_BASE 0x80000000
-#define DEFAULT_ROM_SIZE 0x2000
-#define DEFAULT_RAM_BASE 0xc0000000
-#define DEFAULT_RAM_SIZE 0x2000
+#define DEFAULT_ROM_BASE   0x80000000
+#define DEFAULT_ROM_SIZE   0x2000
+#define DEFAULT_RAM_BASE   0xc0000000
+#define DEFAULT_RAM_SIZE   0x2000
+#define DEFAULT_CACHE_BITS 12
 
 static int usage(const char* argv0) {
 	fprintf(stderr,
@@ -24,11 +25,12 @@ static int usage(const char* argv0) {
 		"Advanced mode:\n"
 		"Usage:   %s --advanced <ROM FILE> [options]\n"
 		"Options:\n"
-		"    --rom-base 0x[ROM BASE] : Base address of the ROM (default 0x%08x)\n"
-		"    --rom-size 0x[ROM SIZE] : Size of the ROM (defaut 0x%08x)\n"
-		"    --ram-base 0x[RAM BASE] : Base address of the RAM (default 0x%08x)\n"
-		"    --ram-size 0x[RAM SIZE] : Size of the ROM (default 0x%08x)\n",
-		argv0, argv0, DEFAULT_ROM_BASE, DEFAULT_ROM_SIZE, DEFAULT_RAM_BASE, DEFAULT_RAM_SIZE);
+		"    --rom-base 0x[ROM BASE]  : Base address of the ROM (default 0x%08x)\n"
+		"    --rom-size 0x[ROM SIZE]  : Size of the ROM (defaut 0x%08x)\n"
+		"    --ram-base 0x[RAM BASE]  : Base address of the RAM (default 0x%08x)\n"
+		"    --ram-size 0x[RAM SIZE]  : Size of the ROM (default 0x%08x)\n"
+		"    --insn-cache-bits [BITS] : Number of significant bits for the instruction cache (default %d)\n",
+		argv0, argv0, DEFAULT_ROM_BASE, DEFAULT_ROM_SIZE, DEFAULT_RAM_BASE, DEFAULT_RAM_SIZE, DEFAULT_CACHE_BITS);
 	return 1;
 }
 
@@ -45,7 +47,7 @@ static int main_simple(const char* hex_input_filename, const char* emu_output_fi
 	}
 
 	emulator_t emu;
-	emu_create(&emu, DEFAULT_ROM_BASE, DEFAULT_ROM_SIZE, DEFAULT_RAM_BASE, DEFAULT_RAM_SIZE);
+	emu_create(&emu, DEFAULT_ROM_BASE, DEFAULT_ROM_SIZE, DEFAULT_RAM_BASE, DEFAULT_RAM_SIZE, DEFAULT_CACHE_BITS);
 
 	guest_paddr max_rom_code_addr = DEFAULT_ROM_BASE;
 	do {
@@ -87,12 +89,15 @@ static int main_simple(const char* hex_input_filename, const char* emu_output_fi
 	return 0;
 }
 
-static bool parse_hex_argv(const char* argv, uint64_t* res) {
-	if (strncmp(argv, "0x", 2) != 0) {
-		return false;
+static bool parse_num_argv(const char* argv, uint64_t* res) {
+	if (strncmp(argv, "0x", 2) == 0) {
+		char* endptr;
+		*res = strtoull(&argv[2], &endptr, 16);
+		return endptr == argv + strlen(argv);
 	}
+
 	char* endptr;
-	*res = strtoull(&argv[2], &endptr, 16);
+	*res = strtoull(argv, &endptr, 10);
 	return endptr == argv + strlen(argv);
 }
 
@@ -103,27 +108,29 @@ static int main_advanced(int argc, char** argv) {
 	const char* rom_file = NULL;
 	guest_paddr rom_base = DEFAULT_ROM_BASE, ram_base = DEFAULT_RAM_BASE;
 	size_t rom_size = DEFAULT_ROM_SIZE, ram_size = DEFAULT_RAM_SIZE;
+	size_t insn_cache_bits = DEFAULT_CACHE_BITS;
 
 	while (argc_iter < argc) {
 		if (strcmp(argv[argc_iter], "--advanced") == 0) {
 			argc_iter++;
 			rom_file = argv[argc_iter++];
 		}
-#define PARSE_HEX_ARG(ARG_NAME, VALUE)                                \
+#define PARSE_NUM_ARG(ARG_NAME, VALUE)                                \
 	else if (strcmp(argv[argc_iter], (ARG_NAME)) == 0) {          \
 		argc_iter++;                                          \
 		uint64_t value_u64;                                   \
 		if (argc_iter >= argc ||                              \
-		    !parse_hex_argv(argv[argc_iter++], &value_u64)) { \
+		    !parse_num_argv(argv[argc_iter++], &value_u64)) { \
 			return usage(argv[0]);                        \
 		}                                                     \
 		*(VALUE) = value_u64;                                 \
 	}
-		PARSE_HEX_ARG("--rom-base", &rom_base)
-		PARSE_HEX_ARG("--rom-size", &rom_size)
-		PARSE_HEX_ARG("--ram-base", &ram_base)
-		PARSE_HEX_ARG("--ram-size", &ram_size)
-#undef PARSE_HEX_ARG
+		PARSE_NUM_ARG("--rom-base", &rom_base)
+		PARSE_NUM_ARG("--rom-size", &rom_size)
+		PARSE_NUM_ARG("--ram-base", &ram_base)
+		PARSE_NUM_ARG("--ram-size", &ram_size)
+		PARSE_NUM_ARG("--insn-cache-bits", &insn_cache_bits)
+#undef PARSE_NUM_ARG
 		else {
 			return usage(argv[0]);
 		}
@@ -150,7 +157,7 @@ static int main_advanced(int argc, char** argv) {
 	}
 
 	emulator_t emu;
-	emu_create(&emu, rom_base, rom_size, ram_base, ram_size);
+	emu_create(&emu, rom_base, rom_size, ram_base, ram_size, insn_cache_bits);
 
 	if (fread(emu.rom.pool, 1, file_size, input_file) != file_size) {
 		perror("fread");

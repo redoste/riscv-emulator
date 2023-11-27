@@ -11,6 +11,10 @@
 typedef struct cpu_t {
 	guest_paddr pc;
 	guest_reg regs[REG_COUNT];
+
+	cached_ins_t* instruction_cache;
+	guest_paddr instruction_cache_mask;
+
 	bool jump_pending;
 } cpu_t;
 
@@ -24,6 +28,16 @@ typedef struct emulator_t emulator_t;
  *     ins_t* decoded_instruction   : pointer to the ins_t to fill with the decoded instruction
  */
 bool cpu_decode(uint32_t encoded_instruction, ins_t* decoded_instruction);
+
+/* cpu_decode_and_cache : try to get an instruction in the instruction cache, decode it
+ *                        and fill the cache in case of a cache miss
+ *                        returns true if the instruction was successfully decoded
+ *                        returns false otherwise
+ *     emulator_t* emu              : pointer to the emulator where the cache will be updated
+ *     guest_paddr instruction_addr : address of the instruction to decode and cache
+ *     ins_t** decoded_instruction  : pointer to the ins_t* to fill with the address of the decoded instruction
+ */
+bool cpu_decode_and_cache(emulator_t* emu, guest_paddr instruction_addr, ins_t** decoded_instruction);
 
 /* cpu_execute : execute a single instruction at the CPU PC
  *     emulator_t* emu : pointer to the emulator state to update to the next instruction

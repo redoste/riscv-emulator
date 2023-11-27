@@ -1,6 +1,7 @@
 #ifndef ISA_H
 #define ISA_H
 
+#include <stdbool.h>
 #include <stdint.h>
 
 #include <rv64_isa.h>
@@ -22,7 +23,6 @@ typedef enum __attribute__((packed)) ins_type_t {
 
 /* ins_t : structure representing a decoded RISC-V instruction
  */
-// TODO : add a decoded instructions cache
 typedef struct ins_t {
 	ins_type_t type;
 
@@ -34,6 +34,15 @@ typedef struct ins_t {
 
 	int64_t imm;
 } ins_t;
+
+/* cached_ins_t : structure representing a decoded RISC-V instruction cached in
+ *                the CPU instruction cache
+ */
+typedef struct cached_ins_t {
+	guest_paddr tag;
+	ins_t decoded_instruction;
+	bool valid;
+} cached_ins_t;
 
 /* X_INSTRUCTIONS : X-macro storing informations about all the instructions
  *                  the emulator can emulate

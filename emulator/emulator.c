@@ -12,7 +12,7 @@
 #include "emulator.h"
 #include "emulator_sdl.h"
 
-void emu_create(emulator_t* emu, guest_paddr rom_base, size_t rom_size, guest_paddr ram_base, size_t ram_size) {
+void emu_create(emulator_t* emu, guest_paddr rom_base, size_t rom_size, guest_paddr ram_base, size_t ram_size, size_t instruction_cache_bits) {
 	uint8_t* rom_pool = malloc(rom_size);
 	uint8_t* ram_pool = malloc(ram_size);
 	assert(rom_pool != NULL && ram_pool != NULL);
@@ -41,6 +41,17 @@ void emu_create(emulator_t* emu, guest_paddr rom_base, size_t rom_size, guest_pa
 	// NOTE : we assume the entry point is at the start of the ROM
 	emu->cpu.pc = emu->rom.base;
 
+	if (instruction_cache_bits > 24) {
+		fprintf(stderr, "The number of significant bits for the instruction cache is over 24 bits\n");
+		abort();
+	}
+	const guest_paddr instruction_cache_mask = (1ull << instruction_cache_bits) - 1;
+	const size_t instruction_cache_size = (1ull << instruction_cache_bits) * sizeof(emu->cpu.instruction_cache[0]);
+	emu->cpu.instruction_cache = malloc(instruction_cache_size);
+	emu->cpu.instruction_cache_mask = instruction_cache_mask;
+	assert(emu->cpu.instruction_cache != NULL);
+	memset(emu->cpu.instruction_cache, 0, instruction_cache_size);
+
 #ifdef RISCV_EMULATOR_SDL_SUPPORT
 	memset(&emu->sdl_data, 0, sizeof(emu->sdl_data));
 #endif
@@ -49,6 +60,7 @@ void emu_create(emulator_t* emu, guest_paddr rom_base, size_t rom_size, guest_pa
 void emu_destroy(emulator_t* emu) {
 	free(emu->rom.pool);
 	free(emu->ram.pool);
+	free(emu->cpu.instruction_cache);
 }
 
 #define le8toh(x) (x)

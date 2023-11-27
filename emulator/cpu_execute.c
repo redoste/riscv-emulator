@@ -241,35 +241,34 @@ void cpu_execute(emulator_t* emu) {
 		abort();
 	}
 
-	uint32_t encoded_instruction = emu_r32(emu, emu->cpu.pc);
-	ins_t instruction;
-	if (!cpu_decode(encoded_instruction, &instruction)) {
+	ins_t* instruction;
+	if (!cpu_decode_and_cache(emu, emu->cpu.pc, &instruction)) {
 		fprintf(stderr, "Invalid instruction %08" PRIx32 " at PC=%016" PRIx64 "\n",
-			encoded_instruction, emu->cpu.pc);
+			emu_r32(emu, emu->cpu.pc), emu->cpu.pc);
 		abort();
 	}
 
 	// We check for x0: see the comment before clearing x0 at the end of the function
 	assert(emu->cpu.regs[0] == 0);
 
-	switch (instruction.type) {
+	switch (instruction->type) {
 		case INS_TYPE_R:
-			cpu_execute_type_r(emu, &instruction);
+			cpu_execute_type_r(emu, instruction);
 			break;
 		case INS_TYPE_I:
-			cpu_execute_type_i(emu, &instruction);
+			cpu_execute_type_i(emu, instruction);
 			break;
 		case INS_TYPE_S:
-			cpu_execute_type_s(emu, &instruction);
+			cpu_execute_type_s(emu, instruction);
 			break;
 		case INS_TYPE_B:
-			cpu_execute_type_b(emu, &instruction);
+			cpu_execute_type_b(emu, instruction);
 			break;
 		case INS_TYPE_U:
-			cpu_execute_type_u(emu, &instruction);
+			cpu_execute_type_u(emu, instruction);
 			break;
 		case INS_TYPE_J:
-			cpu_execute_type_j(emu, &instruction);
+			cpu_execute_type_j(emu, instruction);
 			break;
 		default:
 			// TODO : better diag system
