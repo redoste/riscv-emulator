@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <endian.h>
 #include <inttypes.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -50,42 +51,43 @@ void emu_destroy(emulator_t* emu) {
 	free(emu->ram.pool);
 }
 
-// TODO : support BE hosts
+#define le8toh(x) (x)
+#define htole8(x) (x)
 
-#define EMU_RX(SIZE, TYPE)                                                         \
-	TYPE emu_r##SIZE(emulator_t* emu, guest_paddr addr) {                      \
-		if (addr - emu->rom.base < emu->rom.size &&                        \
-		    addr - emu->rom.base + sizeof(TYPE) <= emu->rom.size) {        \
-			TYPE* value = (TYPE*)&emu->rom.pool[addr - emu->rom.base]; \
-			return *value;                                             \
-		} else if (addr - emu->ram.base < emu->ram.size &&                 \
-			   addr - emu->ram.base + sizeof(TYPE) <= emu->ram.size) { \
-			TYPE* value = (TYPE*)&emu->ram.pool[addr - emu->ram.base]; \
-			return *value;                                             \
-		}                                                                  \
-                                                                                   \
-		fprintf(stderr, "invalid r" #SIZE " at %016lx PC=%016lx\n",        \
-			addr, emu->cpu.pc);                                        \
-		abort();                                                           \
+#define EMU_RX(SIZE, TYPE)                                                                  \
+	TYPE emu_r##SIZE(emulator_t* emu, guest_paddr addr) {                               \
+		if (addr - emu->rom.base < emu->rom.size &&                                 \
+		    addr - emu->rom.base + sizeof(TYPE) <= emu->rom.size) {                 \
+			TYPE* value = (TYPE*)&emu->rom.pool[addr - emu->rom.base];          \
+			return le##SIZE##toh(*value);                                       \
+		} else if (addr - emu->ram.base < emu->ram.size &&                          \
+			   addr - emu->ram.base + sizeof(TYPE) <= emu->ram.size) {          \
+			TYPE* value = (TYPE*)&emu->ram.pool[addr - emu->ram.base];          \
+			return le##SIZE##toh(*value);                                       \
+		}                                                                           \
+                                                                                            \
+		fprintf(stderr, "invalid r" #SIZE " at %016" PRIx64 " PC=%016" PRIx64 "\n", \
+			addr, emu->cpu.pc);                                                 \
+		abort();                                                                    \
 	}
 
-#define EMU_WX(SIZE, TYPE)                                                             \
-	void emu_w##SIZE(emulator_t* emu, guest_paddr addr, TYPE value) {              \
-		if (addr - emu->rom.base < emu->rom.size &&                            \
-		    addr - emu->rom.base + sizeof(TYPE) <= emu->rom.size) {            \
-			TYPE* host_addr = (TYPE*)&emu->rom.pool[addr - emu->rom.base]; \
-			*host_addr = value;                                            \
-			return;                                                        \
-		} else if (addr - emu->ram.base < emu->ram.size &&                     \
-			   addr - emu->ram.base + sizeof(TYPE) <= emu->ram.size) {     \
-			TYPE* host_addr = (TYPE*)&emu->ram.pool[addr - emu->ram.base]; \
-			*host_addr = value;                                            \
-			return;                                                        \
-		}                                                                      \
-                                                                                       \
-		fprintf(stderr, "invalid w" #SIZE " at %016lx PC=%016lx\n",            \
-			addr, emu->cpu.pc);                                            \
-		abort();                                                               \
+#define EMU_WX(SIZE, TYPE)                                                                  \
+	void emu_w##SIZE(emulator_t* emu, guest_paddr addr, TYPE value) {                   \
+		if (addr - emu->rom.base < emu->rom.size &&                                 \
+		    addr - emu->rom.base + sizeof(TYPE) <= emu->rom.size) {                 \
+			TYPE* host_addr = (TYPE*)&emu->rom.pool[addr - emu->rom.base];      \
+			*host_addr = htole##SIZE(value);                                    \
+			return;                                                             \
+		} else if (addr - emu->ram.base < emu->ram.size &&                          \
+			   addr - emu->ram.base + sizeof(TYPE) <= emu->ram.size) {          \
+			TYPE* host_addr = (TYPE*)&emu->ram.pool[addr - emu->ram.base];      \
+			*host_addr = htole##SIZE(value);                                    \
+			return;                                                             \
+		}                                                                           \
+                                                                                            \
+		fprintf(stderr, "invalid w" #SIZE " at %016" PRIx64 " PC=%016" PRIx64 "\n", \
+			addr, emu->cpu.pc);                                                 \
+		abort();                                                                    \
 	}
 
 EMU_RX(8, uint8_t)

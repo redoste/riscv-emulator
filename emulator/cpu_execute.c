@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <endian.h>
 #include <inttypes.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -8,20 +9,30 @@
 #include "emulator.h"
 #include "isa.h"
 
+#ifdef __BYTE_ORDER
+#if __BYTE_ORDER == __LITTLE_ENDIAN
+#define REG_WORD_OFFSET 0
+#else
+#define REG_WORD_OFFSET 4
+#endif
+#else
+#pragma GCC warning "__BYTE_ORDER undefined, assuming little endian"
+#define REG_WORD_OFFSET 0
+#endif
+
 static void cpu_execute_type_r(emulator_t* emu, const ins_t* instruction) {
 	cpu_t* cpu = &emu->cpu;
 
 	guest_reg* rd = &cpu->regs[instruction->rd];
 	guest_reg* rs1 = &cpu->regs[instruction->rs1];
 	guest_reg* rs2 = &cpu->regs[instruction->rs2];
-	// TODO : support BE hosts
-	guest_word* rs1w = (guest_word*)&cpu->regs[instruction->rs1];
-	guest_word* rs2w = (guest_word*)&cpu->regs[instruction->rs2];
+	guest_word* rs1w = (guest_word*)((uint8_t*)&cpu->regs[instruction->rs1] + REG_WORD_OFFSET);
+	guest_word* rs2w = (guest_word*)((uint8_t*)&cpu->regs[instruction->rs2] + REG_WORD_OFFSET);
 
 	guest_reg_signed* rds = (guest_reg_signed*)&cpu->regs[instruction->rd];
 	guest_reg_signed* rs1s = (guest_reg_signed*)&cpu->regs[instruction->rs1];
 	guest_reg_signed* rs2s = (guest_reg_signed*)&cpu->regs[instruction->rs2];
-	guest_word_signed* rs1ws = (guest_word_signed*)&cpu->regs[instruction->rs1];
+	guest_word_signed* rs1ws = (guest_word_signed*)((uint8_t*)&cpu->regs[instruction->rs1] + REG_WORD_OFFSET);
 
 	switch ((instruction->opcode >> 2) | (instruction->funct3 << 5) |
 		(instruction->funct7 << 8)) {
@@ -57,12 +68,11 @@ static void cpu_execute_type_i(emulator_t* emu, const ins_t* instruction) {
 
 	guest_reg* rd = &cpu->regs[instruction->rd];
 	guest_reg* rs1 = &cpu->regs[instruction->rs1];
-	// TODO : support BE hosts
-	guest_word* rs1w = (guest_word*)&cpu->regs[instruction->rs1];
+	guest_word* rs1w = (guest_word*)((uint8_t*)&cpu->regs[instruction->rs1] + REG_WORD_OFFSET);
 
 	guest_reg_signed* rds = (guest_reg_signed*)&cpu->regs[instruction->rd];
 	guest_reg_signed* rs1s = (guest_reg_signed*)&cpu->regs[instruction->rs1];
-	guest_word_signed* rs1ws = (guest_word_signed*)&cpu->regs[instruction->rs1];
+	guest_word_signed* rs1ws = (guest_word_signed*)((uint8_t*)&cpu->regs[instruction->rs1] + REG_WORD_OFFSET);
 
 	int64_t imm = instruction->imm;
 
