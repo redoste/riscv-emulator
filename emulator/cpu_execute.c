@@ -34,8 +34,7 @@ static void cpu_execute_type_r(emulator_t* emu, const ins_t* instruction) {
 	guest_reg_signed* rs2s = (guest_reg_signed*)&cpu->regs[instruction->rs2];
 	guest_word_signed* rs1ws = (guest_word_signed*)((uint8_t*)&cpu->regs[instruction->rs1] + REG_WORD_OFFSET);
 
-	switch ((instruction->opcode >> 2) | (instruction->funct3 << 5) |
-		(instruction->funct7 << 8)) {
+	switch (instruction->opcode_switch) {
 #define X_R(MNEMONIC, OPCODE, F3, F7, EXPR)             \
 	case ((OPCODE >> 2) | (F3 << 5) | (F7 << 8)): { \
 		EXPR;                                   \
@@ -56,8 +55,8 @@ static void cpu_execute_type_r(emulator_t* emu, const ins_t* instruction) {
 #undef X_U
 #undef X_J
 		default:
-			fprintf(stderr, "Unsupported R instruction opcode=%" PRIx8 " f3=%" PRIx8 " f7=%" PRIx8 "\n",
-				instruction->opcode, instruction->funct3, instruction->funct7);
+			fprintf(stderr, "Unsupported R instruction opcode_switch=%" PRIx16 "\n",
+				instruction->opcode_switch);
 			abort();
 			break;
 	}
@@ -76,7 +75,7 @@ static void cpu_execute_type_i(emulator_t* emu, const ins_t* instruction) {
 
 	int64_t imm = instruction->imm;
 
-	switch ((instruction->opcode >> 2) | (instruction->funct3 << 5)) {
+	switch (instruction->opcode_switch) {
 #define X_R(MNEMONIC, OPCODE, F3, F7, EXPR)
 #define X_I(MNEMONIC, OPCODE, F3, EXPR)     \
 	case ((OPCODE >> 2) | (F3 << 5)): { \
@@ -97,8 +96,8 @@ static void cpu_execute_type_i(emulator_t* emu, const ins_t* instruction) {
 #undef X_U
 #undef X_J
 		default:
-			fprintf(stderr, "Unsupported I instruction opcode=%" PRIx8 " f3=%" PRIx8 "\n",
-				instruction->opcode, instruction->funct3);
+			fprintf(stderr, "Unsupported I instruction opcode_switch=%" PRIx16 "\n",
+				instruction->opcode_switch);
 			abort();
 			break;
 	}
@@ -111,7 +110,7 @@ static void cpu_execute_type_s(emulator_t* emu, const ins_t* instruction) {
 	guest_reg* rs2 = &cpu->regs[instruction->rs2];
 	int64_t imm = instruction->imm;
 
-	switch ((instruction->opcode >> 2) | (instruction->funct3 << 5)) {
+	switch (instruction->opcode_switch) {
 #define X_R(MNEMONIC, OPCODE, F3, F7, EXPR)
 #define X_I(MNEMONIC, OPCODE, F3, EXPR)
 #define X_S(MNEMONIC, OPCODE, F3, EXPR)     \
@@ -132,8 +131,8 @@ static void cpu_execute_type_s(emulator_t* emu, const ins_t* instruction) {
 #undef X_U
 #undef X_J
 		default:
-			fprintf(stderr, "Unsupported S instruction opcode=%" PRIx8 " f3=%" PRIx8 "\n",
-				instruction->opcode, instruction->funct3);
+			fprintf(stderr, "Unsupported S instruction opcode_switch=%" PRIx16 "\n",
+				instruction->opcode_switch);
 			abort();
 			break;
 	}
@@ -150,7 +149,7 @@ static void cpu_execute_type_b(emulator_t* emu, const ins_t* instruction) {
 
 	int64_t imm = instruction->imm;
 
-	switch ((instruction->opcode >> 2) | (instruction->funct3 << 5)) {
+	switch (instruction->opcode_switch) {
 #define X_R(MNEMONIC, OPCODE, F3, F7, EXPR)
 #define X_I(MNEMONIC, OPCODE, F3, EXPR)
 #define X_S(MNEMONIC, OPCODE, F3, EXPR)
@@ -171,8 +170,8 @@ static void cpu_execute_type_b(emulator_t* emu, const ins_t* instruction) {
 #undef X_U
 #undef X_J
 		default:
-			fprintf(stderr, "Unsupported B instruction opcode=%" PRIx8 " f3=%" PRIx8 "\n",
-				instruction->opcode, instruction->funct3);
+			fprintf(stderr, "Unsupported B instruction opcode_switch=%" PRIx16 "\n",
+				instruction->opcode_switch);
 			abort();
 			break;
 	}
@@ -184,7 +183,7 @@ static void cpu_execute_type_u(emulator_t* emu, const ins_t* instruction) {
 	guest_reg* rd = &cpu->regs[instruction->rd];
 	int64_t imm = instruction->imm;
 
-	switch (instruction->opcode >> 2) {
+	switch (instruction->opcode_switch) {
 #define X_R(MNEMONIC, OPCODE, F3, F7, EXPR)
 #define X_I(MNEMONIC, OPCODE, F3, EXPR)
 #define X_S(MNEMONIC, OPCODE, F3, EXPR)
@@ -206,8 +205,8 @@ static void cpu_execute_type_u(emulator_t* emu, const ins_t* instruction) {
 #undef X_J
 
 		default:
-			fprintf(stderr, "Unsupported U instruction opcode=%" PRIx8 "\n",
-				instruction->opcode);
+			fprintf(stderr, "Unsupported U instruction opcode_switch=%" PRIx16 "\n",
+				instruction->opcode_switch);
 			abort();
 			break;
 	}

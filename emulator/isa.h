@@ -26,9 +26,7 @@ typedef enum __attribute__((packed)) ins_type_t {
 typedef struct ins_t {
 	ins_type_t type;
 
-	uint8_t opcode;
-	uint8_t funct3;
-	uint8_t funct7;
+	uint16_t opcode_switch;
 
 	reg_t rd;
 	reg_t rs1;
