@@ -87,3 +87,11 @@ bool cpu_decode_and_cache(emulator_t* emu, guest_paddr instruction_addr, ins_t**
 	cached_instruction->valid = true;
 	return true;
 }
+
+void cpu_invalidate_instruction_cache(emulator_t* emu, guest_paddr addr) {
+	size_t cache_index = (addr >> 2) & emu->cpu.instruction_cache_mask;
+	cached_ins_t* cached_instruction = &emu->cpu.instruction_cache[cache_index];
+	if (cached_instruction->valid && cached_instruction->tag == (addr & ~3)) {
+		cached_instruction->valid = false;
+	}
+}

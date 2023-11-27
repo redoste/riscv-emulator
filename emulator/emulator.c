@@ -85,6 +85,7 @@ void emu_destroy(emulator_t* emu) {
 
 #define EMU_WX(SIZE, TYPE)                                                                  \
 	void emu_w##SIZE(emulator_t* emu, guest_paddr addr, TYPE value) {                   \
+		cpu_invalidate_instruction_cache(emu, addr);                                \
 		if (addr - emu->rom.base < emu->rom.size &&                                 \
 		    addr - emu->rom.base + sizeof(TYPE) <= emu->rom.size) {                 \
 			TYPE* host_addr = (TYPE*)&emu->rom.pool[addr - emu->rom.base];      \
