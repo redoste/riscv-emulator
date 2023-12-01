@@ -45,6 +45,16 @@ enum {
 	F3_OR = 6,
 	F3_AND = 7,
 
+	/* OPCODE OP / OP-32 : M extension */
+	F3_MUL = 0,
+	F3_MULH = 1,
+	F3_MULHSU = 2,
+	F3_MULHU = 3,
+	F3_DIV = 4,
+	F3_DIVU = 5,
+	F3_REM = 6,
+	F3_REMU = 7,
+
 	/* OPCODE MISC-MEM */
 	F3_FENCE = 0,
 
@@ -92,6 +102,16 @@ enum {
 	F7_SRA = 0x20,
 	F7_OR = 0x00,
 	F7_AND = 0x00,
+
+	/* OPCODE OP / OP-32 : M extension */
+	F7_MUL = 0x01,
+	F7_MULH = 0x01,
+	F7_MULHSU = 0x01,
+	F7_MULHU = 0x01,
+	F7_DIV = 0x01,
+	F7_DIVU = 0x01,
+	F7_REM = 0x01,
+	F7_REMU = 0x01,
 };
 
 /* RISC-V funct12 */

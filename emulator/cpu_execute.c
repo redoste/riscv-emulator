@@ -33,6 +33,7 @@ static void cpu_execute_type_r(emulator_t* emu, const ins_t* instruction) {
 	guest_reg_signed* rs1s = (guest_reg_signed*)&cpu->regs[instruction->rs1];
 	guest_reg_signed* rs2s = (guest_reg_signed*)&cpu->regs[instruction->rs2];
 	guest_word_signed* rs1ws = (guest_word_signed*)((uint8_t*)&cpu->regs[instruction->rs1] + REG_WORD_OFFSET);
+	guest_word_signed* rs2ws = (guest_word_signed*)((uint8_t*)&cpu->regs[instruction->rs2] + REG_WORD_OFFSET);
 
 	switch (instruction->opcode_switch) {
 #define X_R(MNEMONIC, OPCODE, F3, F7, EXPR)             \
