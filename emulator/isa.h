@@ -86,11 +86,10 @@ typedef struct cached_ins_t {
 	X_R(SRLW, OPCODE_OP_32, F3_SRL, F7_SRL, *rds = (guest_word_signed)(*rs1w >> (*rs2 & 0x1f)))                                                        \
 	X_R(SRAW, OPCODE_OP_32, F3_SRA, F7_SRA, *rds = (guest_word_signed)(*rs1ws >> (*rs2 & 0x1f)))                                                       \
                                                                                                                                                            \
-	/* TODO : support MULH[[S]U] on 32 bit targets that lack __int128 */                                                                               \
 	X_R(MUL, OPCODE_OP, F3_MUL, F7_MUL, *rd = *rs1 * *rs2)                                                                                             \
-	X_R(MULH, OPCODE_OP, F3_MULH, F7_MULH, *rds = ((__int128)*rs1s * (__int128)*rs2s) >> 64)                                                           \
-	X_R(MULHSU, OPCODE_OP, F3_MULHSU, F7_MULHSU, *rds = ((__int128)*rs1s * (unsigned __int128)*rs2) >> 64)                                             \
-	X_R(MULHU, OPCODE_OP, F3_MULHU, F7_MULHU, *rd = ((unsigned __int128)*rs1 * (unsigned __int128)*rs2) >> 64)                                         \
+	X_R(MULH, OPCODE_OP, F3_MULH, F7_MULH, *rds = mulh(*rs1s, *rs2s))                                                                                  \
+	X_R(MULHSU, OPCODE_OP, F3_MULHSU, F7_MULHSU, *rds = mulhsu(*rs1s, *rs2))                                                                           \
+	X_R(MULHU, OPCODE_OP, F3_MULHU, F7_MULHU, *rd = mulhu(*rs1, *rs2))                                                                                 \
 	X_R(DIV, OPCODE_OP, F3_DIV, F7_DIV, *rds = (*rs2s == 0) ? -1 : (*rs1s == INT64_MIN && *rs2s == -1) ? INT64_MIN                                     \
 													   : (*rs1s / *rs2s))                              \
 	X_R(DIVU, OPCODE_OP, F3_DIVU, F7_DIVU, *rd = (*rs2 == 0) ? UINT64_MAX : (*rs1 / *rs2))                                                             \

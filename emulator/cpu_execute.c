@@ -20,6 +20,71 @@
 #define REG_WORD_OFFSET 0
 #endif
 
+#ifdef __SIZEOF_INT128__
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wpedantic"
+// We ignore -Wpedantic because __int128 isn't part of the ISO C standard
+
+static inline guest_reg_signed mulh(guest_reg_signed rs1, guest_reg_signed rs2) {
+	return ((__int128)rs1 * (__int128)rs2) >> 64;
+}
+
+static inline guest_reg_signed mulhsu(guest_reg_signed rs1, guest_reg rs2) {
+	return ((__int128)rs1 * (unsigned __int128)rs2) >> 64;
+}
+
+static inline guest_reg mulhu(guest_reg rs1, guest_reg rs2) {
+	return ((unsigned __int128)rs1 * (unsigned __int128)rs2) >> 64;
+}
+
+#pragma GCC diagnostic pop
+#else
+static inline guest_reg_signed mulh(guest_reg_signed rs1, guest_reg_signed rs2) {
+	int64_t rs1l = rs1 & 0xffffffff, rs1h = rs1 >> 32;
+	int64_t rs2l = rs2 & 0xffffffff, rs2h = rs2 >> 32;
+
+	int64_t m0 = rs1l * rs2l;
+	int64_t m1 = rs1h * rs2l;
+	int64_t m2 = rs1l * rs2h;
+	int64_t m3 = rs1h * rs2h;
+
+	m3 += m2 >> 32;
+	m1 += (m0 >> 32) + (m2 & 0xffffffff);
+
+	return m3 + (m1 >> 32);
+}
+
+static inline guest_reg_signed mulhsu(guest_reg_signed rs1, guest_reg rs2) {
+	int64_t rs1l = rs1 & 0xffffffff, rs1h = rs1 >> 32;
+	uint64_t rs2l = rs2 & 0xffffffff, rs2h = rs2 >> 32;
+
+	uint64_t m0 = rs1l * rs2l;
+	int64_t m1 = rs1h * rs2l;
+	uint64_t m2 = rs1l * rs2h;
+	int64_t m3 = rs1h * rs2h;
+
+	m3 += m2 >> 32;
+	m1 += (m0 >> 32) + (m2 & 0xffffffff);
+
+	return m3 + (m1 >> 32);
+}
+
+static inline guest_reg mulhu(guest_reg rs1, guest_reg rs2) {
+	uint64_t rs1l = rs1 & 0xffffffff, rs1h = rs1 >> 32;
+	uint64_t rs2l = rs2 & 0xffffffff, rs2h = rs2 >> 32;
+
+	uint64_t m0 = rs1l * rs2l;
+	uint64_t m1 = rs1h * rs2l;
+	uint64_t m2 = rs1l * rs2h;
+	uint64_t m3 = rs1h * rs2h;
+
+	m3 += m2 >> 32;
+	m1 += (m0 >> 32) + (m2 & 0xffffffff);
+
+	return m3 + (m1 >> 32);
+}
+#endif
+
 static void cpu_execute_type_r(emulator_t* emu, const ins_t* instruction) {
 	cpu_t* cpu = &emu->cpu;
 
