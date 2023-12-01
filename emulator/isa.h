@@ -41,7 +41,6 @@ typedef struct ins_t {
 typedef struct cached_ins_t {
 	guest_paddr tag;
 	ins_t decoded_instruction;
-	bool valid;
 } cached_ins_t;
 
 /* X_INSTRUCTIONS : X-macro storing informations about all the instructions

@@ -75,23 +75,25 @@ bool cpu_decode_and_cache(emulator_t* emu, guest_paddr instruction_addr, ins_t**
 	cached_ins_t* cached_instruction = &emu->cpu.instruction_cache[cache_index];
 	*decoded_instruction = &cached_instruction->decoded_instruction;
 
-	if (cached_instruction->valid && cached_instruction->tag == instruction_addr) {
+	if (cached_instruction->decoded_instruction.type != INS_TYPE_INVALID &&
+	    cached_instruction->tag == instruction_addr) {
 		return true;
 	}
 
 	uint32_t encoded_instruction = emu_r32(emu, instruction_addr);
 	if (!cpu_decode(encoded_instruction, &cached_instruction->decoded_instruction)) {
+		cached_instruction->decoded_instruction.type = INS_TYPE_INVALID;
 		return false;
 	}
 	cached_instruction->tag = instruction_addr;
-	cached_instruction->valid = true;
 	return true;
 }
 
 void cpu_invalidate_instruction_cache(emulator_t* emu, guest_paddr addr) {
 	size_t cache_index = (addr >> 2) & emu->cpu.instruction_cache_mask;
 	cached_ins_t* cached_instruction = &emu->cpu.instruction_cache[cache_index];
-	if (cached_instruction->valid && cached_instruction->tag == (addr & ~3)) {
-		cached_instruction->valid = false;
+	if (cached_instruction->decoded_instruction.type != INS_TYPE_INVALID &&
+	    cached_instruction->tag == (addr & ~3)) {
+		cached_instruction->decoded_instruction.type = INS_TYPE_INVALID;
 	}
 }
