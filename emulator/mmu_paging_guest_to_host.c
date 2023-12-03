@@ -62,6 +62,10 @@ bool mmu_pg2h_map(emulator_t* emu, guest_paddr guest_physical_page, void* host_p
 		return false;
 	}
 	*level0_entry = host_page_int | MMU_PG2H_PTE_VALID | MMU_PG2H_PTE_TYPE_POOL;
+
+	/* NOTE : we don't invalidate the TLB as there shouldn't be any valid entry with this tag,
+	 *        it was already marked as invalid by mmu_pg2h_unmap
+	 */
 	return true;
 }
 
@@ -112,12 +116,29 @@ bool mmu_pg2h_unmap(emulator_t* emu, guest_paddr guest_physical_page) {
 		munmap((void*)(*level0_entry & MMU_PG2H_PAGE_MASK), MMU_PG2H_PAGE_SIZE);
 	}
 	*level0_entry = 0;
+
+	size_t tlb_index = (guest_physical_page >> MMU_PG2H_PAGE_SHIFT) & emu->pg2h_tlb_mask;
+	mmu_pg2h_tlb_entry_t* tlb_entry = &emu->pg2h_tlb[tlb_index];
+	if (tlb_entry->tag == guest_physical_page) {
+		tlb_entry->pte = 0;
+	}
+
 	return true;
 }
 
-bool mmu_pg2h_get_pte(emulator_t* emu, guest_paddr guest_physical_page, mmu_pg2h_pte* pte) {
+bool mmu_pg2h_get_pte(emulator_t* emu, guest_paddr addr, mmu_pg2h_pte* pte) {
+	guest_paddr guest_physical_page = addr & MMU_PG2H_PAGE_MASK;
+
+	size_t tlb_index = (guest_physical_page >> MMU_PG2H_PAGE_SHIFT) & emu->pg2h_tlb_mask;
+	mmu_pg2h_tlb_entry_t* tlb_entry = &emu->pg2h_tlb[tlb_index];
+	if ((tlb_entry->pte & MMU_PG2H_PTE_VALID) &&
+	    tlb_entry->tag == guest_physical_page) {
+		*pte = tlb_entry->pte;
+		return true;
+	}
+
 	mmu_pg2h_pte* level0_entry;
-	if (!mmu_pg2h_walk(emu, guest_physical_page & MMU_PG2H_PAGE_MASK, &level0_entry)) {
+	if (!mmu_pg2h_walk(emu, guest_physical_page, &level0_entry)) {
 		return false;
 	}
 
@@ -125,6 +146,8 @@ bool mmu_pg2h_get_pte(emulator_t* emu, guest_paddr guest_physical_page, mmu_pg2h
 		return false;
 	}
 	*pte = *level0_entry;
+	tlb_entry->tag = guest_physical_page;
+	tlb_entry->pte = *level0_entry;
 	return true;
 }
 

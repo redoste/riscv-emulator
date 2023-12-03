@@ -4,7 +4,6 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include "emulator.h"
 #include "isa.h"
 
 /* MMU_PG2H_OFFSET_MASK : mask to extract the offset part of a guest physical
@@ -48,6 +47,14 @@
  */
 typedef uintptr_t mmu_pg2h_pte;
 
+/* mmu_pg2h_tlb_entry_t : structure representing an entry in the TLB for the physical
+ *                        guest to host page table
+ */
+typedef struct mmu_pg2h_tlb_entry_t {
+	guest_paddr tag;
+	mmu_pg2h_pte pte;
+} mmu_pg2h_tlb_entry_t;
+
 /* MMU_PG2H_PTE_VALID : flag marking a PTE as valid in the PG2H page table
  */
 #define MMU_PG2H_PTE_VALID (1 << 0)
@@ -60,6 +67,9 @@ typedef uintptr_t mmu_pg2h_pte;
 /* MMU_PG2H_PTE_TYPE_MMIO : flag marking a PTE as used for MMIO
  */
 #define MMU_PG2H_PTE_TYPE_MMIO (1 << 1)
+
+// NOTE : forward declaration to deal with a cyclic dependency with emulator.h
+typedef struct emulator_t emulator_t;
 
 /* mmu_pg2h_map : map a new guest physical page to a host page
  *                returns true if the page was successfully mapped
@@ -81,11 +91,11 @@ bool mmu_pg2h_unmap(emulator_t* emu, guest_paddr guest_physical_page);
 /* mmu_pg2h_get_pte : get the PTE of a page in the physical guest to host page table
  *                    returns true if the PTE is present and valid
  *                    returns false otherwise
- *     emulator_t* emu                 : pointer to the emulator
- *     guest_paddr guest_physical_page : guest physical page corresponding to the requested PTE
- *     mmu_pg2h_pte* pte               : pointer to the mmu_pg2h_pte to fill with the read PTE
+ *     emulator_t* emu   : pointer to the emulator
+ *     guest_paddr addr  : guest physical address corresponding to the requested PTE
+ *     mmu_pg2h_pte* pte : pointer to the mmu_pg2h_pte to fill with the read PTE
  */
-bool mmu_pg2h_get_pte(emulator_t* emu, guest_paddr guest_physical_page, mmu_pg2h_pte* pte);
+bool mmu_pg2h_get_pte(emulator_t* emu, guest_paddr addr, mmu_pg2h_pte* pte);
 
 /* mmu_pg2h_free : free all the allocated memory used by the page table
  *     emulator_t* emu : pointer to the emulator

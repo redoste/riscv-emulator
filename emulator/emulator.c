@@ -14,22 +14,30 @@
 #include "emulator_sdl.h"
 #include "mmu_paging_guest_to_host.h"
 
-void emu_create(emulator_t* emu, guest_reg pc, size_t instruction_cache_bits) {
+void emu_create(emulator_t* emu, guest_reg pc, size_t cache_bits) {
 	emu->pg2h_paging_table = 0;
 
 	memset(&emu->cpu, 0, sizeof(emu->cpu));
 	emu->cpu.pc = pc;
 
-	if (instruction_cache_bits > 24) {
-		fprintf(stderr, "The number of significant bits for the instruction cache is over 24 bits\n");
+	if (cache_bits > 24) {
+		fprintf(stderr, "The number of significant bits for the caches is over 24 bits\n");
 		abort();
 	}
-	const guest_paddr instruction_cache_mask = (1ull << instruction_cache_bits) - 1;
-	const size_t instruction_cache_size = (1ull << instruction_cache_bits) * sizeof(emu->cpu.instruction_cache[0]);
+
+	const guest_paddr caches_mask = (1ull << cache_bits) - 1;
+
+	const size_t instruction_cache_size = (1ull << cache_bits) * sizeof(emu->cpu.instruction_cache[0]);
 	emu->cpu.instruction_cache = malloc(instruction_cache_size);
-	emu->cpu.instruction_cache_mask = instruction_cache_mask;
+	emu->cpu.instruction_cache_mask = caches_mask;
 	assert(emu->cpu.instruction_cache != NULL);
 	memset(emu->cpu.instruction_cache, 0, instruction_cache_size);
+
+	const size_t pg2h_tlb_size = (1ull << cache_bits) * sizeof(emu->pg2h_tlb[0]);
+	emu->pg2h_tlb = malloc(pg2h_tlb_size);
+	emu->pg2h_tlb_mask = caches_mask;
+	assert(emu->pg2h_tlb != NULL);
+	memset(emu->pg2h_tlb, 0, pg2h_tlb_size);
 
 #ifdef RISCV_EMULATOR_SDL_SUPPORT
 	memset(&emu->sdl_data, 0, sizeof(emu->sdl_data));
@@ -39,6 +47,7 @@ void emu_create(emulator_t* emu, guest_reg pc, size_t instruction_cache_bits) {
 void emu_destroy(emulator_t* emu) {
 	mmu_pg2h_free(emu);
 	free(emu->cpu.instruction_cache);
+	free(emu->pg2h_tlb);
 #ifdef RISCV_EMULATOR_SDL_SUPPORT
 	emu_sdl_destory(emu);
 #endif

@@ -29,7 +29,7 @@ static int usage(const char* argv0) {
 		"    --rom-size 0x[ROM SIZE]  : Size of the ROM (defaut 0x%08x)\n"
 		"    --ram-base 0x[RAM BASE]  : Base address of the RAM (default 0x%08x)\n"
 		"    --ram-size 0x[RAM SIZE]  : Size of the ROM (default 0x%08x)\n"
-		"    --insn-cache-bits [BITS] : Number of significant bits for the instruction cache (default %d)\n",
+		"    --cache-bits [BITS]      : Number of significant bits for the different caches (default %d)\n",
 		argv0, argv0, DEFAULT_ROM_BASE, DEFAULT_ROM_SIZE, DEFAULT_RAM_BASE, DEFAULT_RAM_SIZE, DEFAULT_CACHE_BITS);
 	return 1;
 }
@@ -110,7 +110,7 @@ static int main_advanced(int argc, char** argv) {
 	const char* rom_file = NULL;
 	guest_paddr rom_base = DEFAULT_ROM_BASE, ram_base = DEFAULT_RAM_BASE;
 	size_t rom_size = DEFAULT_ROM_SIZE, ram_size = DEFAULT_RAM_SIZE;
-	size_t insn_cache_bits = DEFAULT_CACHE_BITS;
+	size_t cache_bits = DEFAULT_CACHE_BITS;
 
 	while (argc_iter < argc) {
 		if (strcmp(argv[argc_iter], "--advanced") == 0) {
@@ -131,7 +131,7 @@ static int main_advanced(int argc, char** argv) {
 		PARSE_NUM_ARG("--rom-size", &rom_size)
 		PARSE_NUM_ARG("--ram-base", &ram_base)
 		PARSE_NUM_ARG("--ram-size", &ram_size)
-		PARSE_NUM_ARG("--insn-cache-bits", &insn_cache_bits)
+		PARSE_NUM_ARG("--cache-bits", &cache_bits)
 #undef PARSE_NUM_ARG
 		else {
 			return usage(argv[0]);
@@ -159,7 +159,7 @@ static int main_advanced(int argc, char** argv) {
 	}
 
 	emulator_t emu;
-	emu_create(&emu, rom_base, insn_cache_bits);
+	emu_create(&emu, rom_base, cache_bits);
 	if (!emu_map_memory(&emu, rom_base, rom_size) ||
 	    !emu_map_memory(&emu, ram_base, ram_size)) {
 		fprintf(stderr,

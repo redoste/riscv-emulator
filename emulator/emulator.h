@@ -8,14 +8,16 @@
 #include "cpu.h"
 #include "emulator_sdl.h"
 #include "isa.h"
+#include "mmu_paging_guest_to_host.h"
 
 /* emulator_t : structure storing the emulator state
  */
 typedef struct emulator_t {
 	cpu_t cpu;
 
-	// TODO : add a TLB for physical guest to host mappings
-	uintptr_t pg2h_paging_table;
+	mmu_pg2h_pte pg2h_paging_table;
+	mmu_pg2h_tlb_entry_t* pg2h_tlb;
+	guest_paddr pg2h_tlb_mask;
 
 #ifdef RISCV_EMULATOR_SDL_SUPPORT
 	emu_sdl_data_t sdl_data;
@@ -25,9 +27,9 @@ typedef struct emulator_t {
 /* emu_create : create an emulator
  *     emulator_t* emu               : pointer to the emulator_t struct to initialize
  *     guest_reg pc                  : initial value for the program counter
- *     size_t instruction_cache_bits : number of significant bits for the instruction cache
+ *     size_t cache_bits             : number of significant bits for the different caches
  */
-void emu_create(emulator_t* emu, guest_reg pc, size_t instruction_cache_bits);
+void emu_create(emulator_t* emu, guest_reg pc, size_t cache_bits);
 
 /* emu_destroy : destroy an emulator and free its associated ressources
  *     emulator_t* emu : pointer to the emulator_t struct to destroy
