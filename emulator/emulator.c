@@ -69,14 +69,25 @@ bool emu_map_memory(emulator_t* emu, guest_paddr base, size_t size) {
 #define le8toh(x) (x)
 #define htole8(x) (x)
 
+#define EMU_RX_MISALIGNED(SIZE, TYPE)                                                    \
+	static inline TYPE emu_r##SIZE##_misaligned(emulator_t* emu, guest_paddr addr) { \
+		TYPE value = 0;                                                          \
+		for (size_t i = 0; i < sizeof(TYPE); i++) {                              \
+			value |= (TYPE)emu_r8(emu, addr + i) << (i * 8);                 \
+		}                                                                        \
+		return value;                                                            \
+	}
+
 #define EMU_RX(SIZE, TYPE)                                                                  \
 	TYPE emu_r##SIZE(emulator_t* emu, guest_paddr addr) {                               \
 		mmu_pg2h_pte pte;                                                           \
 		size_t offset = addr & MMU_PG2H_OFFSET_MASK;                                \
-		/* TODO : support misaligned R/W */                                         \
-		if ((offset & (sizeof(TYPE) - 1)) == 0 &&                                   \
-		    offset + sizeof(TYPE) <= MMU_PG2H_PAGE_SIZE &&                          \
-		    mmu_pg2h_get_pte(emu, addr, &pte) &&                                    \
+		if ((offset & (sizeof(TYPE) - 1)) != 0) {                                   \
+			return emu_r##SIZE##_misaligned(emu, addr);                         \
+		}                                                                           \
+		/* Read across page boudaries should be handled by the misaligned case */   \
+		assert(offset + sizeof(TYPE) <= MMU_PG2H_PAGE_SIZE);                        \
+		if (mmu_pg2h_get_pte(emu, addr, &pte) &&                                    \
 		    (pte & MMU_PG2H_PTE_VALID) &&                                           \
 		    !(pte & MMU_PG2H_PTE_TYPE_MMIO)) {                                      \
 			uint8_t* pool = (uint8_t*)(pte & MMU_PG2H_PAGE_MASK);               \
@@ -89,14 +100,26 @@ bool emu_map_memory(emulator_t* emu, guest_paddr base, size_t size) {
 		abort();                                                                    \
 	}
 
+#define EMU_WX_MISALIGNED(SIZE, TYPE)                                                                \
+	static inline void emu_w##SIZE##_misaligned(emulator_t* emu, guest_paddr addr, TYPE value) { \
+		for (size_t i = 0; i < sizeof(TYPE); i++) {                                          \
+			emu_w8(emu, addr + i, value & 0xff);                                         \
+			value >>= 8;                                                                 \
+		}                                                                                    \
+	}
+
 #define EMU_WX(SIZE, TYPE)                                                                  \
 	void emu_w##SIZE(emulator_t* emu, guest_paddr addr, TYPE value) {                   \
 		cpu_invalidate_instruction_cache(emu, addr);                                \
 		mmu_pg2h_pte pte;                                                           \
 		size_t offset = addr & MMU_PG2H_OFFSET_MASK;                                \
-		if ((offset & (sizeof(TYPE) - 1)) == 0 &&                                   \
-		    offset + sizeof(TYPE) <= MMU_PG2H_PAGE_SIZE &&                          \
-		    mmu_pg2h_get_pte(emu, addr, &pte) &&                                    \
+		if ((offset & (sizeof(TYPE) - 1)) != 0) {                                   \
+			emu_w##SIZE##_misaligned(emu, addr, value);                         \
+			return;                                                             \
+		}                                                                           \
+		/* Write across page boudaries should be handled by the misaligned case */  \
+		assert(offset + sizeof(TYPE) <= MMU_PG2H_PAGE_SIZE);                        \
+		if (mmu_pg2h_get_pte(emu, addr, &pte) &&                                    \
 		    (pte & MMU_PG2H_PTE_VALID) &&                                           \
 		    !(pte & MMU_PG2H_PTE_TYPE_MMIO)) {                                      \
 			uint8_t* pool = (uint8_t*)(pte & MMU_PG2H_PAGE_MASK);               \
@@ -109,6 +132,27 @@ bool emu_map_memory(emulator_t* emu, guest_paddr base, size_t size) {
 			addr, emu->cpu.pc);                                                 \
 		abort();                                                                    \
 	}
+
+// Reading or writing a 8 bit value misaligned shouldn't be possible
+static inline uint8_t emu_r8_misaligned(emulator_t* emu, guest_paddr addr) {
+	(void)emu;
+	(void)addr;
+	abort();
+}
+
+static inline void emu_w8_misaligned(emulator_t* emu, guest_paddr addr, uint8_t value) {
+	(void)emu;
+	(void)addr;
+	(void)value;
+	abort();
+}
+
+EMU_RX_MISALIGNED(16, uint16_t)
+EMU_RX_MISALIGNED(32, uint32_t)
+EMU_RX_MISALIGNED(64, uint64_t)
+EMU_WX_MISALIGNED(16, uint16_t)
+EMU_WX_MISALIGNED(32, uint32_t)
+EMU_WX_MISALIGNED(64, uint64_t)
 
 EMU_RX(8, uint8_t)
 EMU_RX(16, uint16_t)
