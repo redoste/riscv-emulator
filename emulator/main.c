@@ -47,7 +47,9 @@ static int main_simple(const char* hex_input_filename, const char* emu_output_fi
 	}
 
 	emulator_t emu;
-	emu_create(&emu, DEFAULT_ROM_BASE, DEFAULT_ROM_SIZE, DEFAULT_RAM_BASE, DEFAULT_RAM_SIZE, DEFAULT_CACHE_BITS);
+	emu_create(&emu, DEFAULT_ROM_BASE, DEFAULT_CACHE_BITS);
+	assert(emu_map_memory(&emu, DEFAULT_ROM_BASE, DEFAULT_ROM_SIZE));
+	assert(emu_map_memory(&emu, DEFAULT_RAM_BASE, DEFAULT_RAM_SIZE));
 
 	guest_paddr max_rom_code_addr = DEFAULT_ROM_BASE;
 	do {
@@ -157,15 +159,32 @@ static int main_advanced(int argc, char** argv) {
 	}
 
 	emulator_t emu;
-	emu_create(&emu, rom_base, rom_size, ram_base, ram_size, insn_cache_bits);
-
-	if (fread(emu.rom.pool, 1, file_size, input_file) != file_size) {
-		perror("fread");
+	emu_create(&emu, rom_base, insn_cache_bits);
+	if (!emu_map_memory(&emu, rom_base, rom_size) ||
+	    !emu_map_memory(&emu, ram_base, ram_size)) {
+		fprintf(stderr,
+			"Unable to map the emulated memory\n"
+			"Make sure it's properly aligned to page boundaries and is using cannonical addresses\n");
 		fclose(input_file);
 		emu_destroy(&emu);
 		return 1;
 	}
+
+	uint8_t* rom_content = malloc(file_size);
+	assert(rom_content != NULL);
+	if (fread(rom_content, 1, file_size, input_file) != file_size) {
+		perror("fread");
+		fclose(input_file);
+		free(rom_content);
+		emu_destroy(&emu);
+		return 1;
+	}
 	fclose(input_file);
+
+	for (size_t i = 0; i < file_size; i++) {
+		emu_w8(&emu, rom_base + i, rom_content[i]);
+	}
+	free(rom_content);
 
 	// TODO : add proper exit
 	while (emu.cpu.pc >= rom_base && emu.cpu.pc < rom_base + rom_size) {

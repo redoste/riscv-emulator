@@ -9,6 +9,8 @@
 
 #include <SDL2/SDL.h>
 
+#include "isa.h"
+
 // NOTE : forward declaration to deal with a cyclic dependency with emulator.h
 typedef struct emulator_t emulator_t;
 
@@ -32,11 +34,9 @@ void emu_sdl_init(emulator_t* emu, int width, int height);
 
 /* emu_sdl_draw : draw a frame to the SDL window
  *     emulator_t* emu       : pointer to the emulator
- *     uint8_t* frame        : pointer to the frame to draw to the window
- *     size_t max_frame_size : maximum size of the frame to make sure we don't go out of bound of
- *                             the guest memory
+ *     guest_paddr addr      : address of the frame to draw in the guest memory
  */
-void emu_sdl_draw(emulator_t* emu, uint8_t* frame, size_t max_frame_size);
+void emu_sdl_draw(emulator_t* emu, guest_paddr addr);
 
 /* emu_sdl_poll_events : poll events from the SDL window
  *                       returns 1 if a keyboard event was caught

@@ -51,16 +51,17 @@ void emu_sdl_init(emulator_t* emu, int width, int height) {
 	emu->sdl_data.height = height;
 }
 
-void emu_sdl_draw(emulator_t* emu, uint8_t* frame, size_t max_frame_size) {
+void emu_sdl_draw(emulator_t* emu, guest_paddr addr) {
 	if (!(emu->sdl_data.window && emu->sdl_data.renderer && emu->sdl_data.texture)) {
 		fprintf(stderr, "guest called DRAW emucall before INIT emucall\n");
 		abort();
 	}
 
-	size_t frame_size = emu->sdl_data.width * emu->sdl_data.height * sizeof(uint32_t);
-	if (frame_size > max_frame_size) {
-		fprintf(stderr, "guest called DRAW with a frame near the end of a memory pool\n");
-		abort();
+	const size_t frame_size = emu->sdl_data.width * emu->sdl_data.height;
+	// TODO : don't remalloc the same buffer on every draw call
+	uint32_t* frame = malloc(frame_size * sizeof(uint32_t));
+	for (size_t i = 0; i < frame_size; i++) {
+		frame[i] = emu_r32(emu, addr + (i * sizeof(uint32_t)));
 	}
 
 	int ret = SDL_UpdateTexture(emu->sdl_data.texture, NULL, frame, emu->sdl_data.width * sizeof(uint32_t));
@@ -70,6 +71,8 @@ void emu_sdl_draw(emulator_t* emu, uint8_t* frame, size_t max_frame_size) {
 	ret = SDL_RenderCopy(emu->sdl_data.renderer, emu->sdl_data.texture, NULL, NULL);
 	assert(ret == 0);
 	SDL_RenderPresent(emu->sdl_data.renderer);
+
+	free(frame);
 
 	struct timespec current_time;
 	clock_gettime(CLOCK_MONOTONIC, &current_time);

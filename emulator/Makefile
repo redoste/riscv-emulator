@@ -5,6 +5,7 @@ SRC := cpu_decode.c \
        emulator.c \
        isa.c \
        main.c \
+       mmu_paging_guest_to_host.c \
 
 ifdef SDL
 	SRC += emulator_sdl.c

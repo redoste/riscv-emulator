@@ -5,41 +5,20 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/mman.h>
 #include <time.h>
 #include <unistd.h>
 
 #include "cpu.h"
 #include "emulator.h"
 #include "emulator_sdl.h"
+#include "mmu_paging_guest_to_host.h"
 
-void emu_create(emulator_t* emu, guest_paddr rom_base, size_t rom_size, guest_paddr ram_base, size_t ram_size, size_t instruction_cache_bits) {
-	uint8_t* rom_pool = malloc(rom_size);
-	uint8_t* ram_pool = malloc(ram_size);
-	assert(rom_pool != NULL && ram_pool != NULL);
-
-	if ((ram_base >= rom_base && ram_base < rom_base + rom_size) ||
-	    (rom_base >= ram_base && rom_base < ram_base + ram_size)) {
-		fprintf(stderr, "ROM and RAM overlap\n");
-		abort();
-	}
-
-	mem_region_t rom = {
-		.pool = rom_pool,
-		.base = rom_base,
-		.size = rom_size,
-	};
-	mem_region_t ram = {
-		.pool = ram_pool,
-		.base = ram_base,
-		.size = ram_size,
-	};
-
-	emu->rom = rom;
-	emu->ram = ram;
+void emu_create(emulator_t* emu, guest_reg pc, size_t instruction_cache_bits) {
+	emu->pg2h_paging_table = 0;
 
 	memset(&emu->cpu, 0, sizeof(emu->cpu));
-	// NOTE : we assume the entry point is at the start of the ROM
-	emu->cpu.pc = emu->rom.base;
+	emu->cpu.pc = pc;
 
 	if (instruction_cache_bits > 24) {
 		fprintf(stderr, "The number of significant bits for the instruction cache is over 24 bits\n");
@@ -58,9 +37,33 @@ void emu_create(emulator_t* emu, guest_paddr rom_base, size_t rom_size, guest_pa
 }
 
 void emu_destroy(emulator_t* emu) {
-	free(emu->rom.pool);
-	free(emu->ram.pool);
+	mmu_pg2h_free(emu);
 	free(emu->cpu.instruction_cache);
+}
+
+bool emu_map_memory(emulator_t* emu, guest_paddr base, size_t size) {
+	if ((base & MMU_PG2H_OFFSET_MASK) != 0 ||
+	    (size & MMU_PG2H_OFFSET_MASK) != 0) {
+		return false;
+	}
+
+	uint8_t* pool = mmap(NULL, size, PROT_READ | PROT_WRITE,
+			     MAP_PRIVATE | MAP_ANONYMOUS, 0, 0);
+	if (pool == MAP_FAILED) {
+		return false;
+	}
+
+	for (size_t i = 0; i < size / MMU_PG2H_PAGE_SIZE; i++) {
+		if (!mmu_pg2h_map(emu, base + (i * MMU_PG2H_PAGE_SIZE), pool + (i * MMU_PG2H_PAGE_SIZE))) {
+			for (size_t j = 0; j < i; j++) {
+				mmu_pg2h_unmap(emu, base + (j * MMU_PG2H_PAGE_SIZE));
+			}
+			munmap(pool, size);
+			return false;
+		}
+	}
+
+	return true;
 }
 
 #define le8toh(x) (x)
@@ -68,13 +71,16 @@ void emu_destroy(emulator_t* emu) {
 
 #define EMU_RX(SIZE, TYPE)                                                                  \
 	TYPE emu_r##SIZE(emulator_t* emu, guest_paddr addr) {                               \
-		if (addr - emu->rom.base < emu->rom.size &&                                 \
-		    addr - emu->rom.base + sizeof(TYPE) <= emu->rom.size) {                 \
-			TYPE* value = (TYPE*)&emu->rom.pool[addr - emu->rom.base];          \
-			return le##SIZE##toh(*value);                                       \
-		} else if (addr - emu->ram.base < emu->ram.size &&                          \
-			   addr - emu->ram.base + sizeof(TYPE) <= emu->ram.size) {          \
-			TYPE* value = (TYPE*)&emu->ram.pool[addr - emu->ram.base];          \
+		mmu_pg2h_pte pte;                                                           \
+		size_t offset = addr & MMU_PG2H_OFFSET_MASK;                                \
+		/* TODO : support misaligned R/W */                                         \
+		if ((offset & (sizeof(TYPE) - 1)) == 0 &&                                   \
+		    offset + sizeof(TYPE) <= MMU_PG2H_PAGE_SIZE &&                          \
+		    mmu_pg2h_get_pte(emu, addr, &pte) &&                                    \
+		    (pte & MMU_PG2H_PTE_VALID) &&                                           \
+		    !(pte & MMU_PG2H_PTE_TYPE_MMIO)) {                                      \
+			uint8_t* pool = (uint8_t*)(pte & MMU_PG2H_PAGE_MASK);               \
+			TYPE* value = (TYPE*)&pool[offset];                                 \
 			return le##SIZE##toh(*value);                                       \
 		}                                                                           \
                                                                                             \
@@ -86,14 +92,15 @@ void emu_destroy(emulator_t* emu) {
 #define EMU_WX(SIZE, TYPE)                                                                  \
 	void emu_w##SIZE(emulator_t* emu, guest_paddr addr, TYPE value) {                   \
 		cpu_invalidate_instruction_cache(emu, addr);                                \
-		if (addr - emu->rom.base < emu->rom.size &&                                 \
-		    addr - emu->rom.base + sizeof(TYPE) <= emu->rom.size) {                 \
-			TYPE* host_addr = (TYPE*)&emu->rom.pool[addr - emu->rom.base];      \
-			*host_addr = htole##SIZE(value);                                    \
-			return;                                                             \
-		} else if (addr - emu->ram.base < emu->ram.size &&                          \
-			   addr - emu->ram.base + sizeof(TYPE) <= emu->ram.size) {          \
-			TYPE* host_addr = (TYPE*)&emu->ram.pool[addr - emu->ram.base];      \
+		mmu_pg2h_pte pte;                                                           \
+		size_t offset = addr & MMU_PG2H_OFFSET_MASK;                                \
+		if ((offset & (sizeof(TYPE) - 1)) == 0 &&                                   \
+		    offset + sizeof(TYPE) <= MMU_PG2H_PAGE_SIZE &&                          \
+		    mmu_pg2h_get_pte(emu, addr, &pte) &&                                    \
+		    (pte & MMU_PG2H_PTE_VALID) &&                                           \
+		    !(pte & MMU_PG2H_PTE_TYPE_MMIO)) {                                      \
+			uint8_t* pool = (uint8_t*)(pte & MMU_PG2H_PAGE_MASK);               \
+			TYPE* host_addr = (TYPE*)&pool[offset];                             \
 			*host_addr = htole##SIZE(value);                                    \
 			return;                                                             \
 		}                                                                           \
@@ -149,24 +156,9 @@ void emu_ecall(emulator_t* emu) {
 		case 0x494e4954:  // "INIT"
 			emu_sdl_init(emu, emu->cpu.regs[11], emu->cpu.regs[12]);
 			break;
-		case 0x44524157: {  // "DRAW"
-			guest_paddr addr = emu->cpu.regs[11];
-			uint8_t* frame;
-			size_t max_frame_size;
-			if (addr - emu->rom.base < emu->rom.size) {
-				frame = &emu->rom.pool[addr - emu->rom.base];
-				max_frame_size = emu->rom.size - (addr - emu->rom.base);
-			} else if (addr - emu->ram.base < emu->ram.size) {
-				frame = &emu->ram.pool[addr - emu->ram.base];
-				max_frame_size = emu->ram.size - (addr - emu->ram.base);
-			} else {
-				fprintf(stderr, "invalid DRAW at %016" PRIx64 " PC=%016" PRIx64 "\n",
-					addr, emu->cpu.pc);
-				abort();
-			}
-			emu_sdl_draw(emu, frame, max_frame_size);
+		case 0x44524157:  // "DRAW"
+			emu_sdl_draw(emu, emu->cpu.regs[11]);
 			break;
-		}
 		case 0x474b4559: {  // "GKEY"
 			unsigned int pressed;
 			uint8_t key;
