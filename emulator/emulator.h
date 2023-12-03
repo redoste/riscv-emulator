@@ -29,7 +29,7 @@ typedef struct emulator_t {
  */
 void emu_create(emulator_t* emu, guest_reg pc, size_t instruction_cache_bits);
 
-/* emu_destroy : destory an emulator and free its associated ressources
+/* emu_destroy : destroy an emulator and free its associated ressources
  *     emulator_t* emu : pointer to the emulator_t struct to destroy
  */
 void emu_destroy(emulator_t* emu);

@@ -39,6 +39,9 @@ void emu_create(emulator_t* emu, guest_reg pc, size_t instruction_cache_bits) {
 void emu_destroy(emulator_t* emu) {
 	mmu_pg2h_free(emu);
 	free(emu->cpu.instruction_cache);
+#ifdef RISCV_EMULATOR_SDL_SUPPORT
+	emu_sdl_destory(emu);
+#endif
 }
 
 bool emu_map_memory(emulator_t* emu, guest_paddr base, size_t size) {

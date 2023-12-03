@@ -22,6 +22,7 @@ typedef struct emu_sdl_data_t {
 	SDL_Texture* texture;
 	unsigned int width;
 	unsigned int height;
+	uint32_t* framebuffer;
 	struct timespec previous_frame_time;
 } emu_sdl_data_t;
 
@@ -48,6 +49,11 @@ void emu_sdl_draw(emulator_t* emu, guest_paddr addr);
  *                             the keycodes are following doomgeneric's map
  */
 unsigned int emu_sdl_poll_events(emulator_t* emu, unsigned int* pressed, uint8_t* key);
+
+/* emu_sdl_destroy : destroy the SDL subsystem and free its associated ressources
+ *     emulator_t* emu : pointer to the emulator
+ */
+void emu_sdl_destory(emulator_t* emu);
 
 #endif
 

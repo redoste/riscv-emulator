@@ -49,6 +49,10 @@ void emu_sdl_init(emulator_t* emu, int width, int height) {
 	assert(width > 0 && height > 0);
 	emu->sdl_data.width = width;
 	emu->sdl_data.height = height;
+
+	uint32_t* framebuffer = malloc(width * height * sizeof(uint32_t));
+	assert(framebuffer != NULL);
+	emu->sdl_data.framebuffer = framebuffer;
 }
 
 void emu_sdl_draw(emulator_t* emu, guest_paddr addr) {
@@ -58,21 +62,17 @@ void emu_sdl_draw(emulator_t* emu, guest_paddr addr) {
 	}
 
 	const size_t frame_size = emu->sdl_data.width * emu->sdl_data.height;
-	// TODO : don't remalloc the same buffer on every draw call
-	uint32_t* frame = malloc(frame_size * sizeof(uint32_t));
 	for (size_t i = 0; i < frame_size; i++) {
-		frame[i] = emu_r32(emu, addr + (i * sizeof(uint32_t)));
+		emu->sdl_data.framebuffer[i] = emu_r32(emu, addr + (i * sizeof(uint32_t)));
 	}
 
-	int ret = SDL_UpdateTexture(emu->sdl_data.texture, NULL, frame, emu->sdl_data.width * sizeof(uint32_t));
+	int ret = SDL_UpdateTexture(emu->sdl_data.texture, NULL, emu->sdl_data.framebuffer, emu->sdl_data.width * sizeof(uint32_t));
 	assert(ret == 0);
 	ret = SDL_RenderClear(emu->sdl_data.renderer);
 	assert(ret == 0);
 	ret = SDL_RenderCopy(emu->sdl_data.renderer, emu->sdl_data.texture, NULL, NULL);
 	assert(ret == 0);
 	SDL_RenderPresent(emu->sdl_data.renderer);
-
-	free(frame);
 
 	struct timespec current_time;
 	clock_gettime(CLOCK_MONOTONIC, &current_time);
@@ -139,6 +139,14 @@ unsigned int emu_sdl_poll_events(emulator_t* emu, unsigned int* pressed, uint8_t
 		}
 	}
 	return 0;
+}
+
+void emu_sdl_destory(emulator_t* emu) {
+	free(emu->sdl_data.framebuffer);
+	SDL_DestroyTexture(emu->sdl_data.texture);
+	SDL_DestroyRenderer(emu->sdl_data.renderer);
+	SDL_DestroyWindow(emu->sdl_data.window);
+	memset(&emu->sdl_data, 0, sizeof(emu->sdl_data));
 }
 
 #endif
