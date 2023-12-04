@@ -6,6 +6,7 @@
 #include <stdint.h>
 
 #include "cpu.h"
+#include "devices.h"
 #include "emulator_sdl.h"
 #include "isa.h"
 #include "mmu_paging_guest_to_host.h"
@@ -18,6 +19,10 @@ typedef struct emulator_t {
 	mmu_pg2h_pte pg2h_paging_table;
 	mmu_pg2h_tlb_entry_t* pg2h_tlb;
 	guest_paddr pg2h_tlb_mask;
+
+	device_mmio_t* mmio_devices;
+	size_t mmio_devices_len;
+	size_t mmio_devices_capacity;
 
 #ifdef RISCV_EMULATOR_SDL_SUPPORT
 	emu_sdl_data_t sdl_data;
@@ -44,6 +49,15 @@ void emu_destroy(emulator_t* emu);
  *     size_t size      : size of the memory chunk to mmap
  */
 bool emu_map_memory(emulator_t* emu, guest_paddr base, size_t size);
+
+/* emu_add_mmio_device : map and add a MMIO device to the guest
+ *                       returns true if the device was successfully attached
+ *                       returns false otherwise
+ *     emulator_t* emu       : pointer to the emulator
+ *     guest_paddr base      : base guest physical address for the new device
+ *     device_mmio_t* device : pointer to the MMIO device handlers
+ */
+bool emu_add_mmio_device(emulator_t* emu, guest_paddr base, const device_mmio_t* device);
 
 /* emu_wx : write a x bits value to the guest memory
  *     emulator_t* emu  : pointer to the emulator

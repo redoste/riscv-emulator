@@ -10,6 +10,7 @@
 #include <unistd.h>
 
 #include "cpu.h"
+#include "devices.h"
 #include "emulator.h"
 #include "emulator_sdl.h"
 #include "mmu_paging_guest_to_host.h"
@@ -39,12 +40,20 @@ void emu_create(emulator_t* emu, guest_reg pc, size_t cache_bits) {
 	assert(emu->pg2h_tlb != NULL);
 	memset(emu->pg2h_tlb, 0, pg2h_tlb_size);
 
+	emu->mmio_devices = NULL;
+	emu->mmio_devices_capacity = emu->mmio_devices_len = 0;
+
 #ifdef RISCV_EMULATOR_SDL_SUPPORT
 	memset(&emu->sdl_data, 0, sizeof(emu->sdl_data));
 #endif
 }
 
 void emu_destroy(emulator_t* emu) {
+	for (size_t i = 0; i < emu->mmio_devices_len; i++) {
+		emu->mmio_devices[i].free_handler(emu, emu->mmio_devices[i].device_data);
+	}
+	free(emu->mmio_devices);
+
 	mmu_pg2h_free(emu);
 	free(emu->cpu.instruction_cache);
 	free(emu->pg2h_tlb);
@@ -78,6 +87,25 @@ bool emu_map_memory(emulator_t* emu, guest_paddr base, size_t size) {
 	return true;
 }
 
+bool emu_add_mmio_device(emulator_t* emu, guest_paddr base, const device_mmio_t* device) {
+	if (emu->mmio_devices_capacity == 0) {
+		emu->mmio_devices_capacity = 16;
+		emu->mmio_devices = malloc(sizeof(device_mmio_t) * emu->mmio_devices_capacity);
+		assert(emu->mmio_devices != NULL);
+	} else if (emu->mmio_devices_len == emu->mmio_devices_capacity) {
+		emu->mmio_devices_capacity *= 2;
+		emu->mmio_devices = realloc(emu->mmio_devices, sizeof(device_mmio_t) * emu->mmio_devices_capacity);
+		assert(emu->mmio_devices != NULL);
+	}
+
+	emu->mmio_devices[emu->mmio_devices_len] = *device;
+	if (!mmu_pg2h_map_mmio(emu, base, emu->mmio_devices_len)) {
+		return false;
+	}
+	emu->mmio_devices_len++;
+	return true;
+}
+
 #define le8toh(x) (x)
 #define htole8(x) (x)
 
@@ -90,26 +118,31 @@ bool emu_map_memory(emulator_t* emu, guest_paddr base, size_t size) {
 		return value;                                                            \
 	}
 
-#define EMU_RX(SIZE, TYPE)                                                                  \
-	TYPE emu_r##SIZE(emulator_t* emu, guest_paddr addr) {                               \
-		mmu_pg2h_pte pte;                                                           \
-		size_t offset = addr & MMU_PG2H_OFFSET_MASK;                                \
-		if ((offset & (sizeof(TYPE) - 1)) != 0) {                                   \
-			return emu_r##SIZE##_misaligned(emu, addr);                         \
-		}                                                                           \
-		/* Read across page boudaries should be handled by the misaligned case */   \
-		assert(offset + sizeof(TYPE) <= MMU_PG2H_PAGE_SIZE);                        \
-		if (mmu_pg2h_get_pte(emu, addr, &pte) &&                                    \
-		    (pte & MMU_PG2H_PTE_VALID) &&                                           \
-		    !(pte & MMU_PG2H_PTE_TYPE_MMIO)) {                                      \
-			uint8_t* pool = (uint8_t*)(pte & MMU_PG2H_PAGE_MASK);               \
-			TYPE* value = (TYPE*)&pool[offset];                                 \
-			return le##SIZE##toh(*value);                                       \
-		}                                                                           \
-                                                                                            \
-		fprintf(stderr, "invalid r" #SIZE " at %016" PRIx64 " PC=%016" PRIx64 "\n", \
-			addr, emu->cpu.pc);                                                 \
-		abort();                                                                    \
+#define EMU_RX(SIZE, TYPE)                                                                          \
+	TYPE emu_r##SIZE(emulator_t* emu, guest_paddr addr) {                                       \
+		mmu_pg2h_pte pte;                                                                   \
+		size_t offset = addr & MMU_PG2H_OFFSET_MASK;                                        \
+		if ((offset & (sizeof(TYPE) - 1)) != 0) {                                           \
+			return emu_r##SIZE##_misaligned(emu, addr);                                 \
+		}                                                                                   \
+		/* Read across page boudaries should be handled by the misaligned case */           \
+		assert(offset + sizeof(TYPE) <= MMU_PG2H_PAGE_SIZE);                                \
+                                                                                                    \
+		if (!mmu_pg2h_get_pte(emu, addr, &pte)) {                                           \
+			fprintf(stderr, "invalid r" #SIZE " at %016" PRIx64 " PC=%016" PRIx64 "\n", \
+				addr, emu->cpu.pc);                                                 \
+			abort();                                                                    \
+		}                                                                                   \
+                                                                                                    \
+		if (pte & MMU_PG2H_PTE_TYPE_MMIO) {                                                 \
+			size_t device_index = pte >> MMU_PG2H_PAGE_SHIFT;                           \
+			device_mmio_t* device = &emu->mmio_devices[device_index];                   \
+			return device->r##SIZE##_handler(emu, device->device_data, offset);         \
+		} else {                                                                            \
+			uint8_t* pool = (uint8_t*)(pte & MMU_PG2H_PAGE_MASK);                       \
+			TYPE* value = (TYPE*)&pool[offset];                                         \
+			return le##SIZE##toh(*value);                                               \
+		}                                                                                   \
 	}
 
 #define EMU_WX_MISALIGNED(SIZE, TYPE)                                                                \
@@ -120,29 +153,33 @@ bool emu_map_memory(emulator_t* emu, guest_paddr base, size_t size) {
 		}                                                                                    \
 	}
 
-#define EMU_WX(SIZE, TYPE)                                                                  \
-	void emu_w##SIZE(emulator_t* emu, guest_paddr addr, TYPE value) {                   \
-		cpu_invalidate_instruction_cache(emu, addr);                                \
-		mmu_pg2h_pte pte;                                                           \
-		size_t offset = addr & MMU_PG2H_OFFSET_MASK;                                \
-		if ((offset & (sizeof(TYPE) - 1)) != 0) {                                   \
-			emu_w##SIZE##_misaligned(emu, addr, value);                         \
-			return;                                                             \
-		}                                                                           \
-		/* Write across page boudaries should be handled by the misaligned case */  \
-		assert(offset + sizeof(TYPE) <= MMU_PG2H_PAGE_SIZE);                        \
-		if (mmu_pg2h_get_pte(emu, addr, &pte) &&                                    \
-		    (pte & MMU_PG2H_PTE_VALID) &&                                           \
-		    !(pte & MMU_PG2H_PTE_TYPE_MMIO)) {                                      \
-			uint8_t* pool = (uint8_t*)(pte & MMU_PG2H_PAGE_MASK);               \
-			TYPE* host_addr = (TYPE*)&pool[offset];                             \
-			*host_addr = htole##SIZE(value);                                    \
-			return;                                                             \
-		}                                                                           \
-                                                                                            \
-		fprintf(stderr, "invalid w" #SIZE " at %016" PRIx64 " PC=%016" PRIx64 "\n", \
-			addr, emu->cpu.pc);                                                 \
-		abort();                                                                    \
+#define EMU_WX(SIZE, TYPE)                                                                          \
+	void emu_w##SIZE(emulator_t* emu, guest_paddr addr, TYPE value) {                           \
+		cpu_invalidate_instruction_cache(emu, addr);                                        \
+		mmu_pg2h_pte pte;                                                                   \
+		size_t offset = addr & MMU_PG2H_OFFSET_MASK;                                        \
+		if ((offset & (sizeof(TYPE) - 1)) != 0) {                                           \
+			emu_w##SIZE##_misaligned(emu, addr, value);                                 \
+			return;                                                                     \
+		}                                                                                   \
+		/* Write across page boudaries should be handled by the misaligned case */          \
+		assert(offset + sizeof(TYPE) <= MMU_PG2H_PAGE_SIZE);                                \
+                                                                                                    \
+		if (!mmu_pg2h_get_pte(emu, addr, &pte)) {                                           \
+			fprintf(stderr, "invalid w" #SIZE " at %016" PRIx64 " PC=%016" PRIx64 "\n", \
+				addr, emu->cpu.pc);                                                 \
+			abort();                                                                    \
+		}                                                                                   \
+                                                                                                    \
+		if (pte & MMU_PG2H_PTE_TYPE_MMIO) {                                                 \
+			size_t device_index = pte >> MMU_PG2H_PAGE_SHIFT;                           \
+			device_mmio_t* device = &emu->mmio_devices[device_index];                   \
+			device->w##SIZE##_handler(emu, device->device_data, offset, value);         \
+		} else {                                                                            \
+			uint8_t* pool = (uint8_t*)(pte & MMU_PG2H_PAGE_MASK);                       \
+			TYPE* host_addr = (TYPE*)&pool[offset];                                     \
+			*host_addr = htole##SIZE(value);                                            \
+		}                                                                                   \
 	}
 
 // Reading or writing a 8 bit value misaligned shouldn't be possible

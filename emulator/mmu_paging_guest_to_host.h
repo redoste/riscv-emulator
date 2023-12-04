@@ -2,6 +2,7 @@
 #define MMU_PG2H
 
 #include <stdbool.h>
+#include <stddef.h>
 #include <stdint.h>
 
 #include "isa.h"
@@ -79,6 +80,15 @@ typedef struct emulator_t emulator_t;
  *     void* host_page                 : host page to map
  */
 bool mmu_pg2h_map(emulator_t* emu, guest_paddr guest_physical_page, void* host_page);
+
+/* mmu_pg2h_map_mmio : map a new guest physical page to a MMIO device
+ *                     returns true if the page was successfully mapped
+ *                     returns false otherwise
+ *     emulator_t* emu                 : pointer to the emulator
+ *     guest_paddr guest_physical_page : guest physical page to map
+ *     size_t device_index             : index of the device to map
+ */
+bool mmu_pg2h_map_mmio(emulator_t* emu, guest_paddr guest_physical_page, size_t device_index);
 
 /* mmu_pg2h_unmap : unmap a guest physical page
  *                  returns true if the page was successfully unmapped

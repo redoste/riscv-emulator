@@ -20,12 +20,9 @@ static void* mmu_pg2h_map_page_table(void) {
 	return page;
 }
 
-bool mmu_pg2h_map(emulator_t* emu, guest_paddr guest_physical_page, void* host_page) {
-	uintptr_t host_page_int = (uintptr_t)host_page;
-
-	if ((guest_physical_page & MMU_PG2H_OFFSET_MASK) != 0 ||
-	    (host_page_int & MMU_PG2H_OFFSET_MASK) != 0) {
-		// The guest physical address or the host address aren't aligned to a page boundary
+static bool mmu_pg2h_walk_and_allocate(emulator_t* emu, guest_paddr guest_physical_page, mmu_pg2h_pte** pte) {
+	if ((guest_physical_page & MMU_PG2H_OFFSET_MASK) != 0) {
+		// The guest physical address isn't aligned to a page boundary
 		return false;
 	}
 	if (MMU_PG2H_PPN_TOP(guest_physical_page) != MMU_PG2H_PPN_TOPP &&
@@ -56,12 +53,47 @@ bool mmu_pg2h_map(emulator_t* emu, guest_paddr guest_physical_page, void* host_p
 		previous_level_entry = &current_level_table[ppn[i]];
 	}
 
-	mmu_pg2h_pte* level0_entry = previous_level_entry;
+	*pte = previous_level_entry;
+	return true;
+}
+
+bool mmu_pg2h_map(emulator_t* emu, guest_paddr guest_physical_page, void* host_page) {
+	uintptr_t host_page_int = (uintptr_t)host_page;
+
+	if ((host_page_int & MMU_PG2H_OFFSET_MASK) != 0) {
+		// The host address isn't aligned to a page boundary
+		return false;
+	}
+
+	mmu_pg2h_pte* level0_entry;
+	if (!mmu_pg2h_walk_and_allocate(emu, guest_physical_page, &level0_entry)) {
+		return false;
+	}
+
 	if (*level0_entry & MMU_PG2H_PTE_VALID) {
 		// This guest physical page is already mapped
 		return false;
 	}
 	*level0_entry = host_page_int | MMU_PG2H_PTE_VALID | MMU_PG2H_PTE_TYPE_POOL;
+
+	/* NOTE : we don't invalidate the TLB as there shouldn't be any valid entry with this tag,
+	 *        it was already marked as invalid by mmu_pg2h_unmap
+	 */
+	return true;
+}
+
+bool mmu_pg2h_map_mmio(emulator_t* emu, guest_paddr guest_physical_page, size_t device_index) {
+	mmu_pg2h_pte* level0_entry;
+	if (!mmu_pg2h_walk_and_allocate(emu, guest_physical_page, &level0_entry)) {
+		return false;
+	}
+
+	if (*level0_entry & MMU_PG2H_PTE_VALID) {
+		// This guest physical page is already mapped
+		return false;
+	}
+	*level0_entry = (device_index << MMU_PG2H_PAGE_SHIFT) |
+			MMU_PG2H_PTE_VALID | MMU_PG2H_PTE_TYPE_MMIO;
 
 	/* NOTE : we don't invalidate the TLB as there shouldn't be any valid entry with this tag,
 	 *        it was already marked as invalid by mmu_pg2h_unmap
