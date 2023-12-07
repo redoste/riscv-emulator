@@ -5,6 +5,11 @@ CC := gcc
 CFLAGS := -Wall -Wextra -Wpedantic -Wstrict-prototypes -Wvla -I../common
 LDFLAGS :=
 
+HOST_CC := gcc
+
+HOST_CFLAGS := $(CFLAGS) -O0 -g
+HOST_LDFLAGS := $(LDFLAGS)
+
 ifdef RELEASE
 	CFLAGS += -O2
 else

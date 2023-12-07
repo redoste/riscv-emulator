@@ -13,6 +13,21 @@ ifdef SDL
 	LDFLAGS += -lSDL2
 endif
 
+DYNAREC_CODEGEN_DIR  := dynarec_x86_64_codegen
+DYNAREC_CODEGEN_FILE := dynarec_x86_64_codegen.c
+DYNAREC_CODEGEN_SRC  := $(DYNAREC_CODEGEN_DIR)/main.c \
+                        $(DYNAREC_CODEGEN_DIR)/assembler.c \
+                        $(DYNAREC_CODEGEN_DIR)/codegen.c \
+                        $(DYNAREC_CODEGEN_DIR)/x86_isa.c
+DYNAREC_CODEGEN_OBJ  := $(DYNAREC_CODEGEN_SRC:%.c=%.o)
+DYNAREC_CODEGEN_OUT  := $(DYNAREC_CODEGEN_DIR)/codegen
+
+ifdef DYNAREC_X86_64
+	SRC += dynarec_x86_64.c \
+	       $(DYNAREC_CODEGEN_FILE)
+	CFLAGS += -DRISCV_EMULATOR_DYNAREC_X86_64_SUPPORT
+endif
+
 OBJ := $(SRC:%.c=%.o)
 OUT := ../riscv-emulator
 
@@ -25,8 +40,20 @@ $(OUT): $(OBJ)
 $(OBJ): %.o: %.c
 	$(CC) -MMD -MT $@ $(CFLAGS) -c $< -o $@
 
+$(DYNAREC_CODEGEN_FILE): $(DYNAREC_CODEGEN_OUT)
+	./$< > $@
+
+$(DYNAREC_CODEGEN_OUT): $(DYNAREC_CODEGEN_OBJ)
+	$(HOST_CC) $^ -o $@ $(HOST_LDFLAGS)
+
+$(DYNAREC_CODEGEN_OBJ): %.o: %.c
+	$(HOST_CC) -MMD -MT $@ $(HOST_CFLAGS) -c $< -o $@
+
 .PHONY: clean
 clean:
 	-rm -v *.o *.d
+	-rm -v $(DYNAREC_CODEGEN_DIR)/*.o $(DYNAREC_CODEGEN_DIR)/*.d
+	-rm -v $(DYNAREC_CODEGEN_FILE) $(DYNAREC_CODEGEN_OUT)
 
 -include $(OBJ:%.o=%.d)
+-include $(DYNAREC_CODEGEN_OBJ:%.o=%.d)

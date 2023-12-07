@@ -12,6 +12,10 @@ Makefile.config
 *.o
 *.d
 
+# Codegen artifacts
+emulator/dynarec_x86_64_codegen/codegen
+emulator/dynarec_x86_64_codegen.c
+
 # Tests artifacts
 *.hex
 *.bin
