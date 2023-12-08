@@ -302,6 +302,8 @@ static void cpu_execute_type_j(emulator_t* emu, const ins_t* instruction) {
 }
 
 void cpu_execute(emulator_t* emu) {
+	assert(!emu->cpu.dynarec_enabled);
+
 	if ((emu->cpu.pc & 0x3) != 0) {
 		fprintf(stderr, "Unaligned PC=%016" PRIx64 "\n", emu->cpu.pc);
 		abort();

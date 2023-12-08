@@ -11,15 +11,17 @@
 
 #include "cpu.h"
 #include "devices.h"
+#include "dynarec_x86_64.h"
 #include "emulator.h"
 #include "emulator_sdl.h"
 #include "mmu_paging_guest_to_host.h"
 
-void emu_create(emulator_t* emu, guest_reg pc, size_t cache_bits) {
+void emu_create(emulator_t* emu, guest_reg pc, size_t cache_bits, bool dynarec_enabled) {
 	emu->pg2h_paging_table = 0;
 
 	memset(&emu->cpu, 0, sizeof(emu->cpu));
 	emu->cpu.pc = pc;
+	emu->cpu.dynarec_enabled = dynarec_enabled;
 
 	if (cache_bits > 24) {
 		fprintf(stderr, "The number of significant bits for the caches is over 24 bits\n");
@@ -28,11 +30,23 @@ void emu_create(emulator_t* emu, guest_reg pc, size_t cache_bits) {
 
 	const guest_paddr caches_mask = (1ull << cache_bits) - 1;
 
-	const size_t instruction_cache_size = (1ull << cache_bits) * sizeof(emu->cpu.instruction_cache[0]);
-	emu->cpu.instruction_cache = malloc(instruction_cache_size);
+	size_t instruction_cache_size;
+	if (dynarec_enabled) {
+#ifdef RISCV_EMULATOR_DYNAREC_X86_64_SUPPORT
+		instruction_cache_size = (1ull << cache_bits) *
+					 sizeof(emu->cpu.instruction_cache.as_dr_ins[0]);
+#else
+		fprintf(stderr, "Dynarec support isn't enabled\n");
+		abort();
+#endif
+	} else {
+		instruction_cache_size = (1ull << cache_bits) *
+					 sizeof(emu->cpu.instruction_cache.as_cached_ins[0]);
+	}
+	emu->cpu.instruction_cache.as_ptr = malloc(instruction_cache_size);
 	emu->cpu.instruction_cache_mask = caches_mask;
-	assert(emu->cpu.instruction_cache != NULL);
-	memset(emu->cpu.instruction_cache, 0, instruction_cache_size);
+	assert(emu->cpu.instruction_cache.as_ptr != NULL);
+	memset(emu->cpu.instruction_cache.as_ptr, 0, instruction_cache_size);
 
 	const size_t pg2h_tlb_size = (1ull << cache_bits) * sizeof(emu->pg2h_tlb[0]);
 	emu->pg2h_tlb = malloc(pg2h_tlb_size);
@@ -55,7 +69,12 @@ void emu_destroy(emulator_t* emu) {
 	free(emu->mmio_devices);
 
 	mmu_pg2h_free(emu);
-	free(emu->cpu.instruction_cache);
+#ifdef RISCV_EMULATOR_DYNAREC_X86_64_SUPPORT
+	if (emu->cpu.dynarec_enabled) {
+		dr_free(emu);
+	}
+#endif
+	free(emu->cpu.instruction_cache.as_ptr);
 	free(emu->pg2h_tlb);
 #ifdef RISCV_EMULATOR_SDL_SUPPORT
 	emu_sdl_destory(emu);

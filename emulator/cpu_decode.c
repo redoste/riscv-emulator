@@ -1,8 +1,10 @@
 #include <assert.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <sys/mman.h>
 
 #include "cpu.h"
+#include "dynarec_x86_64.h"
 #include "emulator.h"
 #include "isa.h"
 
@@ -69,10 +71,11 @@ bool cpu_decode(uint32_t encoded_instruction, ins_t* decoded_instruction) {
 }
 
 bool cpu_decode_and_cache(emulator_t* emu, guest_paddr instruction_addr, ins_t** decoded_instruction) {
+	assert(!emu->cpu.dynarec_enabled);
 	assert((instruction_addr & 3) == 0);
 
 	size_t cache_index = (instruction_addr >> 2) & emu->cpu.instruction_cache_mask;
-	cached_ins_t* cached_instruction = &emu->cpu.instruction_cache[cache_index];
+	cached_ins_t* cached_instruction = &emu->cpu.instruction_cache.as_cached_ins[cache_index];
 	*decoded_instruction = &cached_instruction->decoded_instruction;
 
 	if (cached_instruction->decoded_instruction.type != INS_TYPE_INVALID &&
@@ -90,8 +93,35 @@ bool cpu_decode_and_cache(emulator_t* emu, guest_paddr instruction_addr, ins_t**
 }
 
 void cpu_invalidate_instruction_cache(emulator_t* emu, guest_paddr addr) {
+#ifdef RISCV_EMULATOR_DYNAREC_X86_64_SUPPORT
+	if (emu->cpu.dynarec_enabled) {
+		size_t cache_index = (addr >> 2) & emu->cpu.instruction_cache_mask;
+		dr_ins_t* cached_instruction = &emu->cpu.instruction_cache.as_dr_ins[cache_index];
+
+		if (cached_instruction->native_code != NULL &&
+		    cached_instruction->tag == (addr & ~3)) {
+			uintptr_t page_base = (uintptr_t)cached_instruction->native_code & DYNAREC_PAGE_MASK;
+			munmap((void*)page_base, DYNAREC_PAGE_SIZE);
+
+			for (guest_reg pc = cached_instruction->block_entry;; pc += 4) {
+				size_t index = (pc >> 2) & emu->cpu.instruction_cache_mask;
+				dr_ins_t* entry = &emu->cpu.instruction_cache.as_dr_ins[index];
+				if (entry->block_entry == cached_instruction->block_entry) {
+					entry->native_code = NULL;
+					entry->tag = entry->block_entry = 0;
+				} else {
+					break;
+				}
+			}
+		}
+		return;
+	}
+#else
+	assert(!emu->cpu.dynarec_enabled);
+#endif
+
 	size_t cache_index = (addr >> 2) & emu->cpu.instruction_cache_mask;
-	cached_ins_t* cached_instruction = &emu->cpu.instruction_cache[cache_index];
+	cached_ins_t* cached_instruction = &emu->cpu.instruction_cache.as_cached_ins[cache_index];
 	if (cached_instruction->decoded_instruction.type != INS_TYPE_INVALID &&
 	    cached_instruction->tag == (addr & ~3)) {
 		cached_instruction->decoded_instruction.type = INS_TYPE_INVALID;

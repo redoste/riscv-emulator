@@ -47,9 +47,10 @@ static int main_simple(const char* hex_input_filename, const char* emu_output_fi
 	}
 
 	emulator_t emu;
-	emu_create(&emu, DEFAULT_ROM_BASE, DEFAULT_CACHE_BITS);
-	assert(emu_map_memory(&emu, DEFAULT_ROM_BASE, DEFAULT_ROM_SIZE));
-	assert(emu_map_memory(&emu, DEFAULT_RAM_BASE, DEFAULT_RAM_SIZE));
+	emu_create(&emu, DEFAULT_ROM_BASE, DEFAULT_CACHE_BITS, false);
+	bool map_ret = emu_map_memory(&emu, DEFAULT_ROM_BASE, DEFAULT_ROM_SIZE);
+	map_ret &= emu_map_memory(&emu, DEFAULT_RAM_BASE, DEFAULT_RAM_SIZE);
+	assert(map_ret);
 
 	guest_paddr max_rom_code_addr = DEFAULT_ROM_BASE;
 	do {
@@ -159,7 +160,7 @@ static int main_advanced(int argc, char** argv) {
 	}
 
 	emulator_t emu;
-	emu_create(&emu, rom_base, cache_bits);
+	emu_create(&emu, rom_base, cache_bits, false);
 	if (!emu_map_memory(&emu, rom_base, rom_size) ||
 	    !emu_map_memory(&emu, ram_base, ram_size)) {
 		fprintf(stderr,

@@ -4,6 +4,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#include "dynarec_x86_64.h"
 #include "isa.h"
 
 /* cpu_t : structure storing the current state of the emulated CPU
@@ -12,8 +13,16 @@ typedef struct cpu_t {
 	guest_paddr pc;
 	guest_reg regs[REG_COUNT];
 
-	cached_ins_t* instruction_cache;
+	union {
+		void* as_ptr;
+		cached_ins_t* as_cached_ins;
+#ifdef RISCV_EMULATOR_DYNAREC_X86_64_SUPPORT
+		dr_ins_t* as_dr_ins;
+#endif
+	} instruction_cache;
 	guest_paddr instruction_cache_mask;
+
+	bool dynarec_enabled;
 
 	bool jump_pending;
 } cpu_t;

@@ -8,7 +8,7 @@
 #include "emulator.h"
 #include "isa.h"
 
-static inline bool dr_emit_x86_code(const dr_x86_code_t* x86_code, const ins_t* instruction, dr_block_t* block) {
+static inline bool dr_emit_x86_code(emulator_t* emu, const dr_x86_code_t* x86_code, const ins_t* instruction, dr_block_t* block) {
 	if (block->pos + x86_code->code_size >= (DYNAREC_PAGE_SIZE - DYNAREC_PROLOGUE_SIZE)) {
 		return false;
 	}
@@ -27,13 +27,30 @@ static inline bool dr_emit_x86_code(const dr_x86_code_t* x86_code, const ins_t* 
 		*(int32_t*)(&block->page[block->pos + x86_code->imm_reloc]) = instruction->imm;
 	}
 
-	// TODO : track block->pc @ block->pos in the instruction cache
+	size_t cache_index = (block->pc >> 2) & emu->cpu.instruction_cache_mask;
+	dr_ins_t* cached_instruction = &emu->cpu.instruction_cache.as_dr_ins[cache_index];
+
+	if (cached_instruction->native_code != NULL) {
+		if (cached_instruction->block_entry == block->base) {
+			/* The current block is too big to fit in the instruction cache and we're
+			 * looping back to an other instruction alread owned by this block
+			 */
+			return false;
+		}
+		cpu_invalidate_instruction_cache(emu, cached_instruction->tag);
+		assert(cached_instruction->native_code == NULL);
+	}
+
+	cached_instruction->tag = block->pc;
+	cached_instruction->block_entry = block->base;
+	cached_instruction->native_code = block->page + block->pos;
+
 	block->pos += x86_code->code_size;
 
 	return true;
 }
 
-static inline bool dr_emit_type_r(const ins_t* instruction, dr_block_t* block) {
+static inline bool dr_emit_type_r(emulator_t* emu, const ins_t* instruction, dr_block_t* block) {
 	size_t zero_selector = ((instruction->rs1 == 0) << 0) |
 			       ((instruction->rs2 == 0) << 1) |
 			       ((instruction->rd == 0) << 2);
@@ -42,7 +59,8 @@ static inline bool dr_emit_type_r(const ins_t* instruction, dr_block_t* block) {
 #define X_R(MNEMONIC, OPCODE, F3, F7, EXPR)                                \
 	case ((OPCODE >> 2) | (F3 << 5) | (F7 << 8)): {                    \
 		assert(DR_X86_##MNEMONIC[0].code_size > 0);                \
-		return dr_emit_x86_code(&DR_X86_##MNEMONIC[zero_selector], \
+		return dr_emit_x86_code(emu,                               \
+					&DR_X86_##MNEMONIC[zero_selector], \
 					instruction, block);               \
 	}
 #define X_I(MNEMONIC, OPCODE, F3, EXPR)
@@ -67,7 +85,7 @@ static inline bool dr_emit_type_r(const ins_t* instruction, dr_block_t* block) {
 	}
 }
 
-static inline bool dr_emit_type_i(const ins_t* instruction, dr_block_t* block) {
+static inline bool dr_emit_type_i(emulator_t* emu, const ins_t* instruction, dr_block_t* block) {
 	size_t zero_selector = ((instruction->rs1 == 0) << 0) |
 			       ((instruction->rd == 0) << 1);
 
@@ -76,7 +94,8 @@ static inline bool dr_emit_type_i(const ins_t* instruction, dr_block_t* block) {
 #define X_I(MNEMONIC, OPCODE, F3, EXPR)                                    \
 	case ((OPCODE >> 2) | (F3 << 5)): {                                \
 		assert(DR_X86_##MNEMONIC[0].code_size > 0);                \
-		return dr_emit_x86_code(&DR_X86_##MNEMONIC[zero_selector], \
+		return dr_emit_x86_code(emu,                               \
+					&DR_X86_##MNEMONIC[zero_selector], \
 					instruction, block);               \
 	}
 #define X_S(MNEMONIC, OPCODE, F3, EXPR)
@@ -100,7 +119,7 @@ static inline bool dr_emit_type_i(const ins_t* instruction, dr_block_t* block) {
 	}
 }
 
-static inline bool dr_emit_type_s(const ins_t* instruction, dr_block_t* block) {
+static inline bool dr_emit_type_s(emulator_t* emu, const ins_t* instruction, dr_block_t* block) {
 	size_t zero_selector = ((instruction->rs1 == 0) << 0) |
 			       ((instruction->rs2 == 0) << 1);
 
@@ -110,7 +129,8 @@ static inline bool dr_emit_type_s(const ins_t* instruction, dr_block_t* block) {
 #define X_S(MNEMONIC, OPCODE, F3, EXPR)                                    \
 	case ((OPCODE >> 2) | (F3 << 5)): {                                \
 		assert(DR_X86_##MNEMONIC[0].code_size > 0);                \
-		return dr_emit_x86_code(&DR_X86_##MNEMONIC[zero_selector], \
+		return dr_emit_x86_code(emu,                               \
+					&DR_X86_##MNEMONIC[zero_selector], \
 					instruction, block);               \
 	}
 #define X_B(MNEMONIC, OPCODE, F3, EXPR)
@@ -133,7 +153,7 @@ static inline bool dr_emit_type_s(const ins_t* instruction, dr_block_t* block) {
 	}
 }
 
-static inline bool dr_emit_type_b(const ins_t* instruction, dr_block_t* block) {
+static inline bool dr_emit_type_b(emulator_t* emu, const ins_t* instruction, dr_block_t* block) {
 	size_t zero_selector = ((instruction->rs1 == 0) << 0) |
 			       ((instruction->rs2 == 0) << 1);
 
@@ -144,7 +164,8 @@ static inline bool dr_emit_type_b(const ins_t* instruction, dr_block_t* block) {
 #define X_B(MNEMONIC, OPCODE, F3, EXPR)                                    \
 	case ((OPCODE >> 2) | (F3 << 5)): {                                \
 		assert(DR_X86_##MNEMONIC[0].code_size > 0);                \
-		return dr_emit_x86_code(&DR_X86_##MNEMONIC[zero_selector], \
+		return dr_emit_x86_code(emu,                               \
+					&DR_X86_##MNEMONIC[zero_selector], \
 					instruction, block);               \
 	}
 #define X_U(MNEMONIC, OPCODE, EXPR)
@@ -166,7 +187,7 @@ static inline bool dr_emit_type_b(const ins_t* instruction, dr_block_t* block) {
 	}
 }
 
-static inline bool dr_emit_type_u(const ins_t* instruction, dr_block_t* block) {
+static inline bool dr_emit_type_u(emulator_t* emu, const ins_t* instruction, dr_block_t* block) {
 	size_t zero_selector = (instruction->rd == 0);
 
 	switch (instruction->opcode_switch) {
@@ -177,7 +198,8 @@ static inline bool dr_emit_type_u(const ins_t* instruction, dr_block_t* block) {
 #define X_U(MNEMONIC, OPCODE, EXPR)                                        \
 	case (OPCODE >> 2): {                                              \
 		assert(DR_X86_##MNEMONIC[0].code_size > 0);                \
-		return dr_emit_x86_code(&DR_X86_##MNEMONIC[zero_selector], \
+		return dr_emit_x86_code(emu,                               \
+					&DR_X86_##MNEMONIC[zero_selector], \
 					instruction, block);               \
 	}
 #define X_J(MNEMONIC, OPCODE, EXPR)
@@ -198,7 +220,7 @@ static inline bool dr_emit_type_u(const ins_t* instruction, dr_block_t* block) {
 	}
 }
 
-static inline bool dr_emit_type_j(const ins_t* instruction, dr_block_t* block) {
+static inline bool dr_emit_type_j(emulator_t* emu, const ins_t* instruction, dr_block_t* block) {
 	size_t zero_selector = (instruction->rd == 0);
 
 #define X_R(MNEMONIC, OPCODE, F3, F7, EXPR)
@@ -208,7 +230,8 @@ static inline bool dr_emit_type_j(const ins_t* instruction, dr_block_t* block) {
 #define X_U(MNEMONIC, OPCODE, EXPR)
 #define X_J(MNEMONIC, OPCODE, EXPR)                                \
 	assert(DR_X86_##MNEMONIC[0].code_size > 0);                \
-	return dr_emit_x86_code(&DR_X86_##MNEMONIC[zero_selector], \
+	return dr_emit_x86_code(emu,                               \
+				&DR_X86_##MNEMONIC[zero_selector], \
 				instruction, block);
 
 	X_INSTRUCTIONS
@@ -222,6 +245,7 @@ static inline bool dr_emit_type_j(const ins_t* instruction, dr_block_t* block) {
 }
 
 bool dr_emit_block(emulator_t* emu, guest_paddr base) {
+	assert(emu->cpu.dynarec_enabled);
 	assert((base & 3) == 0);
 
 	uint8_t* page = mmap(NULL, DYNAREC_PAGE_SIZE, PROT_READ | PROT_WRITE,
@@ -233,6 +257,7 @@ bool dr_emit_block(emulator_t* emu, guest_paddr base) {
 	dr_block_t block = {
 		.page = page,
 		.pos = 0,
+		.base = base,
 		.pc = base,
 	};
 
@@ -249,22 +274,22 @@ bool dr_emit_block(emulator_t* emu, guest_paddr base) {
 
 		switch (instruction.type) {
 			case INS_TYPE_R:
-				cont &= dr_emit_type_r(&instruction, &block);
+				cont &= dr_emit_type_r(emu, &instruction, &block);
 				break;
 			case INS_TYPE_I:
-				cont &= dr_emit_type_i(&instruction, &block);
+				cont &= dr_emit_type_i(emu, &instruction, &block);
 				break;
 			case INS_TYPE_S:
-				cont &= dr_emit_type_s(&instruction, &block);
+				cont &= dr_emit_type_s(emu, &instruction, &block);
 				break;
 			case INS_TYPE_B:
-				cont &= dr_emit_type_b(&instruction, &block);
+				cont &= dr_emit_type_b(emu, &instruction, &block);
 				break;
 			case INS_TYPE_U:
-				cont &= dr_emit_type_u(&instruction, &block);
+				cont &= dr_emit_type_u(emu, &instruction, &block);
 				break;
 			case INS_TYPE_J:
-				cont &= dr_emit_type_j(&instruction, &block);
+				cont &= dr_emit_type_j(emu, &instruction, &block);
 				break;
 			default:
 				fprintf(stderr, "Internal emulator error : invalid instruction type\n");
@@ -292,6 +317,20 @@ bool dr_emit_block(emulator_t* emu, guest_paddr base) {
 	}
 
 	return true;
+}
+
+void dr_free(emulator_t* emu) {
+	assert(emu->cpu.dynarec_enabled);
+
+	size_t instruction_cache_size = emu->cpu.instruction_cache_mask + 1;
+	for (size_t i = 0; i < instruction_cache_size; i++) {
+		dr_ins_t* cached_instruction = &emu->cpu.instruction_cache.as_dr_ins[i];
+		if (cached_instruction->native_code != NULL) {
+			uintptr_t page_base = (uintptr_t)cached_instruction->native_code & DYNAREC_PAGE_MASK;
+			munmap((void*)page_base, DYNAREC_PAGE_SIZE);
+			cached_instruction->native_code = NULL;
+		}
+	}
 }
 
 #endif
