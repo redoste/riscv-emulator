@@ -320,7 +320,8 @@ static void cpu_execute_dynarec(emulator_t* emu) {
 
 	assert(emu->cpu.regs[0] == 0);
 
-	emu->cpu.pc = dr_entry(cached_instruction->native_code, emu->cpu.regs, emu->cpu.pc);
+	emu->cpu.pc = dr_entry(emu, cached_instruction->native_code,
+			       emu->cpu.regs, emu->cpu.pc);
 }
 #endif
 

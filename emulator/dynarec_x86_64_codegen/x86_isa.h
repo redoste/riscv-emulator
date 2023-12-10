@@ -115,6 +115,8 @@ typedef uint64_t x86_operand_t;
 #define X_X86_MNEMONICS \
 	X(MOV)          \
 	X(MOVSX)        \
+	X(MOVSX16)      \
+	X(MOVSX8)       \
 	X(MOVZX)        \
 	X(ADD)          \
 	X(SUB)          \
@@ -140,7 +142,10 @@ typedef uint64_t x86_operand_t;
 	X(JGE)          \
 	X(JNC)          \
 	X(JC)           \
-	X(JMP)
+	X(JMP)          \
+	X(CALL)         \
+	X(PUSH)         \
+	X(POP)
 
 /* x86_mnemonic_t : enumeration of the supported x86-64 mnemonics
  */

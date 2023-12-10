@@ -3,9 +3,50 @@
 
 #include "codegen.h"
 
-C_S(SB) {}
-C_S(SH) {}
-C_S(SW) {}
-C_S(SD) {}
+// TODO : rs1_zero & rs2_zero optimizations
+
+C_S(SB) {
+	S_S();
+
+	A_RS1(MOV, OP_REG(RSI), OP_RELOC_RV_REG);
+	A_IMM(ADD, OP_REG(RSI), OP_RELOC_IMM32);
+	A_RS2(MOV, OP_REG(RDX), OP_RELOC_RV_REG);
+	EMU_FUNCTION(0);
+
+	E();
+}
+
+C_S(SH) {
+	S_S();
+
+	A_RS1(MOV, OP_REG(RSI), OP_RELOC_RV_REG);
+	A_IMM(ADD, OP_REG(RSI), OP_RELOC_IMM32);
+	A_RS2(MOV, OP_REG(RDX), OP_RELOC_RV_REG);
+	EMU_FUNCTION(1);
+
+	E();
+}
+
+C_S(SW) {
+	S_S();
+
+	A_RS1(MOV, OP_REG(RSI), OP_RELOC_RV_REG);
+	A_IMM(ADD, OP_REG(RSI), OP_RELOC_IMM32);
+	A_RS2(MOV, OP_REG(RDX), OP_RELOC_RV_REG);
+	EMU_FUNCTION(2);
+
+	E();
+}
+
+C_S(SD) {
+	S_S();
+
+	A_RS1(MOV, OP_REG(RSI), OP_RELOC_RV_REG);
+	A_IMM(ADD, OP_REG(RSI), OP_RELOC_IMM32);
+	A_RS2(MOV, OP_REG(RDX), OP_RELOC_RV_REG);
+	EMU_FUNCTION(3);
+
+	E();
+}
 
 #endif

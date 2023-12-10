@@ -25,6 +25,19 @@ L(MOVSX){
 	EOL,
 };
 
+/* NOTE : MOVSX16 and MOVSX8 are technically MOVSX, but the assembler still doesn't know the
+ *        difference between RAX, EAX and AL, so we hardcode it using a different mnemonic
+ */
+L(MOVSX16){
+	{0xBF0F, 2, 0, true, O(R64), O(RM64)},
+	EOL,
+};
+
+L(MOVSX8){
+	{0xBE0F, 2, 0, true, O(R64), O(RM64)},
+	EOL,
+};
+
 L(MOVZX){
 	/* NOTE : this is technically a 32-bit MOV, but the upper half of the register
 	 *        is zeroed, so it behaves like a MOVZX
@@ -180,6 +193,21 @@ L(JC){
 L(JMP){
 	{0xFF, 1, 4, false, O(RM64), O(NONE)},
 	{0xEB, 1, 0, false, O(IMM8), O(NONE)},
+	EOL,
+};
+
+L(CALL){
+	{0xFF, 1, 2, false, O(RM64), O(NONE)},
+	EOL,
+};
+
+L(PUSH){
+	{0xFF, 1, 6, false, O(RM64), O(NONE)},
+	EOL,
+};
+
+L(POP){
+	{0x8F, 1, 0, false, O(RM64), O(NONE)},
 	EOL,
 };
 

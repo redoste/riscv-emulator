@@ -5,13 +5,116 @@
 
 // TODO : rs1_zero optimizations
 
-C_I(LB) {}
-C_I(LH) {}
-C_I(LW) {}
-C_I(LD) {}
-C_I(LBU) {}
-C_I(LHU) {}
-C_I(LWU) {}
+C_I(LB) {
+	S_I();
+
+	if (rd_zero) {
+		E();
+	}
+
+	A_RS1(MOV, OP_REG(RSI), OP_RELOC_RV_REG);
+	A_IMM(ADD, OP_REG(RSI), OP_RELOC_IMM32);
+	EMU_FUNCTION(4);
+	A(MOVSX8, OP_REG(RAX), OP_REG(RAX));
+	A_RD(MOV, OP_RELOC_RV_REG, OP_REG(RAX));
+
+	E();
+}
+
+C_I(LH) {
+	S_I();
+
+	if (rd_zero) {
+		E();
+	}
+
+	A_RS1(MOV, OP_REG(RSI), OP_RELOC_RV_REG);
+	A_IMM(ADD, OP_REG(RSI), OP_RELOC_IMM32);
+	EMU_FUNCTION(5);
+	A(MOVSX16, OP_REG(RAX), OP_REG(RAX));
+	A_RD(MOV, OP_RELOC_RV_REG, OP_REG(RAX));
+
+	E();
+}
+
+C_I(LW) {
+	S_I();
+
+	if (rd_zero) {
+		E();
+	}
+
+	A_RS1(MOV, OP_REG(RSI), OP_RELOC_RV_REG);
+	A_IMM(ADD, OP_REG(RSI), OP_RELOC_IMM32);
+	EMU_FUNCTION(6);
+	A(MOVSX, OP_REG(RAX), OP_REG(RAX));
+	A_RD(MOV, OP_RELOC_RV_REG, OP_REG(RAX));
+
+	E();
+}
+
+C_I(LD) {
+	S_I();
+
+	if (rd_zero) {
+		E();
+	}
+
+	A_RS1(MOV, OP_REG(RSI), OP_RELOC_RV_REG);
+	A_IMM(ADD, OP_REG(RSI), OP_RELOC_IMM32);
+	EMU_FUNCTION(7);
+	A_RD(MOV, OP_RELOC_RV_REG, OP_REG(RAX));
+
+	E();
+}
+
+C_I(LBU) {
+	S_I();
+
+	if (rd_zero) {
+		E();
+	}
+
+	A_RS1(MOV, OP_REG(RSI), OP_RELOC_RV_REG);
+	A_IMM(ADD, OP_REG(RSI), OP_RELOC_IMM32);
+	EMU_FUNCTION(4);
+	A(AND, OP_IMM(0xff), 0);
+	A_RD(MOV, OP_RELOC_RV_REG, OP_REG(RAX));
+
+	E();
+}
+
+C_I(LHU) {
+	S_I();
+
+	if (rd_zero) {
+		E();
+	}
+
+	A_RS1(MOV, OP_REG(RSI), OP_RELOC_RV_REG);
+	A_IMM(ADD, OP_REG(RSI), OP_RELOC_IMM32);
+	EMU_FUNCTION(5);
+	A(AND, OP_IMM(0xffff), 0);
+	A_RD(MOV, OP_RELOC_RV_REG, OP_REG(RAX));
+
+	E();
+}
+
+C_I(LWU) {
+	S_I();
+
+	if (rd_zero) {
+		E();
+	}
+
+	A_RS1(MOV, OP_REG(RSI), OP_RELOC_RV_REG);
+	A_IMM(ADD, OP_REG(RSI), OP_RELOC_IMM32);
+	EMU_FUNCTION(6);
+	A(MOVZX, OP_REG(RAX), OP_REG(RAX));
+	A_RD(MOV, OP_RELOC_RV_REG, OP_REG(RAX));
+
+	E();
+}
 
 C_I(FENCE) {
 	S_I();
