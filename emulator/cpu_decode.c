@@ -103,10 +103,11 @@ void cpu_invalidate_instruction_cache(emulator_t* emu, guest_paddr addr) {
 			uintptr_t page_base = (uintptr_t)cached_instruction->native_code & DYNAREC_PAGE_MASK;
 			munmap((void*)page_base, DYNAREC_PAGE_SIZE);
 
-			for (guest_reg pc = cached_instruction->block_entry;; pc += 4) {
+			guest_reg block_entry = cached_instruction->block_entry;
+			for (guest_reg pc = block_entry;; pc += 4) {
 				size_t index = (pc >> 2) & emu->cpu.instruction_cache_mask;
 				dr_ins_t* entry = &emu->cpu.instruction_cache.as_dr_ins[index];
-				if (entry->block_entry == cached_instruction->block_entry) {
+				if (entry->block_entry == block_entry) {
 					entry->native_code = NULL;
 					entry->tag = entry->block_entry = 0;
 				} else {
