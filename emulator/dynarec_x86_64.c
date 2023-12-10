@@ -297,7 +297,7 @@ bool dr_emit_block(emulator_t* emu, guest_paddr base) {
 				break;
 		}
 
-		if (instruction.opcode_switch == (OPCODE_JAL >> 2) ||
+		if (instruction.type == INS_TYPE_J ||
 		    instruction.opcode_switch == ((OPCODE_JALR >> 2) | (F3_JALR << 5))) {
 			break;
 		}
