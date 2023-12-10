@@ -65,10 +65,11 @@ typedef enum x86_reloc_type_t {
  *                      interpret
  */
 typedef enum x86_operand_type_t {
-	X86_OPERAND_IMM = 0,  // immediate
-	X86_OPERAND_REG,      // register
-	X86_OPERAND_DEREF,    // [reg]
-	X86_OPERAND_DISP,     // [reg + disp]
+	X86_OPERAND_NONE = 0,  // none
+	X86_OPERAND_IMM,       // immediate
+	X86_OPERAND_REG,       // register
+	X86_OPERAND_DEREF,     // [reg]
+	X86_OPERAND_DISP,      // [reg + disp]
 
 	X86_OPERAND_RELOC_DISP8,  // relocated [reg + disp]
 	X86_OPERAND_RELOC_IMM32,  // relocated immedaite

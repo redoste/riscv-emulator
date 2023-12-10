@@ -124,7 +124,7 @@ static size_t asm_x86_emit_ins(uint8_t* out, size_t out_size, x86_reloc_type_t r
 static bool asm_x86_is_operand_encoding_compatible(x86_operand_t op_type, x86_ins_encoding_operand_type_t encoding_type, int64_t imm) {
 	switch (encoding_type) {
 		case X86_OPERAND_ENCODING_NONE:
-			return true;
+			return op_type == X86_OPERAND_NONE;
 		case X86_OPERAND_ENCODING_RM64:
 			return op_type == X86_OPERAND_REG ||
 			       op_type == X86_OPERAND_DEREF ||
