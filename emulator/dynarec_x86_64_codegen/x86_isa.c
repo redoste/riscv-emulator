@@ -202,11 +202,13 @@ L(CALL){
 };
 
 L(PUSH){
+	{0x50, 1, 0, false, O(R64), O(NONE)},
 	{0xFF, 1, 6, false, O(RM64), O(NONE)},
 	EOL,
 };
 
 L(POP){
+	{0x58, 1, 0, false, O(R64), O(NONE)},
 	{0x8F, 1, 0, false, O(RM64), O(NONE)},
 	EOL,
 };
