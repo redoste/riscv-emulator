@@ -115,10 +115,31 @@ typedef uint64_t x86_operand_t;
 #define X_X86_MNEMONICS \
 	X(MOV)          \
 	X(MOVSX)        \
+	X(MOVZX)        \
 	X(ADD)          \
 	X(SUB)          \
+	X(NEG)          \
 	X(SHL)          \
+	X(SHR)          \
+	X(SAR)          \
+	X(XOR)          \
+	X(OR)           \
+	X(AND)          \
+	X(CMP)          \
+	X(TEST)         \
+	X(SETL)         \
+	X(SETB)         \
 	X(MUL)          \
+	X(IMUL)         \
+	X(CQO)          \
+	X(DIV)          \
+	X(IDIV)         \
+	X(JZ)           \
+	X(JNZ)          \
+	X(JL)           \
+	X(JGE)          \
+	X(JNC)          \
+	X(JC)           \
 	X(JMP)
 
 /* x86_mnemonic_t : enumeration of the supported x86-64 mnemonics

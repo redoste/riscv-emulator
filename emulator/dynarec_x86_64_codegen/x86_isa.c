@@ -25,29 +25,155 @@ L(MOVSX){
 	EOL,
 };
 
+L(MOVZX){
+	/* NOTE : this is technically a 32-bit MOV, but the upper half of the register
+	 *        is zeroed, so it behaves like a MOVZX
+	 *        we use it this way to make it clearer and to not complexify the logic
+	 *        of the assembler (it doesn't know the difference between RAX, EAX and AL)
+	 */
+	{0x8B, 1, 0, false, O(R64), O(RM64)},  // MOV r32, r/m32
+	EOL,
+};
+
 L(ADD){
 	{0x01, 1, 0, true, O(RM64), O(R64)},
 	{0x03, 1, 0, true, O(R64), O(RM64)},
 	{0x83, 1, 0, true, O(RM64), O(IMM8)},
 	{0x81, 1, 0, true, O(RM64), O(IMM32)},
+	{0x05, 1, 0, true, O(IMM32), O(NONE)},  // ADD RAX, imm32
 	EOL,
 };
 
 L(SUB){
 	{0x29, 1, 0, true, O(RM64), O(R64)},
+	{0x2B, 1, 0, true, O(R64), O(RM64)},
+	EOL,
+};
+
+L(NEG){
+	{0xF7, 1, 3, true, O(RM64), O(NONE)},
 	EOL,
 };
 
 L(SHL){
+	{0xC1, 1, 4, true, O(RM64), O(IMM8)},
 	/* TODO : support hardcoded registers (here `SHL r/m64, CL`)
 	 *        we use NONE as a substitute for now
 	 */
-	{0xD3, 1, 4, true, O(RM64), O(NONE)},
+	{0xD3, 1, 4, true, O(RM64), O(NONE)},  // SHL r/m64, CL
+	EOL,
+};
+
+L(SHR){
+	{0xD3, 1, 5, true, O(RM64), O(NONE)},  // SHR r/m64, CL
+	EOL,
+};
+
+L(SAR){
+	{0xC1, 1, 7, true, O(RM64), O(IMM8)},
+	{0xD3, 1, 7, true, O(RM64), O(NONE)},  // SAR r/m64, CL
+	EOL,
+};
+
+L(XOR){
+	{0x31, 1, 0, true, O(RM64), O(R64)},
+	{0x33, 1, 0, true, O(R64), O(RM64)},
+	{0x35, 1, 0, true, O(IMM32), O(NONE)},  // XOR RAX, imm32
+	EOL,
+};
+
+L(OR){
+	{0x09, 1, 0, true, O(RM64), O(R64)},
+	{0x0B, 1, 0, true, O(R64), O(RM64)},
+	{0x0D, 1, 0, true, O(IMM32), O(NONE)},  // OR RAX, imm32
+	EOL,
+};
+
+L(AND){
+	{0x21, 1, 0, true, O(RM64), O(R64)},
+	{0x23, 1, 0, true, O(R64), O(RM64)},
+	{0x81, 1, 4, true, O(RM64), O(IMM32)},
+	{0x25, 1, 0, true, O(IMM32), O(NONE)},  // AND RAX, imm32
+	EOL,
+};
+
+L(CMP){
+	{0x39, 1, 0, true, O(RM64), O(R64)},
+	{0x3B, 1, 0, true, O(R64), O(RM64)},
+	{0x81, 1, 7, true, O(RM64), O(IMM32)},
+	{0x3D, 1, 0, true, O(IMM32), O(NONE)},  // CMP RAX, imm32
+	EOL,
+};
+
+L(TEST){
+	{0xF7, 1, 0, true, O(RM64), O(IMM32)},
+	{0x85, 1, 0, true, O(RM64), O(R64)},
+	{0xA9, 1, 0, true, O(IMM32), O(NONE)},  // TEST RAX, imm32
+	EOL,
+};
+
+L(SETL){
+	{0x9C0F, 2, 0, false, O(RM64), O(NONE)},
+	EOL,
+};
+
+L(SETB){
+	{0x920F, 2, 0, false, O(RM64), O(NONE)},
 	EOL,
 };
 
 L(MUL){
 	{0xF7, 1, 4, true, O(RM64), O(NONE)},
+	EOL,
+};
+
+L(IMUL){
+	{0xF7, 1, 5, true, O(RM64), O(NONE)},
+	EOL,
+};
+
+L(CQO){
+	{0x99, 1, 0, true, O(NONE), O(NONE)},
+	EOL,
+};
+
+L(DIV){
+	{0xF7, 1, 6, true, O(RM64), O(NONE)},
+	EOL,
+};
+
+L(IDIV){
+	{0xF7, 1, 7, true, O(RM64), O(NONE)},
+	EOL,
+};
+
+L(JZ){
+	{0x74, 1, 0, false, O(IMM8), O(NONE)},
+	EOL,
+};
+
+L(JNZ){
+	{0x75, 1, 0, false, O(IMM8), O(NONE)},
+	EOL,
+};
+
+L(JL){
+	{0x7C, 1, 0, false, O(IMM8), O(NONE)},
+	EOL,
+};
+
+L(JGE){
+	{0x7D, 1, 0, false, O(IMM8), O(NONE)},
+	EOL,
+};
+
+L(JNC){
+	{0x73, 1, 0, false, O(IMM8), O(NONE)},
+	EOL,
+};
+
+L(JC){
+	{0x72, 1, 0, false, O(IMM8), O(NONE)},
 	EOL,
 };
 
