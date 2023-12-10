@@ -4,17 +4,12 @@
 
 #include "isa.h"
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-
 #include "ins_b.h"
 #include "ins_i.h"
 #include "ins_j.h"
 #include "ins_r.h"
 #include "ins_s.h"
 #include "ins_u.h"
-
-#pragma GCC diagnostic pop
 
 int main(void) {
 	printf("#include \"dynarec_x86_64.h\"\n\n");

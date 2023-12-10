@@ -50,5 +50,7 @@ dr_emu_functions:
 	.quad emu_r16
 	.quad emu_r32
 	.quad emu_r64
+	.quad emu_ecall
+	.quad emu_ebreak
 
 .section .note.GNU-stack, "", %progbits
