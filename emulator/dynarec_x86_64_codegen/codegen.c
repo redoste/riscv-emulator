@@ -22,7 +22,7 @@ void codegen_end_ins(void) {
 	printf("};\n");
 }
 
-#define CODEGEN_BUFFER_CAPACITY 64
+#define CODEGEN_BUFFER_CAPACITY 128
 static struct {
 	size_t pos;
 	ssize_t rs1_reloc;

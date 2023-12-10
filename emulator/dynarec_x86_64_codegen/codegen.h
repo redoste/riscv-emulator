@@ -56,6 +56,10 @@ void codegen_end_line(void);
  */
 #define S_R() codegen_start_line(rs1_zero, rs2_zero, rd_zero)
 #define S_I() codegen_start_line(rs1_zero, rd_zero, 0)
+#define S_S() codegen_start_line(rs1_zero, rs2_zero, 0)
+#define S_B() codegen_start_line(rs1_zero, rs2_zero, 0)
+#define S_U() codegen_start_line(rd_zero, 0, 0)
+#define S_J() codegen_start_line(rd_zero, 0, 0)
 
 /* A_X : macros used to emit a x86-64 instruction with a X relocation
  */
@@ -70,13 +74,23 @@ void codegen_end_line(void);
  */
 #define OP_RELOC_RV_REG OP_RELOC_DISP8(R8)
 
-/* E : macro used to end the line of an instruction
+/* E : macro used to end the line of an instruction and increment PC
  */
 #define E()                                    \
 	do {                                   \
 		A(ADD, OP_REG(R9), OP_IMM(4)); \
 		codegen_end_line();            \
 		return;                        \
+	} while (0)
+
+/* E_J : macro used to end the line of an instruction and call `dr_exit` with a new
+ *       updated PC
+ */
+#define E_J()                           \
+	do {                            \
+		A(JMP, OP_REG(R10), 0); \
+		codegen_end_line();     \
+		return;                 \
 	} while (0)
 
 #endif

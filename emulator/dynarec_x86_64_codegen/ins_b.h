@@ -3,11 +3,84 @@
 
 #include "codegen.h"
 
-C_B(BEQ) {}
-C_B(BNE) {}
-C_B(BLT) {}
-C_B(BGE) {}
-C_B(BLTU) {}
-C_B(BGEU) {}
+// TODO : rs1_zero & rs2_zero optimizations
+
+C_B(BEQ) {
+	S_B();
+
+	A_RS1(MOV, OP_REG(RAX), OP_RELOC_RV_REG);
+	A_RS2(CMP, OP_REG(RAX), OP_RELOC_RV_REG);
+	A(JNZ, OP_IMM(10), 0);
+
+	A_IMM(ADD, OP_REG(R9), OP_RELOC_IMM32);
+	A(JMP, OP_REG(R10), 0);
+
+	E();
+}
+
+C_B(BNE) {
+	S_B();
+
+	A_RS1(MOV, OP_REG(RAX), OP_RELOC_RV_REG);
+	A_RS2(CMP, OP_REG(RAX), OP_RELOC_RV_REG);
+	A(JZ, OP_IMM(10), 0);
+
+	A_IMM(ADD, OP_REG(R9), OP_RELOC_IMM32);
+	A(JMP, OP_REG(R10), 0);
+
+	E();
+}
+
+C_B(BLT) {
+	S_B();
+
+	A_RS1(MOV, OP_REG(RAX), OP_RELOC_RV_REG);
+	A_RS2(CMP, OP_REG(RAX), OP_RELOC_RV_REG);
+	A(JGE, OP_IMM(10), 0);
+
+	A_IMM(ADD, OP_REG(R9), OP_RELOC_IMM32);
+	A(JMP, OP_REG(R10), 0);
+
+	E();
+}
+
+C_B(BGE) {
+	S_B();
+
+	A_RS1(MOV, OP_REG(RAX), OP_RELOC_RV_REG);
+	A_RS2(CMP, OP_REG(RAX), OP_RELOC_RV_REG);
+	A(JL, OP_IMM(10), 0);
+
+	A_IMM(ADD, OP_REG(R9), OP_RELOC_IMM32);
+	A(JMP, OP_REG(R10), 0);
+
+	E();
+}
+
+C_B(BLTU) {
+	S_B();
+
+	A_RS1(MOV, OP_REG(RAX), OP_RELOC_RV_REG);
+	A_RS2(CMP, OP_REG(RAX), OP_RELOC_RV_REG);
+	A(JNC, OP_IMM(10), 0);
+
+	A_IMM(ADD, OP_REG(R9), OP_RELOC_IMM32);
+	A(JMP, OP_REG(R10), 0);
+
+	E();
+}
+
+C_B(BGEU) {
+	S_B();
+
+	A_RS1(MOV, OP_REG(RAX), OP_RELOC_RV_REG);
+	A_RS2(CMP, OP_REG(RAX), OP_RELOC_RV_REG);
+	A(JC, OP_IMM(10), 0);
+
+	A_IMM(ADD, OP_REG(R9), OP_RELOC_IMM32);
+	A(JMP, OP_REG(R10), 0);
+
+	E();
+}
 
 #endif
