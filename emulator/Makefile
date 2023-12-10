@@ -7,6 +7,8 @@ SRC := cpu_decode.c \
        main.c \
        mmu_paging_guest_to_host.c \
 
+SRC_A :=
+
 ifdef SDL
 	SRC += emulator_sdl.c
 	CFLAGS += -DRISCV_EMULATOR_SDL_SUPPORT
@@ -25,17 +27,22 @@ DYNAREC_CODEGEN_OUT  := $(DYNAREC_CODEGEN_DIR)/codegen
 ifdef DYNAREC_X86_64
 	SRC += dynarec_x86_64.c \
 	       $(DYNAREC_CODEGEN_FILE)
+	SRC_A += dynarec_x86_64_entry_exit.s
 	CFLAGS += -DRISCV_EMULATOR_DYNAREC_X86_64_SUPPORT
 endif
 
 OBJ := $(SRC:%.c=%.o)
+OBJ_A := $(SRC_A:%.s=%.o)
 OUT := ../riscv-emulator
 
 .PHONY: all
 all: $(OUT)
 
-$(OUT): $(OBJ)
+$(OUT): $(OBJ) $(OBJ_A)
 	$(CC) $^ -o $@ $(LDFLAGS)
+
+$(OBJ_A): %.o: %.s
+	$(CC) $(AFLAGS) -c $< -o $@
 
 $(OBJ): %.o: %.c
 	$(CC) -MMD -MT $@ $(CFLAGS) -c $< -o $@

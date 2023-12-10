@@ -6,6 +6,7 @@
 #include <stdlib.h>
 
 #include "cpu.h"
+#include "dynarec_x86_64.h"
 #include "emulator.h"
 #include "isa.h"
 
@@ -301,13 +302,42 @@ static void cpu_execute_type_j(emulator_t* emu, const ins_t* instruction) {
 #undef X_J
 }
 
-void cpu_execute(emulator_t* emu) {
-	assert(!emu->cpu.dynarec_enabled);
+#ifdef RISCV_EMULATOR_DYNAREC_X86_64_SUPPORT
+static void cpu_execute_dynarec(emulator_t* emu) {
+	assert(emu->cpu.dynarec_enabled);
+	assert((emu->cpu.pc & 3) == 0);
 
+	size_t cache_index = (emu->cpu.pc >> 2) & emu->cpu.instruction_cache_mask;
+	dr_ins_t* cached_instruction = &emu->cpu.instruction_cache.as_dr_ins[cache_index];
+	if (cached_instruction->tag != emu->cpu.pc) {
+		if (!dr_emit_block(emu, emu->cpu.pc)) {
+			fprintf(stderr, "Unable to emit dynarec code PC=%016" PRIx64 "\n",
+				emu->cpu.pc);
+			abort();
+		}
+	}
+	assert(cached_instruction->tag == emu->cpu.pc);
+
+	assert(emu->cpu.regs[0] == 0);
+
+	emu->cpu.pc = dr_entry(cached_instruction->native_code, emu->cpu.regs, emu->cpu.pc);
+}
+#endif
+
+void cpu_execute(emulator_t* emu) {
 	if ((emu->cpu.pc & 0x3) != 0) {
 		fprintf(stderr, "Unaligned PC=%016" PRIx64 "\n", emu->cpu.pc);
 		abort();
 	}
+
+#ifdef RISCV_EMULATOR_DYNAREC_X86_64_SUPPORT
+	if (emu->cpu.dynarec_enabled) {
+		cpu_execute_dynarec(emu);
+		return;
+	}
+#else
+	assert(!emu->cpu.dynarec_enabled);
+#endif
 
 	ins_t* instruction;
 	if (!cpu_decode_and_cache(emu, emu->cpu.pc, &instruction)) {

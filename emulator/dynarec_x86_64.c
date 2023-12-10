@@ -305,10 +305,10 @@ bool dr_emit_block(emulator_t* emu, guest_paddr base) {
 	}
 
 	assert(block.pos + DYNAREC_PROLOGUE_SIZE <= DYNAREC_PAGE_SIZE);
-	// jmp r11
+	// jmp r10
 	block.page[block.pos + 0] = 0x41;
 	block.page[block.pos + 1] = 0xff;
-	block.page[block.pos + 2] = 0xe3;
+	block.page[block.pos + 2] = 0xe2;
 
 	if (mprotect(page, DYNAREC_PAGE_SIZE, PROT_READ | PROT_EXEC) < 0) {
 		perror("mprotect");
