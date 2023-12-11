@@ -29,10 +29,19 @@ static int usage(const char* argv0) {
 		"    --rom-size 0x[ROM SIZE]  : Size of the ROM (defaut 0x%08x)\n"
 		"    --ram-base 0x[RAM BASE]  : Base address of the RAM (default 0x%08x)\n"
 		"    --ram-size 0x[RAM SIZE]  : Size of the ROM (default 0x%08x)\n"
+#ifdef RISCV_EMULATOR_DYNAREC_X86_64_SUPPORT
+		"    --dynarec                : Enable dynamic recompilation to x86-64 assembly\n"
+#endif
 		"    --cache-bits [BITS]      : Number of significant bits for the different caches (default %d)\n",
 		argv0, argv0, DEFAULT_ROM_BASE, DEFAULT_ROM_SIZE, DEFAULT_RAM_BASE, DEFAULT_RAM_SIZE, DEFAULT_CACHE_BITS);
 	return 1;
 }
+
+#ifdef RISCV_EMULATOR_DYNAREC_X86_64_SUPPORT
+#define SIMPLE_DYNAREC_ENABLED true
+#else
+#define SIMPLE_DYNAREC_ENABLED false
+#endif
 
 static int main_simple(const char* hex_input_filename, const char* emu_output_filename) {
 	FILE* input_file;
@@ -46,8 +55,9 @@ static int main_simple(const char* hex_input_filename, const char* emu_output_fi
 		return 1;
 	}
 
+	// TODO : follow the subject requirements (load code at 0, etc.)
 	emulator_t emu;
-	emu_create(&emu, DEFAULT_ROM_BASE, DEFAULT_CACHE_BITS, false);
+	emu_create(&emu, DEFAULT_ROM_BASE, DEFAULT_CACHE_BITS, SIMPLE_DYNAREC_ENABLED);
 	bool map_ret = emu_map_memory(&emu, DEFAULT_ROM_BASE, DEFAULT_ROM_SIZE);
 	map_ret &= emu_map_memory(&emu, DEFAULT_RAM_BASE, DEFAULT_RAM_SIZE);
 	assert(map_ret);
@@ -112,6 +122,7 @@ static int main_advanced(int argc, char** argv) {
 	guest_paddr rom_base = DEFAULT_ROM_BASE, ram_base = DEFAULT_RAM_BASE;
 	size_t rom_size = DEFAULT_ROM_SIZE, ram_size = DEFAULT_RAM_SIZE;
 	size_t cache_bits = DEFAULT_CACHE_BITS;
+	bool dynarec_enabled = false;
 
 	while (argc_iter < argc) {
 		if (strcmp(argv[argc_iter], "--advanced") == 0) {
@@ -134,6 +145,12 @@ static int main_advanced(int argc, char** argv) {
 		PARSE_NUM_ARG("--ram-size", &ram_size)
 		PARSE_NUM_ARG("--cache-bits", &cache_bits)
 #undef PARSE_NUM_ARG
+#ifdef RISCV_EMULATOR_DYNAREC_X86_64_SUPPORT
+		else if (strcmp(argv[argc_iter], "--dynarec") == 0) {
+			argc_iter++;
+			dynarec_enabled = true;
+		}
+#endif
 		else {
 			return usage(argv[0]);
 		}
@@ -160,7 +177,7 @@ static int main_advanced(int argc, char** argv) {
 	}
 
 	emulator_t emu;
-	emu_create(&emu, rom_base, cache_bits, false);
+	emu_create(&emu, rom_base, cache_bits, dynarec_enabled);
 	if (!emu_map_memory(&emu, rom_base, rom_size) ||
 	    !emu_map_memory(&emu, ram_base, ram_size)) {
 		fprintf(stderr,
