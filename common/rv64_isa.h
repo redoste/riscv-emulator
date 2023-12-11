@@ -132,6 +132,97 @@ enum {
 	FENCE_OPERAND_W = (1 << 0),
 };
 
+/* RISC-V Unprivileged CSR numbers */
+enum {
+	CSR_CYCLE = 0xC00,
+	CSR_TIME = 0xC01,
+	CSR_INSTRET = 0xC02,
+	CSR_HPMCOUNTER3 = 0xC03,
+};
+
+/* RISC-V Supervisor CSR numbers */
+enum {
+	/* Supervisor trap setup */
+	CSR_SSTATUS = 0x100,
+	CSR_SIE = 0x104,
+	CSR_STVEC = 0x105,
+	CSR_SCOUNTEREN = 0x106,
+
+	/* Supervisor configuration */
+	CSR_SENVCFG = 0x10A,
+
+	/* Supervisor trap handling */
+	CSR_SSCRATCH = 0x140,
+	CSR_SEPC = 0x141,
+	CSR_SCAUSE = 0x142,
+	CSR_STVAL = 0x143,
+	CSR_SIP = 0x144,
+
+	/* Supervisor protection and translation */
+	CSR_SATP = 0x180,
+
+	/* Debug/trace registers */
+	CSR_SCONTEXT = 0x5A8,
+};
+
+/* RISC-V Machine CSR numbers */
+enum {
+	/* Machine information registers */
+	CSR_MVENDORID = 0xF11,
+	CSR_MARCHID = 0xF12,
+	CSR_MIMPID = 0xF13,
+	CSR_MHARTID = 0xF14,
+	CSR_MCONFIGPTR = 0xF15,
+
+	/* Machine trap setup */
+	CSR_MSTATUS = 0x300,
+	CSR_MISA = 0x301,
+	CSR_MEDELEGE = 0x302,
+	CSR_MIDELEGE = 0x303,
+	CSR_MIE = 0x304,
+	CSR_MTVEC = 0x305,
+	CSR_MCOUNTEREN = 0x306,
+
+	/* Machine trap handling */
+	CSR_MSCRATCH = 0x340,
+	CSR_MEPC = 0x341,
+	CSR_MCAUSE = 0x342,
+	CSR_MTVAL = 0x343,
+	CSR_MIP = 0x344,
+	CSR_MTINST = 0x34A,
+	CSR_MTVAL2 = 0x34B,
+
+	/* Machine configuration */
+	CSR_MENVCFG = 0x30A,
+	CSR_MSECCFG = 0x757,
+
+	/* Machine memory protection */
+	CSR_PMPCFG0 = 0x3A0,
+	CSR_PMPADDR0 = 0x3B0,
+
+	/* Machine counter/timers */
+	CSR_MCYCLE = 0xB00,
+	CSR_MINSTRET = 0xB02,
+	CSR_MHPMCOUNTER3 = 0xB03,
+
+	/* Machine counter setup */
+	CSR_MCOUNTINHIBIT = 0x320,
+	CSR_MHPMEVENT3 = 0x323,
+
+	/* Debug/Trace registers */
+	CSR_TSELECT = 0x7A0,
+	CSR_TDATA1 = 0x7A1,
+	CSR_TDATA2 = 0x7A2,
+	CSR_TDATA3 = 0x7A3,
+	CSR_MCONTEXT = 0x7A8,
+
+	/* Debug mode registers */
+	CSR_DCSR = 0x7B0,
+	CSR_DPC = 0x7B1,
+	CSR_DSCRATCH0 = 0x7B2,
+	CSR_DSCRATCH1 = 0x7B3,
+};
+
 /* DECODE_GET_x : macros to get a specific field from an encoded instruction
  *                it's up to the caller to make sure the encoded instruction type has the asked
  *                field
