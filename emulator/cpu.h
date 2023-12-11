@@ -49,10 +49,12 @@ bool cpu_decode(uint32_t encoded_instruction, ins_t* decoded_instruction);
 bool cpu_decode_and_cache(emulator_t* emu, guest_paddr instruction_addr, ins_t** decoded_instruction);
 
 /* cpu_invalidate_instruction_cache : invalidate an entry in the instruction cache
+ *                                    returns true if an entry was invalidated
+ *                                    returns false otherwise
  *     emulator_t* emu  : pointer to the emulator where the cache will be updated
  *     guest_paddr addr : address of the instruction to invalidate
  */
-void cpu_invalidate_instruction_cache(emulator_t* emu, guest_paddr addr);
+bool cpu_invalidate_instruction_cache(emulator_t* emu, guest_paddr addr);
 
 /* cpu_execute : execute a single instruction at the CPU PC
  *     emulator_t* emu : pointer to the emulator state to update to the next instruction

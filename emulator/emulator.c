@@ -1,6 +1,7 @@
 #include <assert.h>
 #include <endian.h>
 #include <inttypes.h>
+#include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -173,13 +174,13 @@ bool emu_add_mmio_device(emulator_t* emu, guest_paddr base, const device_mmio_t*
 	}
 
 #define EMU_WX(SIZE, TYPE)                                                                          \
-	void emu_w##SIZE(emulator_t* emu, guest_paddr addr, TYPE value) {                           \
-		cpu_invalidate_instruction_cache(emu, addr);                                        \
+	bool emu_w##SIZE(emulator_t* emu, guest_paddr addr, TYPE value) {                           \
+		bool ret = cpu_invalidate_instruction_cache(emu, addr);                             \
 		mmu_pg2h_pte pte;                                                                   \
 		size_t offset = addr & MMU_PG2H_OFFSET_MASK;                                        \
 		if ((offset & (sizeof(TYPE) - 1)) != 0) {                                           \
 			emu_w##SIZE##_misaligned(emu, addr, value);                                 \
-			return;                                                                     \
+			return ret;                                                                 \
 		}                                                                                   \
 		/* Write across page boudaries should be handled by the misaligned case */          \
 		assert(offset + sizeof(TYPE) <= MMU_PG2H_PAGE_SIZE);                                \
@@ -199,6 +200,7 @@ bool emu_add_mmio_device(emulator_t* emu, guest_paddr base, const device_mmio_t*
 			TYPE* host_addr = (TYPE*)&pool[offset];                                     \
 			*host_addr = htole##SIZE(value);                                            \
 		}                                                                                   \
+		return ret;                                                                         \
 	}
 
 // Reading or writing a 8 bit value misaligned shouldn't be possible

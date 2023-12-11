@@ -61,14 +61,16 @@ bool emu_map_memory(emulator_t* emu, guest_paddr base, size_t size);
 bool emu_add_mmio_device(emulator_t* emu, guest_paddr base, const device_mmio_t* device);
 
 /* emu_wx : write a x bits value to the guest memory
+ *          returns true if a cache entry was invalidated in the process
+ *          returns false otherwise
  *     emulator_t* emu  : pointer to the emulator
  *     guest_paddr addr : guest physical address to write to
  *     uintx_t value    : value to write to the guest memory
  */
-void emu_w8(emulator_t* emu, guest_paddr addr, uint8_t value);
-void emu_w16(emulator_t* emu, guest_paddr addr, uint16_t value);
-void emu_w32(emulator_t* emu, guest_paddr addr, uint32_t value);
-void emu_w64(emulator_t* emu, guest_paddr addr, uint64_t value);
+bool emu_w8(emulator_t* emu, guest_paddr addr, uint8_t value);
+bool emu_w16(emulator_t* emu, guest_paddr addr, uint16_t value);
+bool emu_w32(emulator_t* emu, guest_paddr addr, uint32_t value);
+bool emu_w64(emulator_t* emu, guest_paddr addr, uint64_t value);
 
 /* emu_rx : read a x bits value from the guest memory
  *          returns the value read

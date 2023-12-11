@@ -40,12 +40,36 @@ dr_exit:
 
 	ret
 
+.macro DR_WX_WRAPPER size
+dr_w\size\()_wrapper:
+	call emu_w\size
+	test %al, %al
+	jnz dr_w\size\()_wrapper.1
+	ret
+dr_w\size\()_wrapper.1:
+	/* If some cache entry were invalidated, we drop the return pointer and
+	 * short-circuit back to `dr_exit` as the current block might have been
+	 * munmaped in the case of self-modifying code
+	 */
+	add $8, %rsp
+	pop %r11
+	pop %r10
+	pop %r9
+	pop %r8
+	jmp *%r10
+.endm
+
+DR_WX_WRAPPER 8
+DR_WX_WRAPPER 16
+DR_WX_WRAPPER 32
+DR_WX_WRAPPER 64
+
 .section .data
 dr_emu_functions:
-	.quad emu_w8
-	.quad emu_w16
-	.quad emu_w32
-	.quad emu_w64
+	.quad dr_w8_wrapper
+	.quad dr_w16_wrapper
+	.quad dr_w32_wrapper
+	.quad dr_w64_wrapper
 	.quad emu_r8
 	.quad emu_r16
 	.quad emu_r32

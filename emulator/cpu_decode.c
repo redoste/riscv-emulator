@@ -92,7 +92,7 @@ bool cpu_decode_and_cache(emulator_t* emu, guest_paddr instruction_addr, ins_t**
 	return true;
 }
 
-void cpu_invalidate_instruction_cache(emulator_t* emu, guest_paddr addr) {
+bool cpu_invalidate_instruction_cache(emulator_t* emu, guest_paddr addr) {
 #ifdef RISCV_EMULATOR_DYNAREC_X86_64_SUPPORT
 	if (emu->cpu.dynarec_enabled) {
 		size_t cache_index = (addr >> 2) & emu->cpu.instruction_cache_mask;
@@ -114,8 +114,10 @@ void cpu_invalidate_instruction_cache(emulator_t* emu, guest_paddr addr) {
 					break;
 				}
 			}
+			return true;
+		} else {
+			return false;
 		}
-		return;
 	}
 #else
 	assert(!emu->cpu.dynarec_enabled);
@@ -126,5 +128,8 @@ void cpu_invalidate_instruction_cache(emulator_t* emu, guest_paddr addr) {
 	if (cached_instruction->decoded_instruction.type != INS_TYPE_INVALID &&
 	    cached_instruction->tag == (addr & ~3)) {
 		cached_instruction->decoded_instruction.type = INS_TYPE_INVALID;
+		return true;
+	} else {
+		return false;
 	}
 }
