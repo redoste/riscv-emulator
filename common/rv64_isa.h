@@ -62,6 +62,14 @@ enum {
 	F3_ECALL = 0,
 	F3_EBREAK = 0,
 
+	/* OPCODE SYSTEM : Zicsr extension */
+	F3_CSRRW = 1,
+	F3_CSRRS = 2,
+	F3_CSRRC = 3,
+	F3_CSRRWI = 5,
+	F3_CSRRSI = 6,
+	F3_CSRRCI = 7,
+
 	/* OPCODE LOAD */
 	F3_LB = 0,
 	F3_LH = 1,
