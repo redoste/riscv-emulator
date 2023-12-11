@@ -86,8 +86,7 @@ void codegen_end_line(void);
 		/* TODO : We should probably save R9 back to the PC field of `cpu_t` */ \
 		/*        in case one of the emu function needs the current PC */       \
 		A(MOV, OP_REG(RDI), OP_REG(R12));                                       \
-		A(MOV, OP_REG(RAX), OP_DISP(R11, index * 8));                           \
-		A(CALL, OP_REG(RAX), 0);                                                \
+		A(CALL, OP_DISP(R11, index * 8), 0);                                    \
 		A(POP, OP_REG(R11), 0);                                                 \
 		A(POP, OP_REG(R10), 0);                                                 \
 		A(POP, OP_REG(R9), 0);                                                  \
