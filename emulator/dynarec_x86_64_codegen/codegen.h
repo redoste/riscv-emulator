@@ -79,6 +79,9 @@ void codegen_end_line(void);
  */
 #define EMU_FUNCTION(index)                                                             \
 	do {                                                                            \
+		/* We need to keep the stack properly aligned, i.e. it is 16-byte */    \
+		/* aligned on the `call` instruction and the push of the return */      \
+		/* address will make it 8-byte aligned */                               \
 		A(PUSH, OP_REG(R8), 0);                                                 \
 		A(PUSH, OP_REG(R9), 0);                                                 \
 		A(PUSH, OP_REG(R10), 0);                                                \

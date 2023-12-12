@@ -42,7 +42,14 @@ dr_exit:
 
 .macro DR_WX_WRAPPER size
 dr_w\size\()_wrapper:
+	/* We need to keep the stack properly aligned, i.e. it is 16-byte aligned
+	 * on the `call` instruction and the push of the return address will make it
+	 * 8-byte aligned
+	 */
+	sub $8, %rsp
 	call emu_w\size
+	add $8, %rsp
+
 	test %al, %al
 	jnz dr_w\size\()_wrapper.1
 	ret
