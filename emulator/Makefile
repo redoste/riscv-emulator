@@ -2,6 +2,7 @@ include ../Makefile.common
 
 SRC := cpu_decode.c \
        cpu_execute.c \
+       cpu_csr.c \
        emulator.c \
        isa.c \
        main.c \

@@ -231,6 +231,11 @@ enum {
 	CSR_DSCRATCH1 = 0x7B3,
 };
 
+/* CSR_MASK : mask used to strip the sign extension from a CSR number
+ *            all CSR numbers should be < 0x1000
+ */
+#define CSR_MASK 0xFFF
+
 /* DECODE_GET_x : macros to get a specific field from an encoded instruction
  *                it's up to the caller to make sure the encoded instruction type has the asked
  *                field

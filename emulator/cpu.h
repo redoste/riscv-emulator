@@ -61,4 +61,18 @@ bool cpu_invalidate_instruction_cache(emulator_t* emu, guest_paddr addr);
  */
 void cpu_execute(emulator_t* emu);
 
+/* cpu_read_csr : read a control and status register
+ *                returns the value of the CSR
+ *     emulator_t* emu   : pointer to the emulator
+ *     guest_reg csr_num : CSR number
+ */
+guest_reg cpu_read_csr(emulator_t* emu, guest_reg csr_num);
+
+/* cpu_read_csr : write a control and status register
+ *     emulator_t* emu   : pointer to the emulator
+ *     guest_reg csr_num : CSR number
+ *     guest_reg value   : CSR value
+ */
+void cpu_write_csr(emulator_t* emu, guest_reg csr_num, guest_reg value);
+
 #endif

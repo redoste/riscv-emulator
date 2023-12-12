@@ -70,6 +70,13 @@
                        \
 	X_I(ECALL)     \
                        \
+	X_I(CSRRW)     \
+	X_I(CSRRS)     \
+	X_I(CSRRC)     \
+	X_I(CSRRWI)    \
+	X_I(CSRRSI)    \
+	X_I(CSRRCI)    \
+                       \
 	X_S(SB)        \
 	X_S(SH)        \
 	X_S(SW)        \

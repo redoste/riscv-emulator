@@ -350,4 +350,11 @@ C_I(ECALL) {
 	E();
 }
 
+C_I(CSRRW) {}
+C_I(CSRRS) {}
+C_I(CSRRC) {}
+C_I(CSRRWI) {}
+C_I(CSRRSI) {}
+C_I(CSRRCI) {}
+
 #endif
