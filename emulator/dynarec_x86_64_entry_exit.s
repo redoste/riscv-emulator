@@ -63,6 +63,9 @@ dr_w\size\()_wrapper.1:
 	pop %r10
 	pop %r9
 	pop %r8
+
+	// And we don't forget to increment PC as the write is now done
+	add $4, %r9
 	jmp *%r10
 .endm
 
