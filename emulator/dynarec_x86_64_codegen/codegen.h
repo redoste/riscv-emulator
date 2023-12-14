@@ -3,6 +3,7 @@
 
 #include <stdbool.h>
 
+#include "isa.h"
 #include "x86_isa.h"
 
 /* codegen_start_ins : emit the start of the array for a RISC-V instruction

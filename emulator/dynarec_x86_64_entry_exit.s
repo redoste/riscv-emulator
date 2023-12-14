@@ -76,15 +76,20 @@ DR_WX_WRAPPER 64
 
 .section .data
 dr_emu_functions:
-	.quad dr_w8_wrapper
-	.quad dr_w16_wrapper
-	.quad dr_w32_wrapper
-	.quad dr_w64_wrapper
-	.quad emu_r8
-	.quad emu_r16
-	.quad emu_r32
-	.quad emu_r64
-	.quad emu_ecall
-	.quad emu_ebreak
+	.quad dr_w8_wrapper      /* [0]  */
+	.quad dr_w16_wrapper     /* [1]  */
+	.quad dr_w32_wrapper     /* [2]  */
+	.quad dr_w64_wrapper     /* [3]  */
+	.quad emu_r8             /* [4]  */
+	.quad emu_r16            /* [5]  */
+	.quad emu_r32            /* [6]  */
+	.quad emu_r64            /* [7]  */
+	.quad emu_ecall          /* [8]  */
+	.quad emu_ebreak         /* [9]  */
+	.quad cpu_csr_read       /* [10] */
+	.quad cpu_csr_write      /* [11] */
+	.quad cpu_csr_exchange   /* [12] */
+	.quad cpu_csr_set_bits   /* [13] */
+	.quad cpu_csr_clear_bits /* [14] */
 
 .section .note.GNU-stack, "", %progbits

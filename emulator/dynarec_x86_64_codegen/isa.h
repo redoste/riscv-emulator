@@ -1,6 +1,8 @@
 #ifndef ISA_H
 #define ISA_H
 
+#include <rv64_isa.h>
+
 /* X_INSTRUCTIONS : X-macro of all the instructions the codegen will emit x86-64
  *                  code for
  *     X_R(MNEMONIC) : R-type instruction

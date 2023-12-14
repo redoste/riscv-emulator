@@ -350,11 +350,144 @@ C_I(ECALL) {
 	E();
 }
 
-C_I(CSRRW) {}
-C_I(CSRRS) {}
-C_I(CSRRC) {}
-C_I(CSRRWI) {}
-C_I(CSRRSI) {}
-C_I(CSRRCI) {}
+C_I(CSRRW) {
+	S_I();
+
+	if (rs1_zero) {
+		A(XOR, OP_REG(RDX), OP_REG(RDX));
+	} else {
+		A_RS1(MOV, OP_REG(RDX), OP_RELOC_RV_REG);
+	}
+
+	A_IMM(MOV, OP_REG(RSI), OP_RELOC_IMM32);
+	A(AND, OP_REG(RSI), OP_IMM(CSR_MASK));
+
+	if (rd_zero) {
+		EMU_FUNCTION(11);
+	} else {
+		EMU_FUNCTION(12);
+		A_RD(MOV, OP_RELOC_RV_REG, OP_REG(RAX));
+	}
+
+	E();
+}
+
+C_I(CSRRS) {
+	S_I();
+
+	if (rs1_zero && rd_zero) {
+		E();
+	}
+
+	A_IMM(MOV, OP_REG(RSI), OP_RELOC_IMM32);
+	A(AND, OP_REG(RSI), OP_IMM(CSR_MASK));
+
+	if (rs1_zero && !rd_zero) {
+		EMU_FUNCTION(10);
+		A_RD(MOV, OP_RELOC_RV_REG, OP_REG(RAX));
+	} else {
+		A_RS1(MOV, OP_REG(RDX), OP_RELOC_RV_REG);
+		EMU_FUNCTION(13);
+		if (!rd_zero) {
+			A_RD(MOV, OP_RELOC_RV_REG, OP_REG(RAX));
+		}
+	}
+
+	E();
+}
+
+C_I(CSRRC) {
+	S_I();
+
+	if (rs1_zero && rd_zero) {
+		E();
+	}
+
+	A_IMM(MOV, OP_REG(RSI), OP_RELOC_IMM32);
+	A(AND, OP_REG(RSI), OP_IMM(CSR_MASK));
+
+	if (rs1_zero && !rd_zero) {
+		EMU_FUNCTION(10);
+		A_RD(MOV, OP_RELOC_RV_REG, OP_REG(RAX));
+	} else {
+		A_RS1(MOV, OP_REG(RDX), OP_RELOC_RV_REG);
+		EMU_FUNCTION(14);
+		if (!rd_zero) {
+			A_RD(MOV, OP_RELOC_RV_REG, OP_REG(RAX));
+		}
+	}
+
+	E();
+}
+
+C_I(CSRRWI) {
+	S_I();
+
+	if (rs1_zero) {
+		A(XOR, OP_REG(RDX), OP_REG(RDX));
+	} else {
+		A_RS1UIMM(MOV, OP_REG(RDX), OP_RELOC_IMM32);
+	}
+
+	A_IMM(MOV, OP_REG(RSI), OP_RELOC_IMM32);
+	A(AND, OP_REG(RSI), OP_IMM(CSR_MASK));
+
+	if (rd_zero) {
+		EMU_FUNCTION(11);
+	} else {
+		EMU_FUNCTION(12);
+		A_RD(MOV, OP_RELOC_RV_REG, OP_REG(RAX));
+	}
+
+	E();
+}
+
+C_I(CSRRSI) {
+	S_I();
+
+	if (rs1_zero && rd_zero) {
+		E();
+	}
+
+	A_IMM(MOV, OP_REG(RSI), OP_RELOC_IMM32);
+	A(AND, OP_REG(RSI), OP_IMM(CSR_MASK));
+
+	if (rs1_zero && !rd_zero) {
+		EMU_FUNCTION(10);
+		A_RD(MOV, OP_RELOC_RV_REG, OP_REG(RAX));
+	} else {
+		A_RS1UIMM(MOV, OP_REG(RDX), OP_RELOC_IMM32);
+		EMU_FUNCTION(13);
+		if (!rd_zero) {
+			A_RD(MOV, OP_RELOC_RV_REG, OP_REG(RAX));
+		}
+	}
+
+	E();
+}
+
+C_I(CSRRCI) {
+	S_I();
+
+	if (rs1_zero && rd_zero) {
+		E();
+	}
+
+	A_IMM(MOV, OP_REG(RSI), OP_RELOC_IMM32);
+	A(AND, OP_REG(RSI), OP_IMM(CSR_MASK));
+
+	if (rs1_zero && !rd_zero) {
+		EMU_FUNCTION(10);
+		A_RD(MOV, OP_RELOC_RV_REG, OP_REG(RAX));
+	} else {
+		A_RS1UIMM(MOV, OP_REG(RDX), OP_RELOC_IMM32);
+		EMU_FUNCTION(14);
+		if (!rd_zero) {
+			A_RD(MOV, OP_RELOC_RV_REG, OP_REG(RAX));
+		}
+	}
+
+	E();
+}
 
 #endif
