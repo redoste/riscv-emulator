@@ -23,6 +23,7 @@ typedef enum codegen_reloc_type_t {
 	CODEGEN_RELOC_RS2,
 	CODEGEN_RELOC_RD,
 	CODEGEN_RELOC_IMM,
+	CODEGEN_RELOC_RS1UIMM,
 } codegen_reloc_type_t;
 
 /* codegen_start_line : start an entry in the dr_x86_code_t array
@@ -63,11 +64,12 @@ void codegen_end_line(void);
 
 /* A_X : macros used to emit a x86-64 instruction with a X relocation
  */
-#define A(MNEMONIC, DST, SRC)     codegen_asm(X86_MNEMONIC_##MNEMONIC, DST, SRC, CODEGEN_RELOC_NONE)
-#define A_RS1(MNEMONIC, DST, SRC) codegen_asm(X86_MNEMONIC_##MNEMONIC, DST, SRC, CODEGEN_RELOC_RS1)
-#define A_RS2(MNEMONIC, DST, SRC) codegen_asm(X86_MNEMONIC_##MNEMONIC, DST, SRC, CODEGEN_RELOC_RS2)
-#define A_RD(MNEMONIC, DST, SRC)  codegen_asm(X86_MNEMONIC_##MNEMONIC, DST, SRC, CODEGEN_RELOC_RD)
-#define A_IMM(MNEMONIC, DST, SRC) codegen_asm(X86_MNEMONIC_##MNEMONIC, DST, SRC, CODEGEN_RELOC_IMM)
+#define A(MNEMONIC, DST, SRC)         codegen_asm(X86_MNEMONIC_##MNEMONIC, DST, SRC, CODEGEN_RELOC_NONE)
+#define A_RS1(MNEMONIC, DST, SRC)     codegen_asm(X86_MNEMONIC_##MNEMONIC, DST, SRC, CODEGEN_RELOC_RS1)
+#define A_RS2(MNEMONIC, DST, SRC)     codegen_asm(X86_MNEMONIC_##MNEMONIC, DST, SRC, CODEGEN_RELOC_RS2)
+#define A_RD(MNEMONIC, DST, SRC)      codegen_asm(X86_MNEMONIC_##MNEMONIC, DST, SRC, CODEGEN_RELOC_RD)
+#define A_IMM(MNEMONIC, DST, SRC)     codegen_asm(X86_MNEMONIC_##MNEMONIC, DST, SRC, CODEGEN_RELOC_IMM)
+#define A_RS1UIMM(MNEMONIC, DST, SRC) codegen_asm(X86_MNEMONIC_##MNEMONIC, DST, SRC, CODEGEN_RELOC_RS1UIMM)
 
 /* OP_RELOC_RV_REG : macro used to easily express a DISP8 relocation relative to
  *                   the x86-64 register holding the base of the RISC-V registers

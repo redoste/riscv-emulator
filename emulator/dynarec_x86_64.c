@@ -29,6 +29,9 @@ static inline bool dr_emit_x86_code(emulator_t* emu, const dr_x86_code_t* x86_co
 	if (x86_code->imm_reloc != -1) {
 		*(int32_t*)(&block->page[block->pos + x86_code->imm_reloc]) = instruction->imm;
 	}
+	if (x86_code->rs1uimm_reloc != -1) {
+		block->page[block->pos + x86_code->rs1uimm_reloc] = instruction->rs1;
+	}
 
 	size_t cache_index = (block->pc >> 2) & emu->cpu.instruction_cache_mask;
 	dr_ins_t* cached_instruction = &emu->cpu.instruction_cache.as_dr_ins[cache_index];

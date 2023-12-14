@@ -28,7 +28,8 @@ static struct {
 	ssize_t rs1_reloc;
 	ssize_t rs2_reloc;
 	ssize_t rd_reloc;
-	size_t imm_reloc;
+	ssize_t imm_reloc;
+	ssize_t rs1uimm_reloc;
 	uint8_t buffer[CODEGEN_BUFFER_CAPACITY];
 } codegen_current_line;
 
@@ -41,6 +42,7 @@ void codegen_start_line(bool b0, bool b1, bool b2) {
 	codegen_current_line.rs2_reloc = -1;
 	codegen_current_line.rd_reloc = -1;
 	codegen_current_line.imm_reloc = -1;
+	codegen_current_line.rs1uimm_reloc = -1;
 }
 
 void codegen_asm(x86_mnemonic_t mnemonic, x86_operand_t dst, x86_operand_t src, codegen_reloc_type_t reloc_type) {
@@ -67,6 +69,9 @@ void codegen_asm(x86_mnemonic_t mnemonic, x86_operand_t dst, x86_operand_t src, 
 		case CODEGEN_RELOC_IMM:
 			codegen_current_line.imm_reloc = codegen_current_line.pos + reloc_pos;
 			break;
+		case CODEGEN_RELOC_RS1UIMM:
+			codegen_current_line.rs1uimm_reloc = codegen_current_line.pos + reloc_pos;
+			break;
 		default:
 			break;
 	}
@@ -79,9 +84,10 @@ void codegen_end_line(void) {
 	for (size_t i = 0; i < codegen_current_line.pos; i++) {
 		printf("\\x%02" PRIx8, codegen_current_line.buffer[i]);
 	}
-	printf("\", %zu, %zd, %zd, %zd, %zd},\n", codegen_current_line.pos,
+	printf("\", %zu, %zd, %zd, %zd, %zd, %zd},\n", codegen_current_line.pos,
 	       codegen_current_line.rs1_reloc, codegen_current_line.rs2_reloc,
-	       codegen_current_line.rd_reloc, codegen_current_line.imm_reloc);
+	       codegen_current_line.rd_reloc, codegen_current_line.imm_reloc,
+	       codegen_current_line.rs1uimm_reloc);
 
 	codegen_current_ins++;
 }

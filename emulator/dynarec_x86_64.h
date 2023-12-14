@@ -24,6 +24,7 @@ typedef struct dr_x86_code_t {
 	ssize_t rs2_reloc;
 	ssize_t rd_reloc;
 	ssize_t imm_reloc;
+	ssize_t rs1uimm_reloc;
 } dr_x86_code_t;
 
 /* DYNAREC_PAGE_SIZE : size of a single page of x86-64 code, here we assume pages are 4KiB
