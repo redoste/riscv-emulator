@@ -144,62 +144,50 @@ typedef struct cached_ins_t {
 	X_I(                                                                                                                                               \
 		CSRRW, OPCODE_SYSTEM, F3_CSRRW, do {                                                                                                       \
 			if (rd == &cpu->regs[0]) {                                                                                                         \
-				cpu_write_csr(emu, imm& CSR_MASK, *rs1);                                                                                   \
+				cpu_csr_write(emu, imm& CSR_MASK, *rs1);                                                                                   \
 			} else {                                                                                                                           \
-				guest_reg value = cpu_read_csr(emu, imm & CSR_MASK);                                                                       \
-				cpu_write_csr(emu, imm& CSR_MASK, *rs1);                                                                                   \
-				*rd = value;                                                                                                               \
+				*rd = cpu_csr_exchange(emu, imm & CSR_MASK, *rs1);                                                                         \
 			}                                                                                                                                  \
 		} while (0))                                                                                                                               \
 	X_I(                                                                                                                                               \
 		CSRRS, OPCODE_SYSTEM, F3_CSRRS, do {                                                                                                       \
 			if (rs1 == &cpu->regs[0]) {                                                                                                        \
-				*rd = cpu_read_csr(emu, imm & CSR_MASK);                                                                                   \
+				*rd = cpu_csr_read(emu, imm & CSR_MASK);                                                                                   \
 			} else {                                                                                                                           \
-				guest_reg value = cpu_read_csr(emu, imm & CSR_MASK);                                                                       \
-				cpu_write_csr(emu, imm& CSR_MASK, value | *rs1);                                                                           \
-				*rd = value;                                                                                                               \
+				*rd = cpu_csr_set_bits(emu, imm & CSR_MASK, *rs1);                                                                         \
 			}                                                                                                                                  \
 		} while (0))                                                                                                                               \
 	X_I(                                                                                                                                               \
 		CSRRC, OPCODE_SYSTEM, F3_CSRRC, do {                                                                                                       \
 			if (rs1 == &cpu->regs[0]) {                                                                                                        \
-				*rd = cpu_read_csr(emu, imm & CSR_MASK);                                                                                   \
+				*rd = cpu_csr_read(emu, imm & CSR_MASK);                                                                                   \
 			} else {                                                                                                                           \
-				guest_reg value = cpu_read_csr(emu, imm & CSR_MASK);                                                                       \
-				cpu_write_csr(emu, imm& CSR_MASK, value & ~(*rs1));                                                                        \
-				*rd = value;                                                                                                               \
+				*rd = cpu_csr_clear_bits(emu, imm & CSR_MASK, *rs1);                                                                       \
 			}                                                                                                                                  \
 		} while (0))                                                                                                                               \
                                                                                                                                                            \
 	X_I(                                                                                                                                               \
 		CSRRWI, OPCODE_SYSTEM, F3_CSRRWI, do {                                                                                                     \
 			if (rd == &cpu->regs[0]) {                                                                                                         \
-				cpu_write_csr(emu, imm& CSR_MASK, (guest_reg)instruction->rs1);                                                            \
+				cpu_csr_write(emu, imm& CSR_MASK, (guest_reg)instruction->rs1);                                                            \
 			} else {                                                                                                                           \
-				guest_reg value = cpu_read_csr(emu, imm & CSR_MASK);                                                                       \
-				cpu_write_csr(emu, imm& CSR_MASK, (guest_reg)instruction->rs1);                                                            \
-				*rd = value;                                                                                                               \
+				*rd = cpu_csr_exchange(emu, imm & CSR_MASK, (guest_reg)instruction->rs1);                                                  \
 			}                                                                                                                                  \
 		} while (0))                                                                                                                               \
 	X_I(                                                                                                                                               \
 		CSRRSI, OPCODE_SYSTEM, F3_CSRRSI, do {                                                                                                     \
 			if (instruction->rs1 == 0) {                                                                                                       \
-				*rd = cpu_read_csr(emu, imm & CSR_MASK);                                                                                   \
+				*rd = cpu_csr_read(emu, imm & CSR_MASK);                                                                                   \
 			} else {                                                                                                                           \
-				guest_reg value = cpu_read_csr(emu, imm & CSR_MASK);                                                                       \
-				cpu_write_csr(emu, imm& CSR_MASK, value | instruction->rs1);                                                               \
-				*rd = value;                                                                                                               \
+				*rd = cpu_csr_set_bits(emu, imm & CSR_MASK, instruction->rs1);                                                             \
 			}                                                                                                                                  \
 		} while (0))                                                                                                                               \
 	X_I(                                                                                                                                               \
 		CSRRCI, OPCODE_SYSTEM, F3_CSRRCI, do {                                                                                                     \
 			if (instruction->rs1 == 0) {                                                                                                       \
-				*rd = cpu_read_csr(emu, imm & CSR_MASK);                                                                                   \
+				*rd = cpu_csr_read(emu, imm & CSR_MASK);                                                                                   \
 			} else {                                                                                                                           \
-				guest_reg value = cpu_read_csr(emu, imm & CSR_MASK);                                                                       \
-				cpu_write_csr(emu, imm& CSR_MASK, value & ~(instruction->rs1));                                                            \
-				*rd = value;                                                                                                               \
+				*rd = cpu_csr_clear_bits(emu, imm & CSR_MASK, instruction->rs1);                                                           \
 			}                                                                                                                                  \
 		} while (0))                                                                                                                               \
                                                                                                                                                            \
