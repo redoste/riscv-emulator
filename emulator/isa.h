@@ -62,11 +62,11 @@ typedef struct cached_ins_t {
  * guest_reg* rs2           : second source register
  * guest_word* rs1w         : first source register as a word
  * guest_word* rs2w         : second source register as a word
- * guest_reg* rds           : destination register signed
- * guest_reg* rs1s          : first source register signed
- * guest_reg* rs2s          : second source register signed
- * guest_word* rs1ws        : first source register as a signed word
- * guest_word* rs2ws        : second source register as a signed word
+ * guest_reg_signed* rds    : destination register signed
+ * guest_reg_signed* rs1s   : first source register signed
+ * guest_reg_signed* rs2s   : second source register signed
+ * guest_word_signed* rs1ws : first source register as a signed word
+ * guest_word_signed* rs2ws : second source register as a signed word
  * int64_t imm              : immediate
  */
 #define X_INSTRUCTIONS                                                                                                                                     \
@@ -98,7 +98,9 @@ typedef struct cached_ins_t {
 													      : (*rs1s % *rs2s))                           \
 	X_R(REMU, OPCODE_OP, F3_REMU, F7_REMU, *rd = (*rs2 == 0) ? *rs1 : (*rs1 % *rs2))                                                                   \
                                                                                                                                                            \
-	X_R(MULW, OPCODE_OP_32, F3_MUL, F7_MUL, *rds = (*rs1ws * *rs2ws))                                                                                  \
+	/* NOTE : We have to do the multiplication on 64 bits because overflowing a multiplication is undefined and LLVM can do */                         \
+	/*        weird optimizations (see: <https://redd.it/18iaz89>) */                                                                                  \
+	X_R(MULW, OPCODE_OP_32, F3_MUL, F7_MUL, *rds = (guest_word_signed)((guest_reg_signed)*rs1ws * *rs2ws))                                             \
 	X_R(DIVW, OPCODE_OP_32, F3_DIV, F7_DIV, *rds = (*rs2ws == 0) ? -1 : (*rs1ws == INT32_MIN && *rs2ws == -1) ? INT32_MIN                              \
 														  : (*rs1ws / *rs2ws))                     \
 	X_R(DIVUW, OPCODE_OP_32, F3_DIVU, F7_DIVU, *rds = (guest_word_signed)((*rs2w == 0) ? UINT32_MAX : (*rs1w / *rs2w)))                                \
