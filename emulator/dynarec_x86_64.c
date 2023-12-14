@@ -1,7 +1,10 @@
 #ifdef RISCV_EMULATOR_DYNAREC_X86_64_SUPPORT
 
 #include <assert.h>
+#include <inttypes.h>
 #include <stdbool.h>
+#include <stdio.h>
+#include <string.h>
 #include <sys/mman.h>
 
 #include "dynarec_x86_64.h"
