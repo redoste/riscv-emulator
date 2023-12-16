@@ -54,6 +54,7 @@
 	X_I(LWU)       \
                        \
 	X_I(FENCE)     \
+	X_I(FENCEI)    \
                        \
 	X_I(ADDI)      \
 	X_I(SLLI)      \

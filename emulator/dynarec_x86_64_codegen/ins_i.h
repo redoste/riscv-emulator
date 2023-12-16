@@ -121,6 +121,11 @@ C_I(FENCE) {
 	E();
 }
 
+C_I(FENCEI) {
+	S_I();
+	E();
+}
+
 C_I(ADDI) {
 	S_I();
 

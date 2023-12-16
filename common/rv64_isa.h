@@ -58,6 +58,9 @@ enum {
 	/* OPCODE MISC-MEM */
 	F3_FENCE = 0,
 
+	/* OPCODE MISC-MEM : Zifencei extension */
+	F3_FENCEI = 1,
+
 	/* OPCODE SYSTEM */
 	F3_ECALL = 0,
 	F3_EBREAK = 0,

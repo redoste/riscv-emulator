@@ -117,6 +117,7 @@ typedef struct cached_ins_t {
 	X_I(LWU, OPCODE_LOAD, F3_LWU, *rd = (uint32_t)emu_r32(emu, *rs1 + imm))                                                                            \
                                                                                                                                                            \
 	X_I(FENCE, OPCODE_MISC_MEM, F3_FENCE, /* nop */)                                                                                                   \
+	X_I(FENCEI, OPCODE_MISC_MEM, F3_FENCEI, /* nop */)                                                                                                 \
                                                                                                                                                            \
 	X_I(ADDI, OPCODE_OP_IMM, F3_ADD, *rd = *rs1 + imm)                                                                                                 \
 	X_I(SLLI, OPCODE_OP_IMM, F3_SLL, *rd = *rs1 << (imm & 0x3f))                                                                                       \
