@@ -3,6 +3,9 @@ fence i, iorw
 fence iorw, i
 fence io, rw
 fence ow, ir
+fence iorw, 0
+fence 0, ow
+fence 0, 0
 
 # EBREAK
 ebreak
