@@ -108,6 +108,131 @@ typedef struct cached_ins_t {
 														      : (*rs1ws % *rs2ws))                 \
 	X_R(REMUW, OPCODE_OP_32, F3_REMU, F7_REMU, *rds = (guest_word_signed)((*rs2w == 0) ? *rs1w : (*rs1w % *rs2w)))                                     \
                                                                                                                                                            \
+	/* NOTE : The instructions from the A extension are implemented "naively" as the emulator does everything in synchronized way */                   \
+	/*        However this is more or less a violation of the spec as `SC` will always succeed even if it should fail */                               \
+	/*        when no corresponding `LR` was executed */                                                                                               \
+	X_R(LR_W, OPCODE_AMO, F3_AMO_W, F7_LR, *rds = (int32_t)emu_r32(emu, *rs1))                                                                         \
+	X_R(                                                                                                                                               \
+		SC_W, OPCODE_AMO, F3_AMO_W, F7_SC, do {                                                                                                    \
+			emu_w32(emu, *rs1, *rs2w);                                                                                                         \
+			*rd = 0;                                                                                                                           \
+		} while (0))                                                                                                                               \
+	X_R(                                                                                                                                               \
+		AMOSWAP_W, OPCODE_AMO, F3_AMO_W, F7_AMOSWAP, do {                                                                                          \
+			int32_t value = (int32_t)emu_r32(emu, *rs1);                                                                                       \
+			emu_w32(emu, *rs1, *rs2w);                                                                                                         \
+			*rds = value;                                                                                                                      \
+		} while (0))                                                                                                                               \
+	X_R(                                                                                                                                               \
+		AMOADD_W, OPCODE_AMO, F3_AMO_W, F7_AMOADD, do {                                                                                            \
+			int32_t value = (int32_t)emu_r32(emu, *rs1);                                                                                       \
+			emu_w32(emu, *rs1, *rs2ws + value);                                                                                                \
+			*rds = value;                                                                                                                      \
+		} while (0))                                                                                                                               \
+	X_R(                                                                                                                                               \
+		AMOXOR_W, OPCODE_AMO, F3_AMO_W, F7_AMOXOR, do {                                                                                            \
+			int32_t value = (int32_t)emu_r32(emu, *rs1);                                                                                       \
+			emu_w32(emu, *rs1, *rs2w ^ value);                                                                                                 \
+			*rds = value;                                                                                                                      \
+		} while (0))                                                                                                                               \
+	X_R(                                                                                                                                               \
+		AMOAND_W, OPCODE_AMO, F3_AMO_W, F7_AMOAND, do {                                                                                            \
+			int32_t value = (int32_t)emu_r32(emu, *rs1);                                                                                       \
+			emu_w32(emu, *rs1, *rs2w& value);                                                                                                  \
+			*rds = value;                                                                                                                      \
+		} while (0))                                                                                                                               \
+	X_R(                                                                                                                                               \
+		AMOOR_W, OPCODE_AMO, F3_AMO_W, F7_AMOOR, do {                                                                                              \
+			int32_t value = (int32_t)emu_r32(emu, *rs1);                                                                                       \
+			emu_w32(emu, *rs1, *rs2w | value);                                                                                                 \
+			*rds = value;                                                                                                                      \
+		} while (0))                                                                                                                               \
+	X_R(                                                                                                                                               \
+		AMOMIN_W, OPCODE_AMO, F3_AMO_W, F7_AMOMIN, do {                                                                                            \
+			int32_t value = (int32_t)emu_r32(emu, *rs1);                                                                                       \
+			emu_w32(emu, *rs1, *rs2ws < value ? *rs2ws : value);                                                                               \
+			*rds = value;                                                                                                                      \
+		} while (0))                                                                                                                               \
+	X_R(                                                                                                                                               \
+		AMOMAX_W, OPCODE_AMO, F3_AMO_W, F7_AMOMAX, do {                                                                                            \
+			int32_t value = (int32_t)emu_r32(emu, *rs1);                                                                                       \
+			emu_w32(emu, *rs1, *rs2ws > value ? *rs2ws : value);                                                                               \
+			*rds = value;                                                                                                                      \
+		} while (0))                                                                                                                               \
+	X_R(                                                                                                                                               \
+		AMOMINU_W, OPCODE_AMO, F3_AMO_W, F7_AMOMINU, do {                                                                                          \
+			uint32_t value = emu_r32(emu, *rs1);                                                                                               \
+			emu_w32(emu, *rs1, *rs2w < value ? *rs2w : value);                                                                                 \
+			*rds = (int32_t)value;                                                                                                             \
+		} while (0))                                                                                                                               \
+	X_R(                                                                                                                                               \
+		AMOMAXU_W, OPCODE_AMO, F3_AMO_W, F7_AMOMAXU, do {                                                                                          \
+			uint32_t value = emu_r32(emu, *rs1);                                                                                               \
+			emu_w32(emu, *rs1, *rs2w > value ? *rs2w : value);                                                                                 \
+			*rds = (int32_t)value;                                                                                                             \
+		} while (0))                                                                                                                               \
+                                                                                                                                                           \
+	X_R(LR_D, OPCODE_AMO, F3_AMO_D, F7_LR, *rd = emu_r64(emu, *rs1))                                                                                   \
+	X_R(                                                                                                                                               \
+		SC_D, OPCODE_AMO, F3_AMO_D, F7_SC, do {                                                                                                    \
+			emu_w64(emu, *rs1, *rs2);                                                                                                          \
+			*rd = 0;                                                                                                                           \
+		} while (0))                                                                                                                               \
+	X_R(                                                                                                                                               \
+		AMOSWAP_D, OPCODE_AMO, F3_AMO_D, F7_AMOSWAP, do {                                                                                          \
+			int64_t value = (int64_t)emu_r64(emu, *rs1);                                                                                       \
+			emu_w64(emu, *rs1, *rs2);                                                                                                          \
+			*rds = value;                                                                                                                      \
+		} while (0))                                                                                                                               \
+	X_R(                                                                                                                                               \
+		AMOADD_D, OPCODE_AMO, F3_AMO_D, F7_AMOADD, do {                                                                                            \
+			int64_t value = (int64_t)emu_r64(emu, *rs1);                                                                                       \
+			emu_w64(emu, *rs1, *rs2s + value);                                                                                                 \
+			*rds = value;                                                                                                                      \
+		} while (0))                                                                                                                               \
+	X_R(                                                                                                                                               \
+		AMOXOR_D, OPCODE_AMO, F3_AMO_D, F7_AMOXOR, do {                                                                                            \
+			int64_t value = (int64_t)emu_r64(emu, *rs1);                                                                                       \
+			emu_w64(emu, *rs1, *rs2 ^ value);                                                                                                  \
+			*rds = value;                                                                                                                      \
+		} while (0))                                                                                                                               \
+	X_R(                                                                                                                                               \
+		AMOAND_D, OPCODE_AMO, F3_AMO_D, F7_AMOAND, do {                                                                                            \
+			int64_t value = (int64_t)emu_r64(emu, *rs1);                                                                                       \
+			emu_w64(emu, *rs1, *rs2& value);                                                                                                   \
+			*rds = value;                                                                                                                      \
+		} while (0))                                                                                                                               \
+	X_R(                                                                                                                                               \
+		AMOOR_D, OPCODE_AMO, F3_AMO_D, F7_AMOOR, do {                                                                                              \
+			int64_t value = (int64_t)emu_r64(emu, *rs1);                                                                                       \
+			emu_w64(emu, *rs1, *rs2 | value);                                                                                                  \
+			*rds = value;                                                                                                                      \
+		} while (0))                                                                                                                               \
+	X_R(                                                                                                                                               \
+		AMOMIN_D, OPCODE_AMO, F3_AMO_D, F7_AMOMIN, do {                                                                                            \
+			int64_t value = (int64_t)emu_r64(emu, *rs1);                                                                                       \
+			emu_w64(emu, *rs1, *rs2s < value ? *rs2s : value);                                                                                 \
+			*rds = value;                                                                                                                      \
+		} while (0))                                                                                                                               \
+	X_R(                                                                                                                                               \
+		AMOMAX_D, OPCODE_AMO, F3_AMO_D, F7_AMOMAX, do {                                                                                            \
+			int64_t value = (int64_t)emu_r64(emu, *rs1);                                                                                       \
+			emu_w64(emu, *rs1, *rs2s > value ? *rs2s : value);                                                                                 \
+			*rds = value;                                                                                                                      \
+		} while (0))                                                                                                                               \
+	X_R(                                                                                                                                               \
+		AMOMINU_D, OPCODE_AMO, F3_AMO_D, F7_AMOMINU, do {                                                                                          \
+			uint64_t value = emu_r64(emu, *rs1);                                                                                               \
+			emu_w64(emu, *rs1, *rs2 < value ? *rs2 : value);                                                                                   \
+			*rd = value;                                                                                                                       \
+		} while (0))                                                                                                                               \
+	X_R(                                                                                                                                               \
+		AMOMAXU_D, OPCODE_AMO, F3_AMO_D, F7_AMOMAXU, do {                                                                                          \
+			uint64_t value = emu_r64(emu, *rs1);                                                                                               \
+			emu_w64(emu, *rs1, *rs2 > value ? *rs2 : value);                                                                                   \
+			*rd = value;                                                                                                                       \
+		} while (0))                                                                                                                               \
+                                                                                                                                                           \
 	X_I(LB, OPCODE_LOAD, F3_LB, *rds = (int8_t)emu_r8(emu, *rs1 + imm))                                                                                \
 	X_I(LH, OPCODE_LOAD, F3_LH, *rds = (int16_t)emu_r16(emu, *rs1 + imm))                                                                              \
 	X_I(LW, OPCODE_LOAD, F3_LW, *rds = (int32_t)emu_r32(emu, *rs1 + imm))                                                                              \

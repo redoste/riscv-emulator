@@ -540,4 +540,28 @@ C_R(REMUW) {
 	E();
 }
 
+C_R(LR_W) {}
+C_R(SC_W) {}
+C_R(AMOSWAP_W) {}
+C_R(AMOADD_W) {}
+C_R(AMOXOR_W) {}
+C_R(AMOAND_W) {}
+C_R(AMOOR_W) {}
+C_R(AMOMIN_W) {}
+C_R(AMOMAX_W) {}
+C_R(AMOMINU_W) {}
+C_R(AMOMAXU_W) {}
+
+C_R(LR_D) {}
+C_R(SC_D) {}
+C_R(AMOSWAP_D) {}
+C_R(AMOADD_D) {}
+C_R(AMOXOR_D) {}
+C_R(AMOAND_D) {}
+C_R(AMOOR_D) {}
+C_R(AMOMIN_D) {}
+C_R(AMOMAX_D) {}
+C_R(AMOMINU_D) {}
+C_R(AMOMAXU_D) {}
+
 #endif

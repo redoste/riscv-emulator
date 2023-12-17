@@ -45,6 +45,30 @@
 	X_R(REMW)      \
 	X_R(REMUW)     \
                        \
+	X_R(LR_W)      \
+	X_R(SC_W)      \
+	X_R(AMOSWAP_W) \
+	X_R(AMOADD_W)  \
+	X_R(AMOXOR_W)  \
+	X_R(AMOAND_W)  \
+	X_R(AMOOR_W)   \
+	X_R(AMOMIN_W)  \
+	X_R(AMOMAX_W)  \
+	X_R(AMOMINU_W) \
+	X_R(AMOMAXU_W) \
+                       \
+	X_R(LR_D)      \
+	X_R(SC_D)      \
+	X_R(AMOSWAP_D) \
+	X_R(AMOADD_D)  \
+	X_R(AMOXOR_D)  \
+	X_R(AMOAND_D)  \
+	X_R(AMOOR_D)   \
+	X_R(AMOMIN_D)  \
+	X_R(AMOMAX_D)  \
+	X_R(AMOMINU_D) \
+	X_R(AMOMAXU_D) \
+                       \
 	X_I(LB)        \
 	X_I(LH)        \
 	X_I(LW)        \

@@ -20,6 +20,8 @@ enum {
 	OPCODE_OP_IMM = 0x13,
 	OPCODE_OP_IMM_32 = 0x1b,
 
+	OPCODE_AMO = 0x2f,
+
 	OPCODE_MISC_MEM = 0x0F,
 	OPCODE_SYSTEM = 0x73,
 
@@ -54,6 +56,10 @@ enum {
 	F3_DIVU = 5,
 	F3_REM = 6,
 	F3_REMU = 7,
+
+	/* OPCODE AMO : A extension */
+	F3_AMO_W = 2,
+	F3_AMO_D = 3,
 
 	/* OPCODE MISC-MEM */
 	F3_FENCE = 0,
@@ -123,6 +129,22 @@ enum {
 	F7_DIVU = 0x01,
 	F7_REM = 0x01,
 	F7_REMU = 0x01,
+
+	/* OPCODE AMO : A extension */
+	/* NOTE : AMO instructions use funct5, so we shift it to the left by two
+	 *        bits to be able to easily use these constants like funct7
+	 */
+	F7_LR = 0x02 << 2,
+	F7_SC = 0x03 << 2,
+	F7_AMOSWAP = 0x01 << 2,
+	F7_AMOADD = 0x00 << 2,
+	F7_AMOXOR = 0x04 << 2,
+	F7_AMOAND = 0x0c << 2,
+	F7_AMOOR = 0x08 << 2,
+	F7_AMOMIN = 0x10 << 2,
+	F7_AMOMAX = 0x14 << 2,
+	F7_AMOMINU = 0x18 << 2,
+	F7_AMOMAXU = 0x1c << 2,
 };
 
 /* RISC-V funct12 */

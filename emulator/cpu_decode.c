@@ -24,6 +24,14 @@ bool cpu_decode(uint32_t encoded_instruction, ins_t* decoded_instruction) {
 
 			uint8_t funct3 = DECODE_GET_F3(encoded_instruction);
 			uint8_t funct7 = DECODE_GET_F7(encoded_instruction);
+
+			/* We drop the `aq` and `rl` bits in AMO instructions to simplify the instruction
+			 * dispatching as they won't be used anyway
+			 */
+			if (opcode == OPCODE_AMO) {
+				funct7 &= ~3;
+			}
+
 			decoded_instruction->opcode_switch = (opcode >> 2) | (funct3 << 5) | (funct7 << 8);
 			break;
 		}
