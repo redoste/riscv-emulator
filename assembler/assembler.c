@@ -30,11 +30,13 @@ static bool assembler_bound_check_imm(const token_t* token, int64_t imm, size_t 
 	}
 }
 
-#define RETURN_IF_LEXER_UNEXPECTED(lexer, token, type)                       \
-	do {                                                                 \
-		if (!lexer_next_expected((lexer), (token), (type), false)) { \
-			return false;                                        \
-		}                                                            \
+#define RETURN_IF_LEXER_UNEXPECTED(lexer, token, ...)                         \
+	do {                                                                  \
+		token_type_t types[] = {__VA_ARGS__};                         \
+		if (!lexer_next_expected((lexer), (token), types,             \
+					 sizeof(types) / sizeof(types[0]))) { \
+			return false;                                         \
+		}                                                             \
 	} while (0)
 
 static bool assembler_parse_r_ins(lexer_t* lexer, reg_t* rd, reg_t* rs1, reg_t* rs2) {

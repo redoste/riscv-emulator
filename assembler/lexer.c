@@ -278,7 +278,7 @@ static const char* const TT_NAMES[TT_COUNT] = {
 	[TT_EOF] = "end of file",
 };
 
-bool lexer_next_expected(lexer_t* lexer, token_t* token, token_type_t expected_type, bool or_eox) {
+bool lexer_next_expected(lexer_t* lexer, token_t* token, const token_type_t* expected_types, size_t expected_types_len) {
 	bool ret = lexer_next(lexer, token);
 #ifdef DEBUG_LEXER
 	if (ret) {
@@ -288,13 +288,28 @@ bool lexer_next_expected(lexer_t* lexer, token_t* token, token_type_t expected_t
 
 	if (!ret) {
 		return false;
-	} else if (token->type == expected_type ||
-		   (or_eox && token->type == TT_EOF) ||
-		   (or_eox && token->type == TT_EOI)) {
+	}
+
+	bool found = false;
+	for (size_t i = 0; i < expected_types_len && !found; i++) {
+		if (token->type == expected_types[i]) {
+			found = true;
+		}
+	}
+
+	if (found) {
 		return true;
 	} else {
-		const char* fmtstr = or_eox ? "expected %s, end of file or end of instruction but got %s\n" : "expected %s but got %s\n";
-		diag_error(token->pos, fmtstr, TT_NAMES[expected_type], TT_NAMES[token->type]);
+		char expected_str[1024] = {0};
+		for (size_t i = 0; i < expected_types_len; i++) {
+			if (i > 0 && i == expected_types_len - 1) {
+				strncat(expected_str, " or ", sizeof(expected_str) - strlen(expected_str) - 1);
+			} else if (i > 0) {
+				strncat(expected_str, ", ", sizeof(expected_str) - strlen(expected_str) - 1);
+			}
+			strncat(expected_str, TT_NAMES[expected_types[i]], sizeof(expected_str) - strlen(expected_str) - 1);
+		}
+		diag_error(token->pos, "expected %s but got %s\n", expected_str, TT_NAMES[token->type]);
 		return false;
 	}
 }

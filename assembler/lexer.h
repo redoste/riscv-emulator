@@ -95,17 +95,17 @@ void lexer_create(lexer_t* lexer, FILE* input_stream, const char* filename);
  */
 bool lexer_next(lexer_t* lexer, token_t* token);
 
-/* lexer_next_expected : lex the next token in the input_stream but accept only a specific kind of tokens
- *                       returns true if the new token is valid and of the correct kind
+/* lexer_next_expected : lex the next token in the input_stream but accept only specific kinds of tokens
+ *                       returns true if the new token is valid and of one the correct kinds
  *                       returns false if lexing the next token generated an error or if the new token is
  *                       of an unexpected kind
  *                       in case of error, the generated token_t struct should be considered *invalid*
- *     lexer_t* lexer             : pointer to the lexer
- *     token_t* token             : pointer to the token struct to fill with the new token
- *     token_type_t expected_type : expected kind for the next token
- *     bool or_eox                : also accept TT_EOI and TT_EOL tokens
+ *     lexer_t* lexer                     : pointer to the lexer
+ *     token_t* token                     : pointer to the token struct to fill with the new token
+ *     const token_type_t* expected_types : expected kinds for the next token
+ *     size_t expected_types_len          : number of expected kinds
  */
-bool lexer_next_expected(lexer_t* lexer, token_t* token, token_type_t expected_type, bool or_eox);
+bool lexer_next_expected(lexer_t* lexer, token_t* token, const token_type_t* expected_types, size_t expected_types_len);
 
 #ifdef DEBUG_LEXER
 /* lexer_debug_print_token : print to stderr details about a token

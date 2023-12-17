@@ -45,7 +45,8 @@ int main(int argc, char** argv) {
 	token_t token;
 	int res = 0;
 	do {
-		if (!lexer_next_expected(&lexer, &token, TT_INS_MNEMONIC, true)) {
+		token_type_t types[] = {TT_INS_MNEMONIC, TT_EOI, TT_EOF};
+		if (!lexer_next_expected(&lexer, &token, types, sizeof(types) / sizeof(types[0]))) {
 			res = 1;
 			break;
 		}
