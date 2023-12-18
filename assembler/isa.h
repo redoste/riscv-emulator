@@ -8,6 +8,8 @@
 /* X_INSTRUCTIONS : X-macro storing informations about all the instructions
  *                  the assembler can assemble
  *     X_R(MNEMONIC, OPCODE, FUNCT3, FUNCT7) : R-type instruction
+ *     X_R_A(MNEMONIC, OPCODE, FUNCT7, RS2)  : R-type instruction that is parsed like an instruction from the A
+ *                                             extension
  *     X_I(MNEMONIC, OPCODE, FUNCT3)         : I-type instruction
  *     X_I_S(MNEMONIC, OPCODE, FUNCT3)       : I-type instruction that is parsed like a S-type (e.g. loads)
  *     X_S(MNEMONIC, OPCODE, FUNCT3)         : S-type instruction
@@ -49,6 +51,18 @@
 	X_R(DIVUW, OPCODE_OP_32, F3_DIVU, F7_DIVU)   \
 	X_R(REMW, OPCODE_OP_32, F3_REM, F7_REM)      \
 	X_R(REMUW, OPCODE_OP_32, F3_REMU, F7_REMU)   \
+                                                     \
+	X_R_A(LR, OPCODE_AMO, F7_LR, false)          \
+	X_R_A(SC, OPCODE_AMO, F7_SC, true)           \
+	X_R_A(AMOSWAP, OPCODE_AMO, F7_AMOSWAP, true) \
+	X_R_A(AMOADD, OPCODE_AMO, F7_AMOADD, true)   \
+	X_R_A(AMOXOR, OPCODE_AMO, F7_AMOXOR, true)   \
+	X_R_A(AMOAND, OPCODE_AMO, F7_AMOAND, true)   \
+	X_R_A(AMOOR, OPCODE_AMO, F7_AMOOR, true)     \
+	X_R_A(AMOMIN, OPCODE_AMO, F7_AMOMIN, true)   \
+	X_R_A(AMOMAX, OPCODE_AMO, F7_AMOMAX, true)   \
+	X_R_A(AMOMINU, OPCODE_AMO, F7_AMOMINU, true) \
+	X_R_A(AMOMAXU, OPCODE_AMO, F7_AMOMAXU, true) \
                                                      \
 	X_I_S(LB, OPCODE_LOAD, F3_LB)                \
 	X_I_S(LH, OPCODE_LOAD, F3_LH)                \
@@ -105,16 +119,18 @@
  *                  can parse
  */
 typedef enum ins_mnemonic_t {
-#define X_R(MNEMONIC, O, F3, F7) INS_##MNEMONIC,
-#define X_I(MNEMONIC, O, F3)     INS_##MNEMONIC,
-#define X_I_S(MNEMONIC, O, F3)   INS_##MNEMONIC,
-#define X_S(MNEMONIC, O, F3)     INS_##MNEMONIC,
-#define X_B(MNEMONIC, O, F3)     INS_##MNEMONIC,
-#define X_U(MNEMONIC, O)         INS_##MNEMONIC,
-#define X_J(MNEMONIC, O)         INS_##MNEMONIC,
-#define X_P(MNEMONIC)            INS_##MNEMONIC,
+#define X_R(MNEMONIC, O, F3, F7)    INS_##MNEMONIC,
+#define X_R_A(MNEMONIC, O, F7, RS2) INS_##MNEMONIC,
+#define X_I(MNEMONIC, O, F3)        INS_##MNEMONIC,
+#define X_I_S(MNEMONIC, O, F3)      INS_##MNEMONIC,
+#define X_S(MNEMONIC, O, F3)        INS_##MNEMONIC,
+#define X_B(MNEMONIC, O, F3)        INS_##MNEMONIC,
+#define X_U(MNEMONIC, O)            INS_##MNEMONIC,
+#define X_J(MNEMONIC, O)            INS_##MNEMONIC,
+#define X_P(MNEMONIC)               INS_##MNEMONIC,
 	X_INSTRUCTIONS
 #undef X_R
+#undef X_R_A
 #undef X_I
 #undef X_I_S
 #undef X_S
@@ -129,6 +145,26 @@ typedef enum ins_mnemonic_t {
 /* INS_NAMES : string representation of the instruction mnemonics
  */
 extern const char* const INS_NAMES[];
+
+/* ins_attrib_t : enumeration of instruction attributes that the assembler
+ *                can parse
+ */
+typedef enum ins_attrib_t {
+	/* Attributes to the A extension instructions */
+	INS_ATTRIB_AMO_AQ,
+	INS_ATTRIB_AMO_RL,
+	INS_ATTRIB_AMO_AQRL,
+
+	/* Size attributes */
+	INS_ATTRIB_SIZE_W,
+	INS_ATTRIB_SIZE_D,
+
+	INS_ATTRIB_COUNT,
+} ins_attrib_t;
+
+/* INS_ATTRIB_NAMES : string representation of the instruction attributes
+ */
+extern const char* const INS_ATTRIB_NAMES[];
 
 /* REG_ALIAS : string representation of the register aliases
  */

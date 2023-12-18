@@ -178,6 +178,24 @@ static bool lexer_next_reg_deref(lexer_t* lexer, token_t* token) {
 	return true;
 }
 
+static bool lexer_next_ins_attrib(lexer_t* lexer, token_t* token) {
+	assert(lexer_peek_char(lexer) == '.');
+	lexer_consume_peek(lexer);
+	char word[LEXER_WORD_BUFFER_CAP] = {0};
+	lexer_read_word(lexer, word, LEXER_WORD_BUFFER_CAP - 1);
+
+	for (size_t attrib = 0; attrib < INS_ATTRIB_COUNT; attrib++) {
+		if (strcasecmp(word, INS_ATTRIB_NAMES[attrib]) == 0) {
+			token->type = TT_INS_ATTRIB;
+			token->as_ins_attrib = attrib;
+			return true;
+		}
+	}
+
+	diag_error(token->pos, "unexpected instruction attribute '%s'\n", word);
+	return false;
+}
+
 static bool lexer_next_word(lexer_t* lexer, token_t* token) {
 	char word[LEXER_WORD_BUFFER_CAP] = {0};
 	lexer_read_word(lexer, word, LEXER_WORD_BUFFER_CAP - 1);
@@ -257,6 +275,9 @@ bool lexer_next(lexer_t* lexer, token_t* token) {
 		} else if (c == '(') {
 			// Register deref in address operand
 			return lexer_next_reg_deref(lexer, token);
+		} else if (c == '.') {
+			// Instruction attribute
+			return lexer_next_ins_attrib(lexer, token);
 		} else if (isalpha(c)) {
 			// Instruction mnemonic or register operand
 			return lexer_next_word(lexer, token);
@@ -273,6 +294,7 @@ static const char* const TT_NAMES[TT_COUNT] = {
 	[TT_REG_DEREF_OPERAND] = "register dereference operand",
 	[TT_INT_LITERAL] = "integer literal",
 	[TT_FENCE_OPERAND] = "fence operand",
+	[TT_INS_ATTRIB] = "instruction attribute",
 	[TT_COMMA] = "comma",
 	[TT_EOI] = "end of instruction",
 	[TT_EOF] = "end of file",
@@ -336,6 +358,10 @@ void lexer_debug_print_token(const token_t* token) {
 		case TT_FENCE_OPERAND:
 			fprintf(stderr, POS_T_FMT_STR " FENCE OPERAND 0x%" PRIx8 "\n", POS_T_FMT_ARG(token->pos),
 				token->as_fence_operand);
+			break;
+		case TT_INS_ATTRIB:
+			fprintf(stderr, POS_T_FMT_STR " INS ATTRIB %s\n", POS_T_FMT_ARG(token->pos),
+				INS_ATTRIB_NAMES[token->as_ins_attrib]);
 			break;
 		case TT_COMMA:
 			fprintf(stderr, POS_T_FMT_STR " COMMA\n", POS_T_FMT_ARG(token->pos));

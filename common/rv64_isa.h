@@ -165,6 +165,12 @@ enum {
 	FENCE_OPERAND_W = (1 << 0),
 };
 
+/* RISC-V A extension attributes */
+enum {
+	AMO_RL = (1 << 0),
+	AMO_AQ = (1 << 1),
+};
+
 /* RISC-V Unprivileged CSR numbers */
 enum {
 	CSR_CYCLE = 0xC00,

@@ -58,6 +58,7 @@ typedef enum token_type_t {
 	TT_REG_DEREF_OPERAND,  // register dereference operand (e.g. `(a0)` `(sp)`)
 	TT_INT_LITERAL,        // integer literal (e.g. `1337` `0x80` `-0xdeadc0de` `-1234`)
 	TT_FENCE_OPERAND,      // fence operand (e.g. `iorw` `rw` `io`)
+	TT_INS_ATTRIB,         // instruction attribute (e.g. `.d` `.rl`)
 	TT_COMMA,              // comma : `,`
 	TT_EOI,                // end of instruction : `\n` or `;`
 	TT_EOF,                // end of file
@@ -75,6 +76,7 @@ typedef struct token_t {
 		reg_t as_reg_deref_operand;
 		int64_t as_int_literal;
 		uint8_t as_fence_operand;
+		ins_attrib_t as_ins_attrib;
 	};
 	pos_t pos;
 } token_t;

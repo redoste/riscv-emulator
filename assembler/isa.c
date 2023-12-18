@@ -1,16 +1,18 @@
 #include "isa.h"
 
 const char* const INS_NAMES[INS_COUNT] = {
-#define X_R(MNEMONIC, O, F3, F7) [INS_##MNEMONIC] = #MNEMONIC,
-#define X_I(MNEMONIC, O, F3)     [INS_##MNEMONIC] = #MNEMONIC,
-#define X_I_S(MNEMONIC, O, F3)   [INS_##MNEMONIC] = #MNEMONIC,
-#define X_S(MNEMONIC, O, F3)     [INS_##MNEMONIC] = #MNEMONIC,
-#define X_B(MNEMONIC, O, F3)     [INS_##MNEMONIC] = #MNEMONIC,
-#define X_U(MNEMONIC, O)         [INS_##MNEMONIC] = #MNEMONIC,
-#define X_J(MNEMONIC, O)         [INS_##MNEMONIC] = #MNEMONIC,
-#define X_P(MNEMONIC)            [INS_##MNEMONIC] = #MNEMONIC,
+#define X_R(MNEMONIC, O, F3, F7)    [INS_##MNEMONIC] = #MNEMONIC,
+#define X_R_A(MNEMONIC, O, F7, RS2) [INS_##MNEMONIC] = #MNEMONIC,
+#define X_I(MNEMONIC, O, F3)        [INS_##MNEMONIC] = #MNEMONIC,
+#define X_I_S(MNEMONIC, O, F3)      [INS_##MNEMONIC] = #MNEMONIC,
+#define X_S(MNEMONIC, O, F3)        [INS_##MNEMONIC] = #MNEMONIC,
+#define X_B(MNEMONIC, O, F3)        [INS_##MNEMONIC] = #MNEMONIC,
+#define X_U(MNEMONIC, O)            [INS_##MNEMONIC] = #MNEMONIC,
+#define X_J(MNEMONIC, O)            [INS_##MNEMONIC] = #MNEMONIC,
+#define X_P(MNEMONIC)               [INS_##MNEMONIC] = #MNEMONIC,
 	X_INSTRUCTIONS
 #undef X_R
+#undef X_R_A
 #undef X_I
 #undef X_I_S
 #undef X_S
@@ -18,6 +20,14 @@ const char* const INS_NAMES[INS_COUNT] = {
 #undef X_U
 #undef X_J
 #undef X_P
+};
+
+const char* const INS_ATTRIB_NAMES[INS_ATTRIB_COUNT] = {
+	[INS_ATTRIB_AMO_AQ] = "aq",
+	[INS_ATTRIB_AMO_RL] = "rl",
+	[INS_ATTRIB_AMO_AQRL] = "aqrl",
+	[INS_ATTRIB_SIZE_W] = "w",
+	[INS_ATTRIB_SIZE_D] = "d",
 };
 
 const char* const REG_ALIAS[REG_COUNT] = {
