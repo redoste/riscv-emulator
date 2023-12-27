@@ -118,6 +118,26 @@ L(CMP){
 	EOL,
 };
 
+L(CMOVL){
+	{0x4C0F, 2, 0, true, O(R64), O(RM64)},
+	EOL,
+};
+
+L(CMOVG){
+	{0x4F0F, 2, 0, true, O(R64), O(RM64)},
+	EOL,
+};
+
+L(CMOVC){
+	{0x420F, 2, 0, true, O(R64), O(RM64)},
+	EOL,
+};
+
+L(CMOVA){
+	{0x470F, 2, 0, true, O(R64), O(RM64)},
+	EOL,
+};
+
 L(TEST){
 	{0xF7, 1, 0, true, O(RM64), O(IMM32)},
 	{0x85, 1, 0, true, O(RM64), O(R64)},

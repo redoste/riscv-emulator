@@ -128,6 +128,10 @@ typedef uint64_t x86_operand_t;
 	X(OR)           \
 	X(AND)          \
 	X(CMP)          \
+	X(CMOVL)        \
+	X(CMOVG)        \
+	X(CMOVC)        \
+	X(CMOVA)        \
 	X(TEST)         \
 	X(SETL)         \
 	X(SETB)         \

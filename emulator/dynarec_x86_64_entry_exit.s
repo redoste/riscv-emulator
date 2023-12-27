@@ -10,7 +10,7 @@ dr_entry:
 	lea dr_exit(%rip), %r10
 	lea dr_emu_functions(%rip), %r11
 
-	/* NOTE : for now we only clobber one callee-saved register
+	/* NOTE : for now we only clobber a few callee-saved registers
 	 *        if we end up using other ones, make sure to backup
 	 *        them properly
 	 */
@@ -18,8 +18,8 @@ dr_entry:
 	//push %rbp
 	push %r12
 	//push %r13
-	//push %r14
-	//push %r15
+	push %r14
+	push %r15
 
 	mov %rdi, %r12
 
@@ -31,8 +31,8 @@ dr_exit:
 	 */
 	mov %r9, %rax
 
-	//pop %r15
-	//pop %r14
+	pop %r15
+	pop %r14
 	//pop %r13
 	pop %r12
 	//pop %rbp
