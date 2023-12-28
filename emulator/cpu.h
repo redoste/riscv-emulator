@@ -4,6 +4,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#include "cpu_csr.h"
 #include "dynarec_x86_64.h"
 #include "isa.h"
 
@@ -12,6 +13,8 @@
 typedef struct cpu_t {
 	guest_paddr pc;
 	guest_reg regs[REG_COUNT];
+
+	cpu_csrs_t csrs;
 
 	union {
 		void* as_ptr;
@@ -60,43 +63,5 @@ bool cpu_invalidate_instruction_cache(emulator_t* emu, guest_paddr addr);
  *     emulator_t* emu : pointer to the emulator state to update to the next instruction
  */
 void cpu_execute(emulator_t* emu);
-
-/* cpu_csr_read : read a control and status register
- *                returns the value of the CSR
- *     emulator_t* emu   : pointer to the emulator
- *     guest_reg csr_num : CSR number
- */
-guest_reg cpu_csr_read(emulator_t* emu, guest_reg csr_num);
-
-/* cpu_csr_write : write a control and status register
- *     emulator_t* emu   : pointer to the emulator
- *     guest_reg csr_num : CSR number
- *     guest_reg value   : CSR value
- */
-void cpu_csr_write(emulator_t* emu, guest_reg csr_num, guest_reg value);
-
-/* cpu_csr_exchange : write a control and status register
- *                    returns the old value of the CSR
- *     emulator_t* emu   : pointer to the emulator
- *     guest_reg csr_num : CSR number
- *     guest_reg value   : CSR value
- */
-guest_reg cpu_csr_exchange(emulator_t* emu, guest_reg csr_num, guest_reg value);
-
-/* cpu_csr_set_bits : set bits in a control and status register
- *                    returns the old value of the CSR
- *     emulator_t* emu   : pointer to the emulator
- *     guest_reg csr_num : CSR number
- *     guest_reg mask    : mask of the bits to set in the CSR
- */
-guest_reg cpu_csr_set_bits(emulator_t* emu, guest_reg csr_num, guest_reg mask);
-
-/* cpu_csr_clear_bits : clear bits in a control and status register
- *                      returns the old value of the CSR
- *     emulator_t* emu   : pointer to the emulator
- *     guest_reg csr_num : CSR number
- *     guest_reg mask    : mask of the bits to clear in the CSR
- */
-guest_reg cpu_csr_clear_bits(emulator_t* emu, guest_reg csr_num, guest_reg mask);
 
 #endif

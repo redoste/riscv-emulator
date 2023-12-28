@@ -8,6 +8,15 @@
 
 guest_reg cpu_csr_read(emulator_t* emu, guest_reg csr_num) {
 	switch (csr_num) {
+#define X_RW(NUM, NAME, MASK, BASE) \
+	case (NUM):                 \
+		return (emu->cpu.csrs.NAME & (MASK)) | (BASE);
+#define X_RO(NUM, VALUE) \
+	case (NUM):      \
+		return VALUE;
+		X_CSRS
+#undef X_RW
+#undef X_RO
 		default:
 			fprintf(stderr, "invalid CSR read %016" PRIx64 " PC=%016" PRIx64 "\n",
 				csr_num, emu->cpu.pc);
@@ -17,8 +26,17 @@ guest_reg cpu_csr_read(emulator_t* emu, guest_reg csr_num) {
 
 void cpu_csr_write(emulator_t* emu, guest_reg csr_num, guest_reg value) {
 	switch (csr_num) {
+#define X_RW(NUM, NAME, MASK, BASE)                             \
+	case (NUM):                                             \
+		emu->cpu.csrs.NAME = (value & (MASK)) | (BASE); \
+		break;
+#define X_RO(NUM, VALUE) \
+	case (NUM):      \
+		break;
+		X_CSRS
+#undef X_RW
+#undef X_RO
 		default:
-			(void)value;
 			fprintf(stderr, "invalid CSR write %016" PRIx64 " PC=%016" PRIx64 "\n",
 				csr_num, emu->cpu.pc);
 			abort();
