@@ -122,9 +122,7 @@ static void cpu_execute_type_r(emulator_t* emu, const ins_t* instruction) {
 #undef X_U
 #undef X_J
 		default:
-			fprintf(stderr, "Unsupported R instruction opcode_switch=%" PRIx16 "\n",
-				instruction->opcode_switch);
-			abort();
+			cpu_throw_exception(emu, EXC_ILL_INS, 0);
 			break;
 	}
 }
@@ -163,9 +161,7 @@ static void cpu_execute_type_i(emulator_t* emu, const ins_t* instruction) {
 #undef X_U
 #undef X_J
 		default:
-			fprintf(stderr, "Unsupported I instruction opcode_switch=%" PRIx16 "\n",
-				instruction->opcode_switch);
-			abort();
+			cpu_throw_exception(emu, EXC_ILL_INS, 0);
 			break;
 	}
 }
@@ -198,9 +194,7 @@ static void cpu_execute_type_s(emulator_t* emu, const ins_t* instruction) {
 #undef X_U
 #undef X_J
 		default:
-			fprintf(stderr, "Unsupported S instruction opcode_switch=%" PRIx16 "\n",
-				instruction->opcode_switch);
-			abort();
+			cpu_throw_exception(emu, EXC_ILL_INS, 0);
 			break;
 	}
 }
@@ -237,9 +231,7 @@ static void cpu_execute_type_b(emulator_t* emu, const ins_t* instruction) {
 #undef X_U
 #undef X_J
 		default:
-			fprintf(stderr, "Unsupported B instruction opcode_switch=%" PRIx16 "\n",
-				instruction->opcode_switch);
-			abort();
+			cpu_throw_exception(emu, EXC_ILL_INS, 0);
 			break;
 	}
 }
@@ -272,9 +264,7 @@ static void cpu_execute_type_u(emulator_t* emu, const ins_t* instruction) {
 #undef X_J
 
 		default:
-			fprintf(stderr, "Unsupported U instruction opcode_switch=%" PRIx16 "\n",
-				instruction->opcode_switch);
-			abort();
+			cpu_throw_exception(emu, EXC_ILL_INS, 0);
 			break;
 	}
 }
@@ -311,9 +301,8 @@ static void cpu_execute_dynarec(emulator_t* emu) {
 	dr_ins_t* cached_instruction = &emu->cpu.instruction_cache.as_dr_ins[cache_index];
 	if (cached_instruction->tag != emu->cpu.pc) {
 		if (!dr_emit_block(emu, emu->cpu.pc)) {
-			fprintf(stderr, "Unable to emit dynarec code PC=%016" PRIx64 "\n",
-				emu->cpu.pc);
-			abort();
+			cpu_throw_exception(emu, EXC_ILL_INS, 0);
+			return;
 		}
 	}
 	assert(cached_instruction->tag == emu->cpu.pc);
@@ -327,8 +316,8 @@ static void cpu_execute_dynarec(emulator_t* emu) {
 
 void cpu_execute(emulator_t* emu) {
 	if ((emu->cpu.pc & 0x3) != 0) {
-		fprintf(stderr, "Unaligned PC=%016" PRIx64 "\n", emu->cpu.pc);
-		abort();
+		cpu_throw_exception(emu, EXC_INS_ADDR_MISALIGNED, emu->cpu.pc);
+		return;
 	}
 
 #ifdef RISCV_EMULATOR_DYNAREC_X86_64_SUPPORT
@@ -342,9 +331,8 @@ void cpu_execute(emulator_t* emu) {
 
 	ins_t* instruction;
 	if (!cpu_decode_and_cache(emu, emu->cpu.pc, &instruction)) {
-		fprintf(stderr, "Invalid instruction %08" PRIx32 " at PC=%016" PRIx64 "\n",
-			emu_r32(emu, emu->cpu.pc), emu->cpu.pc);
-		abort();
+		cpu_throw_exception(emu, EXC_ILL_INS, 0);
+		return;
 	}
 
 	// We check for x0: see the comment before clearing x0 at the end of the function

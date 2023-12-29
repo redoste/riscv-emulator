@@ -91,6 +91,7 @@ bool cpu_decode_and_cache(emulator_t* emu, guest_paddr instruction_addr, ins_t**
 		return true;
 	}
 
+	// TODO : detect exceptions during r32
 	uint32_t encoded_instruction = emu_r32(emu, instruction_addr);
 	if (!cpu_decode(encoded_instruction, &cached_instruction->decoded_instruction)) {
 		cached_instruction->decoded_instruction.type = INS_TYPE_INVALID;

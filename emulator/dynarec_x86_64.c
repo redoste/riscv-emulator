@@ -84,10 +84,7 @@ static inline bool dr_emit_type_r(emulator_t* emu, const ins_t* instruction, dr_
 #undef X_U
 #undef X_J
 		default:
-			fprintf(stderr, "Unsupported R instruction opcode_switch=%" PRIx16 "\n",
-				instruction->opcode_switch);
-			abort();
-			break;
+			return false;
 	}
 }
 
@@ -118,10 +115,7 @@ static inline bool dr_emit_type_i(emulator_t* emu, const ins_t* instruction, dr_
 #undef X_U
 #undef X_J
 		default:
-			fprintf(stderr, "Unsupported I instruction opcode_switch=%" PRIx16 "\n",
-				instruction->opcode_switch);
-			abort();
-			break;
+			return false;
 	}
 }
 
@@ -152,10 +146,7 @@ static inline bool dr_emit_type_s(emulator_t* emu, const ins_t* instruction, dr_
 #undef X_U
 #undef X_J
 		default:
-			fprintf(stderr, "Unsupported S instruction opcode_switch=%" PRIx16 "\n",
-				instruction->opcode_switch);
-			abort();
-			break;
+			return false;
 	}
 }
 
@@ -186,10 +177,7 @@ static inline bool dr_emit_type_b(emulator_t* emu, const ins_t* instruction, dr_
 #undef X_U
 #undef X_J
 		default:
-			fprintf(stderr, "Unsupported B instruction opcode_switch=%" PRIx16 "\n",
-				instruction->opcode_switch);
-			abort();
-			break;
+			return false;
 	}
 }
 
@@ -219,10 +207,7 @@ static inline bool dr_emit_type_u(emulator_t* emu, const ins_t* instruction, dr_
 #undef X_U
 #undef X_J
 		default:
-			fprintf(stderr, "Unsupported U instruction opcode_switch=%" PRIx16 "\n",
-				instruction->opcode_switch);
-			abort();
-			break;
+			return false;
 	}
 }
 
@@ -269,9 +254,7 @@ bool dr_emit_block(emulator_t* emu, guest_paddr base) {
 
 	bool cont = true;
 	while (cont) {
-		/* TODO : properly report to the caller if we failed because the instruction
-		 *        is invalid or because we can't read memory
-		 */
+		// TODO : detect exceptions during r32
 		uint32_t encoded_instruction = emu_r32(emu, block.pc);
 		ins_t instruction;
 		if (!cpu_decode(encoded_instruction, &instruction)) {

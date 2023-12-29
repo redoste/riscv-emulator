@@ -262,6 +262,24 @@ enum {
 	CSR_DSCRATCH1 = 0x7B3,
 };
 
+/* RISC-V Exception codes */
+enum {
+	EXC_INS_ADDR_MISALIGNED = 0,
+	EXC_INS_ACCESS_FAULT = 1,
+	EXC_ILL_INS = 2,
+	EXC_BREAKPOINT = 3,
+	EXC_LOAD_ADDR_MISALIGNED = 4,
+	EXC_LOAD_ACCESS_FAULT = 5,
+	EXC_STORE_ADDR_MISALIGNED = 6,
+	EXC_STORE_ACCESS_FAULT = 7,
+	EXC_ECALL_FROM_U = 8,
+	EXC_ECALL_FROM_S = 9,
+	EXC_ECALL_FROM_M = 11,
+	EXC_INS_PAGE_FAULT = 12,
+	EXC_LOAD_PAGE_FAULT = 13,
+	EXC_STORE_PAGE_FAULT = 15,
+};
+
 /* RISC-V Privilege modes */
 typedef enum privilege_mode_t {
 	UO_MODE = -1,  // Custom mode used to describe the emulator running in "user only" mode

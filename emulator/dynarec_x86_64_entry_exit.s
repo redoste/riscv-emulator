@@ -74,6 +74,9 @@ DR_WX_WRAPPER 16
 DR_WX_WRAPPER 32
 DR_WX_WRAPPER 64
 
+/* TODO : add more complex wrappers that will properly handle exceptions and redispatch
+ *        if required
+ */
 .section .data
 dr_emu_functions:
 	.quad dr_w8_wrapper      /* [0]  */

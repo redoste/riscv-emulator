@@ -63,6 +63,7 @@ guest_reg cpu_csr_clear_bits(emulator_t* emu, guest_reg csr_num, guest_reg mask)
 	X_RO(CSR_MCONFIGPTR, 0)                                                                          \
                                                                                                          \
 	/* Machine trap setup */                                                                         \
+	/* TODO : detect invalid privilege modes in xPP */                                               \
 	X_RW(CSR_MSTATUS, mstatus, (1 << 22) |         /* TSR : Trap sret */                             \
 					   (1 << 21) | /* TW : Timeout wait */                           \
 					   (1 << 20) | /* TVM : Trap virtual memory */                   \

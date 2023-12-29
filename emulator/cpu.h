@@ -5,6 +5,7 @@
 #include <stdint.h>
 
 #include "cpu_csr.h"
+#include "cpu_int.h"
 #include "dynarec_x86_64.h"
 #include "isa.h"
 
