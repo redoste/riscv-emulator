@@ -17,11 +17,12 @@
 #include "emulator_sdl.h"
 #include "mmu_paging_guest_to_host.h"
 
-void emu_create(emulator_t* emu, guest_reg pc, size_t cache_bits, bool dynarec_enabled) {
+void emu_create(emulator_t* emu, guest_reg pc, size_t cache_bits, bool dynarec_enabled, bool user_only_mode) {
 	emu->pg2h_paging_table = 0;
 
 	memset(&emu->cpu, 0, sizeof(emu->cpu));
 	emu->cpu.pc = pc;
+	emu->cpu.priv_mode = user_only_mode ? UO_MODE : M_MODE;
 	emu->cpu.dynarec_enabled = dynarec_enabled;
 
 	if (cache_bits > 24) {
@@ -234,6 +235,7 @@ EMU_WX(32, uint32_t)
 EMU_WX(64, uint64_t)
 
 void emu_ebreak(emulator_t* emu) {
+	assert(emu->cpu.priv_mode == UO_MODE);
 	fprintf(stderr, "EBREAK PC=%016" PRIx64 "\n", emu->cpu.pc);
 	for (size_t i = 0; i < REG_COUNT; i++) {
 		fprintf(stderr, "x%2zu=%016" PRIx64 " ", i, emu->cpu.regs[i]);
@@ -244,6 +246,7 @@ void emu_ebreak(emulator_t* emu) {
 }
 
 void emu_ecall(emulator_t* emu) {
+	assert(emu->cpu.priv_mode == UO_MODE);
 	// Handle custom emulator calls
 	switch (emu->cpu.regs[10]) {
 		case 0x50555443:  // "PUTC"

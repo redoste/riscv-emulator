@@ -262,6 +262,14 @@ enum {
 	CSR_DSCRATCH1 = 0x7B3,
 };
 
+/* RISC-V Privilege modes */
+typedef enum privilege_mode_t {
+	UO_MODE = -1,  // Custom mode used to describe the emulator running in "user only" mode
+	U_MODE = 0,
+	S_MODE = 1,
+	M_MODE = 3,
+} privilege_mode_t;
+
 /* CSR_MASK : mask used to strip the sign extension from a CSR number
  *            all CSR numbers should be < 0x1000
  */

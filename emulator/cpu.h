@@ -16,6 +16,8 @@ typedef struct cpu_t {
 
 	cpu_csrs_t csrs;
 
+	privilege_mode_t priv_mode;
+
 	union {
 		void* as_ptr;
 		cached_ins_t* as_cached_ins;

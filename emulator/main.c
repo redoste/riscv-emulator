@@ -29,6 +29,8 @@ static int usage(const char* argv0) {
 		"    --rom-size 0x[ROM SIZE]  : Size of the ROM (defaut 0x%08x)\n"
 		"    --ram-base 0x[RAM BASE]  : Base address of the RAM (default 0x%08x)\n"
 		"    --ram-size 0x[RAM SIZE]  : Size of the ROM (default 0x%08x)\n"
+		"    --user-only              : Keep the emulated CPU in U-mode and expose emulator calls through ecall\n"
+		"                               (as used by the provided `DOOM` port)\n"
 #ifdef RISCV_EMULATOR_DYNAREC_X86_64_SUPPORT
 		"    --dynarec                : Enable dynamic recompilation to x86-64 assembly\n"
 #endif
@@ -57,7 +59,7 @@ static int main_simple(const char* hex_input_filename, const char* emu_output_fi
 
 	// TODO : follow the subject requirements (load code at 0, etc.)
 	emulator_t emu;
-	emu_create(&emu, DEFAULT_ROM_BASE, DEFAULT_CACHE_BITS, SIMPLE_DYNAREC_ENABLED);
+	emu_create(&emu, DEFAULT_ROM_BASE, DEFAULT_CACHE_BITS, SIMPLE_DYNAREC_ENABLED, true);
 	bool map_ret = emu_map_memory(&emu, DEFAULT_ROM_BASE, DEFAULT_ROM_SIZE);
 	map_ret &= emu_map_memory(&emu, DEFAULT_RAM_BASE, DEFAULT_RAM_SIZE);
 	assert(map_ret);
@@ -122,7 +124,7 @@ static int main_advanced(int argc, char** argv) {
 	guest_paddr rom_base = DEFAULT_ROM_BASE, ram_base = DEFAULT_RAM_BASE;
 	size_t rom_size = DEFAULT_ROM_SIZE, ram_size = DEFAULT_RAM_SIZE;
 	size_t cache_bits = DEFAULT_CACHE_BITS;
-	bool dynarec_enabled = false;
+	bool dynarec_enabled = false, user_only_mode = false;
 
 	while (argc_iter < argc) {
 		if (strcmp(argv[argc_iter], "--advanced") == 0) {
@@ -151,6 +153,10 @@ static int main_advanced(int argc, char** argv) {
 			dynarec_enabled = true;
 		}
 #endif
+		else if (strcmp(argv[argc_iter], "--user-only") == 0) {
+			argc_iter++;
+			user_only_mode = true;
+		}
 		else {
 			return usage(argv[0]);
 		}
@@ -177,7 +183,7 @@ static int main_advanced(int argc, char** argv) {
 	}
 
 	emulator_t emu;
-	emu_create(&emu, rom_base, cache_bits, dynarec_enabled);
+	emu_create(&emu, rom_base, cache_bits, dynarec_enabled, user_only_mode);
 	if (!emu_map_memory(&emu, rom_base, rom_size) ||
 	    !emu_map_memory(&emu, ram_base, ram_size)) {
 		fprintf(stderr,

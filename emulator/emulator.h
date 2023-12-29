@@ -34,8 +34,9 @@ typedef struct emulator_t {
  *     guest_reg pc                  : initial value for the program counter
  *     size_t cache_bits             : number of significant bits for the different caches
  *     bool dynarec_enabled          : enable dynamic recompilation
+ *     bool user_only_mode           : enable user only mode
  */
-void emu_create(emulator_t* emu, guest_reg pc, size_t cache_bits, bool dynarec_enabled);
+void emu_create(emulator_t* emu, guest_reg pc, size_t cache_bits, bool dynarec_enabled, bool user_only_mode);
 
 /* emu_destroy : destroy an emulator and free its associated ressources
  *     emulator_t* emu : pointer to the emulator_t struct to destroy
