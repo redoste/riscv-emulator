@@ -310,6 +310,11 @@ bool dr_emit_block(emulator_t* emu, guest_paddr base) {
 		block.pc += 4;
 	}
 
+	if (block.pos == 0) {
+		munmap(block.page, DYNAREC_PAGE_SIZE);
+		return false;
+	}
+
 	assert(block.pos + DYNAREC_PROLOGUE_SIZE <= DYNAREC_PAGE_SIZE);
 	// jmp r10
 	block.page[block.pos + 0] = 0x41;
