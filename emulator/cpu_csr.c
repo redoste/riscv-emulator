@@ -5,8 +5,15 @@
 
 #include "cpu.h"
 #include "emulator.h"
+#include "isa.h"
 
 guest_reg cpu_csr_read(emulator_t* emu, guest_reg csr_num) {
+	privilege_mode_t csr_priv = (csr_num >> 8) & 3;
+	if (emu->cpu.priv_mode < csr_priv) {
+		cpu_throw_exception(emu, EXC_ILL_INS, 0);
+		return 0;
+	}
+
 	switch (csr_num) {
 #define X_RW(NUM, NAME, MASK, BASE) \
 	case (NUM):                 \
@@ -24,6 +31,12 @@ guest_reg cpu_csr_read(emulator_t* emu, guest_reg csr_num) {
 }
 
 void cpu_csr_write(emulator_t* emu, guest_reg csr_num, guest_reg value) {
+	privilege_mode_t csr_priv = (csr_num >> 8) & 3;
+	if (emu->cpu.priv_mode < csr_priv) {
+		cpu_throw_exception(emu, EXC_ILL_INS, 0);
+		return;
+	}
+
 	switch (csr_num) {
 #define X_RW(NUM, NAME, MASK, BASE)                             \
 	case (NUM):                                             \
