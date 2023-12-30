@@ -301,7 +301,9 @@ static void cpu_execute_dynarec(emulator_t* emu) {
 	dr_ins_t* cached_instruction = &emu->cpu.instruction_cache.as_dr_ins[cache_index];
 	if (cached_instruction->tag != emu->cpu.pc) {
 		if (!dr_emit_block(emu, emu->cpu.pc)) {
-			cpu_throw_exception(emu, EXC_ILL_INS, 0);
+			if (!emu->cpu.exception_pending) {
+				cpu_throw_exception(emu, EXC_ILL_INS, 0);
+			}
 			return;
 		}
 	}
@@ -315,6 +317,11 @@ static void cpu_execute_dynarec(emulator_t* emu) {
 #endif
 
 void cpu_execute(emulator_t* emu) {
+	/* The `exception_pending` flag is kept to true when an exception occured during the
+	 * *current* instruction, we clean it on each new `cpu_execute`
+	 */
+	emu->cpu.exception_pending = false;
+
 	if ((emu->cpu.pc & 0x3) != 0) {
 		cpu_throw_exception(emu, EXC_INS_ADDR_MISALIGNED, emu->cpu.pc);
 		return;
@@ -331,7 +338,9 @@ void cpu_execute(emulator_t* emu) {
 
 	ins_t* instruction;
 	if (!cpu_decode_and_cache(emu, emu->cpu.pc, &instruction)) {
-		cpu_throw_exception(emu, EXC_ILL_INS, 0);
+		if (!emu->cpu.exception_pending) {
+			cpu_throw_exception(emu, EXC_ILL_INS, 0);
+		}
 		return;
 	}
 
@@ -364,7 +373,7 @@ void cpu_execute(emulator_t* emu) {
 			break;
 	}
 
-	if (emu->cpu.jump_pending) {
+	if (emu->cpu.jump_pending || emu->cpu.exception_pending) {
 		emu->cpu.jump_pending = false;
 	} else {
 		emu->cpu.pc += 4;

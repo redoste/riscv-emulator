@@ -31,6 +31,7 @@ typedef struct cpu_t {
 	bool dynarec_enabled;
 
 	bool jump_pending;
+	bool exception_pending;
 } cpu_t;
 
 // NOTE : forward declaration to deal with a cyclic dependency with emulator.h

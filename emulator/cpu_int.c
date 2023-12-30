@@ -14,6 +14,8 @@ void cpu_throw_exception(emulator_t* emu, uint8_t exception_code, guest_reg tval
 		abort();
 	}
 
+	assert(!emu->cpu.exception_pending);
+
 	// TODO : support exception deleg to S-mode
 	assert(!((emu->cpu.csrs.medeleg >> exception_code) & 1));
 
@@ -30,7 +32,5 @@ void cpu_throw_exception(emulator_t* emu, uint8_t exception_code, guest_reg tval
 
 	// Even in vectored mode, exceptions set PC to the base of xtvec
 	emu->cpu.pc = (emu->cpu.csrs.mtvec) & ~3;
-	if (!emu->cpu.dynarec_enabled) {
-		emu->cpu.jump_pending = true;
-	}
+	emu->cpu.exception_pending = true;
 }

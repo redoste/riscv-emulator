@@ -130,13 +130,13 @@ bool emu_add_mmio_device(emulator_t* emu, guest_paddr base, const device_mmio_t*
 #define le8toh(x) (x)
 #define htole8(x) (x)
 
-#define EMU_RX_MISALIGNED(SIZE, TYPE)                                                    \
-	static inline TYPE emu_r##SIZE##_misaligned(emulator_t* emu, guest_paddr addr) { \
-		TYPE value = 0;                                                          \
-		for (size_t i = 0; i < sizeof(TYPE); i++) {                              \
-			value |= (TYPE)emu_r8(emu, addr + i) << (i * 8);                 \
-		}                                                                        \
-		return value;                                                            \
+#define EMU_RX_MISALIGNED(SIZE, TYPE)                                                      \
+	static inline TYPE emu_r##SIZE##_misaligned(emulator_t* emu, guest_paddr addr) {   \
+		TYPE value = 0;                                                            \
+		for (size_t i = 0; i < sizeof(TYPE) && !emu->cpu.exception_pending; i++) { \
+			value |= (TYPE)emu_r8(emu, addr + i) << (i * 8);                   \
+		}                                                                          \
+		return value;                                                              \
 	}
 
 #define EMU_RX(SIZE, TYPE)                                                                  \
@@ -167,7 +167,7 @@ bool emu_add_mmio_device(emulator_t* emu, guest_paddr base, const device_mmio_t*
 
 #define EMU_WX_MISALIGNED(SIZE, TYPE)                                                                \
 	static inline void emu_w##SIZE##_misaligned(emulator_t* emu, guest_paddr addr, TYPE value) { \
-		for (size_t i = 0; i < sizeof(TYPE); i++) {                                          \
+		for (size_t i = 0; i < sizeof(TYPE) && !emu->cpu.exception_pending; i++) {           \
 			emu_w8(emu, addr + i, value & 0xff);                                         \
 			value >>= 8;                                                                 \
 		}                                                                                    \
