@@ -83,6 +83,17 @@ uint16_t emu_r16(emulator_t* emu, guest_paddr addr);
 uint32_t emu_r32(emulator_t* emu, guest_paddr addr);
 uint64_t emu_r64(emulator_t* emu, guest_paddr addr);
 
+/* emu_r32_ins : read a 32 bits instruction from the guest memory
+ *               reading instructions doesn't use emu_r32 because exception codes are
+ *               different and the caller might want to ignore the exception
+ *               returns the value read
+ *     emulator_t* emu         : pointer to the emulator
+ *     guest_paddr addr        : guest physical address to read from
+ *     uint8_t* exception_code : exception code if an exception should occur during the read
+ *                               (uint8_t)-1 otherwise
+ */
+uint32_t emu_r32_ins(emulator_t* emu, guest_paddr addr, uint8_t* exception_code);
+
 /* emu_ebreak : handle the ebreak instruction
  *     emulator_t* emu : pointer to the emulator
  */

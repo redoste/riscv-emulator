@@ -232,6 +232,29 @@ EMU_WX(16, uint16_t)
 EMU_WX(32, uint32_t)
 EMU_WX(64, uint64_t)
 
+uint32_t emu_r32_ins(emulator_t* emu, guest_paddr addr, uint8_t* exception_code) {
+	mmu_pg2h_pte pte;
+	size_t offset = addr & MMU_PG2H_OFFSET_MASK;
+	// Instruction alignement should be guaranteed by the caller
+	assert((offset & 3) == 0);
+
+	*exception_code = (uint8_t)-1;
+	if (!mmu_pg2h_get_pte(emu, addr, &pte)) {
+		*exception_code = EXC_INS_ACCESS_FAULT;
+		return 0;
+	}
+
+	if (pte & MMU_PG2H_PTE_TYPE_MMIO) {
+		size_t device_index = pte >> MMU_PG2H_PAGE_SHIFT;
+		device_mmio_t* device = &emu->mmio_devices[device_index];
+		return device->r32_handler(emu, device->device_data, offset);
+	} else {
+		uint8_t* pool = (uint8_t*)(pte & MMU_PG2H_PAGE_MASK);
+		uint32_t* value = (uint32_t*)&pool[offset];
+		return le32toh(*value);
+	}
+}
+
 void emu_ebreak(emulator_t* emu) {
 	assert(emu->cpu.priv_mode == UO_MODE);
 	fprintf(stderr, "EBREAK PC=%016" PRIx64 "\n", emu->cpu.pc);
