@@ -16,4 +16,9 @@ typedef struct emulator_t emulator_t;
  */
 void cpu_throw_exception(emulator_t* emu, uint8_t exception_code, guest_reg tval);
 
+/* cpu_mret : handle the mret instruction
+ *     emulator_t* emu : pointer to the emulator
+ */
+void cpu_mret(emulator_t* emu);
+
 #endif

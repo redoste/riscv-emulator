@@ -70,6 +70,7 @@ enum {
 	/* OPCODE SYSTEM */
 	F3_ECALL = 0,
 	F3_EBREAK = 0,
+	F3_MRET = 0,
 
 	/* OPCODE SYSTEM : Zicsr extension */
 	F3_CSRRW = 1,
@@ -155,6 +156,7 @@ enum {
 	/* OPCODE SYSTEM */
 	F12_ECALL = 0,
 	F12_EBREAK = 1,
+	F12_MRET = 0x302,
 };
 
 /* RISC-V FENCE operand bits */

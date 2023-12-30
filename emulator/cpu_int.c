@@ -34,3 +34,27 @@ void cpu_throw_exception(emulator_t* emu, uint8_t exception_code, guest_reg tval
 	emu->cpu.pc = (emu->cpu.csrs.mtvec) & ~3;
 	emu->cpu.exception_pending = true;
 }
+
+void cpu_mret(emulator_t* emu) {
+	if (emu->cpu.priv_mode != M_MODE) {
+		cpu_throw_exception(emu, EXC_ILL_INS, 0);
+		return;
+	}
+
+	uint8_t mie = (emu->cpu.csrs.mstatus >> 7) & 1;
+	uint8_t mpp = (emu->cpu.csrs.mstatus >> 11) & 3;
+	assert(mpp == M_MODE || mpp == S_MODE || mpp == U_MODE);
+	emu->cpu.csrs.mstatus = (emu->cpu.csrs.mstatus & ~((3 << 11) | (1 << 7) | (1 << 3))) |
+				((U_MODE & 3) << 11) |  // MPP
+				(1 << 7) |              // MPIE
+				((mie & 1) << 3);       // MIE
+	emu->cpu.priv_mode = mpp;
+	if (mpp != M_MODE) {
+		emu->cpu.csrs.mstatus &= ~(1 << 17);  // MPRV
+	}
+
+	emu->cpu.pc = emu->cpu.csrs.mepc;
+	if (!emu->cpu.dynarec_enabled) {
+		emu->cpu.jump_pending = true;
+	}
+}

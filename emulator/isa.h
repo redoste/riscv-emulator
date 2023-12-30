@@ -301,7 +301,23 @@ typedef struct cached_ins_t {
 			cpu->jump_pending = true;                                                                                                          \
 		} while (0))                                                                                                                               \
                                                                                                                                                            \
-	X_I(ECALL, OPCODE_SYSTEM, F3_ECALL, (imm == F12_EBREAK) ? emu_ebreak(emu) : emu_ecall(emu))                                                        \
+	X_I(                                                                                                                                               \
+		ECALL, OPCODE_SYSTEM, F3_ECALL, do {                                                                                                       \
+			switch (imm) {                                                                                                                     \
+				case F12_EBREAK:                                                                                                           \
+					emu_ebreak(emu);                                                                                                   \
+					break;                                                                                                             \
+				case F12_ECALL:                                                                                                            \
+					emu_ecall(emu);                                                                                                    \
+					break;                                                                                                             \
+				case F12_MRET:                                                                                                             \
+					cpu_mret(emu);                                                                                                     \
+					break;                                                                                                             \
+				default:                                                                                                                   \
+					abort();                                                                                                           \
+					break;                                                                                                             \
+			}                                                                                                                                  \
+		} while (0))                                                                                                                               \
                                                                                                                                                            \
 	X_I(                                                                                                                                               \
 		CSRRW, OPCODE_SYSTEM, F3_CSRRW, do {                                                                                                       \
