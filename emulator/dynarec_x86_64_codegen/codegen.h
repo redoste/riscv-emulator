@@ -2,6 +2,7 @@
 #define CODEGEN_H
 
 #include <stdbool.h>
+#include <stdlib.h>
 
 #include "isa.h"
 #include "x86_isa.h"
@@ -33,6 +34,11 @@ typedef enum codegen_reloc_type_t {
  */
 void codegen_start_line(bool b0, bool b1, bool b2);
 
+/* codegen_start_line_not_indexed : start an entry in the dr_x86_code_t array without a
+ *                                  specific index
+ */
+void codegen_start_line_not_indexed(void);
+
 /* codegen_asm : emit a single x86-64 instruction
  *     x86_mnemonic_t mnemonic         : mnemonic of the instruction to emit
  *     x86_operand_t dst               : destination operand
@@ -47,21 +53,23 @@ void codegen_end_line(void);
 
 /* C_X : macros used to declare the emitting function of a X-type instruction
  */
-#define C_R(MNEMONIC) static inline void codegen_##MNEMONIC(bool rs1_zero, bool rs2_zero, bool rd_zero)
-#define C_I(MNEMONIC) static inline void codegen_##MNEMONIC(bool rs1_zero, bool rd_zero)
-#define C_S(MNEMONIC) static inline void codegen_##MNEMONIC(bool rs1_zero, bool rs2_zero)
-#define C_B(MNEMONIC) static inline void codegen_##MNEMONIC(bool rs1_zero, bool rs2_zero)
-#define C_U(MNEMONIC) static inline void codegen_##MNEMONIC(bool rd_zero)
-#define C_J(MNEMONIC) static inline void codegen_##MNEMONIC(bool rd_zero)
+#define C_R(MNEMONIC)     static inline void codegen_##MNEMONIC(bool rs1_zero, bool rs2_zero, bool rd_zero)
+#define C_I(MNEMONIC)     static inline void codegen_##MNEMONIC(bool rs1_zero, bool rd_zero)
+#define C_I_IMM(MNEMONIC) static inline void codegen_##MNEMONIC(int64_t f12)
+#define C_S(MNEMONIC)     static inline void codegen_##MNEMONIC(bool rs1_zero, bool rs2_zero)
+#define C_B(MNEMONIC)     static inline void codegen_##MNEMONIC(bool rs1_zero, bool rs2_zero)
+#define C_U(MNEMONIC)     static inline void codegen_##MNEMONIC(bool rd_zero)
+#define C_J(MNEMONIC)     static inline void codegen_##MNEMONIC(bool rd_zero)
 
 /* S_X : macros used to start the line of a X-type instruction
  */
-#define S_R() codegen_start_line(rs1_zero, rs2_zero, rd_zero)
-#define S_I() codegen_start_line(rs1_zero, rd_zero, 0)
-#define S_S() codegen_start_line(rs1_zero, rs2_zero, 0)
-#define S_B() codegen_start_line(rs1_zero, rs2_zero, 0)
-#define S_U() codegen_start_line(rd_zero, 0, 0)
-#define S_J() codegen_start_line(rd_zero, 0, 0)
+#define S_R()     codegen_start_line(rs1_zero, rs2_zero, rd_zero)
+#define S_I()     codegen_start_line(rs1_zero, rd_zero, 0)
+#define S_I_IMM() codegen_start_line_not_indexed()
+#define S_S()     codegen_start_line(rs1_zero, rs2_zero, 0)
+#define S_B()     codegen_start_line(rs1_zero, rs2_zero, 0)
+#define S_U()     codegen_start_line(rd_zero, 0, 0)
+#define S_J()     codegen_start_line(rd_zero, 0, 0)
 
 /* A_X : macros used to emit a x86-64 instruction with a X relocation
  */

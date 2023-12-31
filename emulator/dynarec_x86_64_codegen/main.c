@@ -26,6 +26,16 @@ int main(void) {
 		codegen_##MNEMONIC((i & 1) >> 0, (i & 2) >> 1); \
 	}                                                       \
 	codegen_end_ins();
+#define T(...) __VA_ARGS__
+#define X_I_IMM(MNEMONIC, F12S)                                               \
+	{                                                                     \
+		codegen_start_ins(#MNEMONIC);                                 \
+		int64_t f12s[] = {F12S};                                      \
+		for (size_t i = 0; i < sizeof(f12s) / sizeof(f12s[0]); i++) { \
+			codegen_##MNEMONIC(f12s[i]);                          \
+		}                                                             \
+		codegen_end_ins();                                            \
+	}
 #define X_S(MNEMONIC)                                           \
 	codegen_start_ins(#MNEMONIC);                           \
 	for (size_t i = 0; i < 4; i++) {                        \
@@ -55,6 +65,8 @@ int main(void) {
 
 #undef X_R
 #undef X_I
+#undef T
+#undef X_I_IMM
 #undef X_S
 #undef X_B
 #undef X_U

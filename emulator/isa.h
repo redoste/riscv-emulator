@@ -45,12 +45,16 @@ typedef struct cached_ins_t {
 
 /* X_INSTRUCTIONS : X-macro storing informations about all the instructions
  *                  the emulator can emulate
- *     X_R(MNEMONIC, OPCODE, FUNCT3, FUNCT7, EXPR) : R-type instruction
- *     X_I(MNEMONIC, OPCODE, FUNCT3, EXPR)         : I-type instruction
- *     X_S(MNEMONIC, OPCODE, FUNCT3, EXPR)         : S-type instruction
- *     X_B(MNEMONIC, OPCODE, FUNCT3, EXPR)         : B-type instruction
- *     X_U(MNEMONIC, OPCODE, EXPR)                 : U-type instruction
- *     X_J(MNEMONIC, OPCODE, EXPR)                 : J-type instruction
+ *     X_R(MNEMONIC, OPCODE, FUNCT3, FUNCT7, EXPR)      : R-type instruction
+ *     X_I(MNEMONIC, OPCODE, FUNCT3, EXPR)              : I-type instruction
+ *     X_I_IMM(MNEMONIC, OPCODE, FUNT3, EXPR, FUNCT12S) : I-type instruction with different implementations
+ *                                                        depending on the immediate
+ *                                                        F12S should be declared in the same order as in
+ *                                                        emulator/dynarec_x86_64_codegen/isa.h
+ *     X_S(MNEMONIC, OPCODE, FUNCT3, EXPR)              : S-type instruction
+ *     X_B(MNEMONIC, OPCODE, FUNCT3, EXPR)              : B-type instruction
+ *     X_U(MNEMONIC, OPCODE, EXPR)                      : U-type instruction
+ *     X_J(MNEMONIC, OPCODE, EXPR)                      : J-type instruction
  *
  * EXPR is the expression used in cpu_execute to execute the instruction
  * the following variables can be set (depending on the type of the instruction)
@@ -301,8 +305,8 @@ typedef struct cached_ins_t {
 			cpu->jump_pending = true;                                                                                                          \
 		} while (0))                                                                                                                               \
                                                                                                                                                            \
-	X_I(                                                                                                                                               \
-		ECALL, OPCODE_SYSTEM, F3_ECALL, do {                                                                                                       \
+	X_I_IMM(                                                                                                                                           \
+		SYSTEM, OPCODE_SYSTEM, F3_ECALL, do {                                                                                                      \
 			switch (imm) {                                                                                                                     \
 				case F12_EBREAK:                                                                                                           \
 					emu_ebreak(emu);                                                                                                   \
@@ -317,7 +321,8 @@ typedef struct cached_ins_t {
 					abort();                                                                                                           \
 					break;                                                                                                             \
 			}                                                                                                                                  \
-		} while (0))                                                                                                                               \
+		} while (0),                                                                                                                               \
+		T(F12_EBREAK, F12_ECALL, F12_MRET))                                                                                                        \
                                                                                                                                                            \
 	X_I(                                                                                                                                               \
 		CSRRW, OPCODE_SYSTEM, F3_CSRRW, do {                                                                                                       \

@@ -328,29 +328,22 @@ C_I(JALR) {
 	E_J();
 }
 
-C_I(ECALL) {
-	S_I();
+C_I_IMM(SYSTEM) {
+	S_I_IMM();
 
-	A_IMM(MOV, OP_REG(RAX), OP_RELOC_IMM32);
-	A(CMP, OP_IMM(1), 0);
-	A(JZ, OP_IMM(6), 0);
-	A(MOV, OP_REG(RAX), OP_DISP(R11, 8 * 8));
-	A(JMP, OP_IMM(4), 0);
-	A(MOV, OP_REG(RAX), OP_DISP(R11, 9 * 8));
-
-	/* We don't use the EMU_FUNCTION macro to save space by not generating two times
-	 * the PUSHs and POPs
-	 */
-	A(PUSH, OP_REG(R8), 0);
-	A(PUSH, OP_REG(R9), 0);
-	A(PUSH, OP_REG(R10), 0);
-	A(PUSH, OP_REG(R11), 0);
-	A(MOV, OP_REG(RDI), OP_REG(R12));
-	A(CALL, OP_REG(RAX), 0);
-	A(POP, OP_REG(R11), 0);
-	A(POP, OP_REG(R10), 0);
-	A(POP, OP_REG(R9), 0);
-	A(POP, OP_REG(R8), 0);
+	if (f12 == F12_EBREAK) {
+		EMU_FUNCTION(9);
+	} else if (f12 == F12_ECALL) {
+		EMU_FUNCTION(8);
+	} else if (f12 == F12_MRET) {
+		/* TODO : implement mret in dynarec
+		 *        for now this is a stupid (but clearly visible) stub
+		 */
+		A(XOR, OP_REG(RAX), OP_REG(RAX));
+		A(MOV, OP_REG(RAX), OP_DEREF(RAX));
+	} else {
+		abort();
+	}
 
 	E();
 }

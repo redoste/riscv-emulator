@@ -45,6 +45,17 @@ void codegen_start_line(bool b0, bool b1, bool b2) {
 	codegen_current_line.rs1uimm_reloc = -1;
 }
 
+void codegen_start_line_not_indexed(void) {
+	printf("\t{(uint8_t*)\"");
+
+	codegen_current_line.pos = 0;
+	codegen_current_line.rs1_reloc = -1;
+	codegen_current_line.rs2_reloc = -1;
+	codegen_current_line.rd_reloc = -1;
+	codegen_current_line.imm_reloc = -1;
+	codegen_current_line.rs1uimm_reloc = -1;
+}
+
 void codegen_asm(x86_mnemonic_t mnemonic, x86_operand_t dst, x86_operand_t src, codegen_reloc_type_t reloc_type) {
 	size_t reloc_pos;
 	size_t written = asm_x86_ins(codegen_current_line.buffer + codegen_current_line.pos,
