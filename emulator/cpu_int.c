@@ -56,3 +56,15 @@ void cpu_mret(emulator_t* emu) {
 	emu->cpu.pc = emu->cpu.csrs.mepc;
 	emu->cpu.jump_pending = true;
 }
+
+void cpu_wfi(emulator_t* emu) {
+	if (emu->cpu.priv_mode == UO_MODE ||
+	    (emu->cpu.priv_mode != M_MODE && ((emu->cpu.csrs.mstatus >> 21) & 1) /* TW */)) {
+		cpu_throw_exception(emu, EXC_ILL_INS, 0);
+		return;
+	}
+
+	fprintf(stderr, "Waiting for interrupts but no interrupts are implemented (PC=%016" PRIx64 ")\n",
+		emu->cpu.pc);
+	abort();
+}

@@ -337,6 +337,8 @@ C_I_IMM(SYSTEM) {
 		EMU_FUNCTION(8);
 	} else if (f12 == F12_MRET) {
 		EMU_FUNCTION(15);
+	} else if (f12 == F12_WFI) {
+		EMU_FUNCTION(-1);
 	} else {
 		abort();
 	}

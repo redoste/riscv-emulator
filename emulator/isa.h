@@ -317,12 +317,15 @@ typedef struct cached_ins_t {
 				case F12_MRET:                                                                                                             \
 					cpu_mret(emu);                                                                                                     \
 					break;                                                                                                             \
+				case F12_WFI:                                                                                                              \
+					cpu_wfi(emu);                                                                                                      \
+					break;                                                                                                             \
 				default:                                                                                                                   \
 					abort();                                                                                                           \
 					break;                                                                                                             \
 			}                                                                                                                                  \
 		} while (0),                                                                                                                               \
-		T(F12_EBREAK, F12_ECALL, F12_MRET))                                                                                                        \
+		T(F12_EBREAK, F12_ECALL, F12_MRET, F12_WFI))                                                                                               \
                                                                                                                                                            \
 	X_I(                                                                                                                                               \
 		CSRRW, OPCODE_SYSTEM, F3_CSRRW, do {                                                                                                       \

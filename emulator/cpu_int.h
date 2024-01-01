@@ -21,4 +21,9 @@ void cpu_throw_exception(emulator_t* emu, uint8_t exception_code, guest_reg tval
  */
 void cpu_mret(emulator_t* emu);
 
+/* cpu_wfi : handle the wfi instruction
+ *     emulator_t* emu : pointer to the emulator
+ */
+void cpu_wfi(emulator_t* emu);
+
 #endif
