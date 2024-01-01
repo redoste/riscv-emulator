@@ -13,6 +13,15 @@
  */
 typedef struct cpu_t {
 	guest_paddr pc;
+
+	/* NOTE : Putting bools here is not optimal for padding but it helps to keep a consistent offset
+	 *        for the assembly code that reads them (see emulator/dynarec_x86_64_entry_exit.s)
+	 */
+	bool jump_pending;
+	bool exception_pending;
+
+	bool dynarec_enabled;
+
 	guest_reg regs[REG_COUNT];
 
 	cpu_csrs_t csrs;
@@ -27,11 +36,6 @@ typedef struct cpu_t {
 #endif
 	} instruction_cache;
 	guest_paddr instruction_cache_mask;
-
-	bool dynarec_enabled;
-
-	bool jump_pending;
-	bool exception_pending;
 } cpu_t;
 
 // NOTE : forward declaration to deal with a cyclic dependency with emulator.h

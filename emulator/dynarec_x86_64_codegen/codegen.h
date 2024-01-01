@@ -88,23 +88,9 @@ void codegen_end_line(void);
 /* EMU_FUNCTION : macro used to do a function call to an emulator function in the
  *                `dr_emu_functions` table pointed by R11
  */
-#define EMU_FUNCTION(index)                                                             \
-	do {                                                                            \
-		/* We need to keep the stack properly aligned, i.e. it is 16-byte */    \
-		/* aligned on the `call` instruction and the push of the return */      \
-		/* address will make it 8-byte aligned */                               \
-		A(PUSH, OP_REG(R8), 0);                                                 \
-		A(PUSH, OP_REG(R9), 0);                                                 \
-		A(PUSH, OP_REG(R10), 0);                                                \
-		A(PUSH, OP_REG(R11), 0);                                                \
-		/* TODO : We should probably save R9 back to the PC field of `cpu_t` */ \
-		/*        in case one of the emu function needs the current PC */       \
-		A(MOV, OP_REG(RDI), OP_REG(R12));                                       \
-		A(CALL, OP_DISP(R11, index * 8), 0);                                    \
-		A(POP, OP_REG(R11), 0);                                                 \
-		A(POP, OP_REG(R10), 0);                                                 \
-		A(POP, OP_REG(R9), 0);                                                  \
-		A(POP, OP_REG(R8), 0);                                                  \
+#define EMU_FUNCTION(index)                          \
+	do {                                         \
+		A(CALL, OP_DISP(R11, index * 8), 0); \
 	} while (0)
 
 /* E : macro used to end the line of an instruction and increment PC
