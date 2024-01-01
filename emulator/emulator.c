@@ -186,7 +186,7 @@ bool emu_add_mmio_device(emulator_t* emu, guest_paddr base, const device_mmio_t*
 		assert(offset + sizeof(TYPE) <= MMU_PG2H_PAGE_SIZE);                        \
                                                                                             \
 		if (!mmu_pg2h_get_pte(emu, addr, &pte)) {                                   \
-			cpu_throw_exception(emu, EXC_STORE_ACCESS_FAULT, value);            \
+			cpu_throw_exception(emu, EXC_STORE_ACCESS_FAULT, addr);             \
 			return ret;                                                         \
 		}                                                                           \
                                                                                             \
