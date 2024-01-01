@@ -152,6 +152,7 @@ DR_WRAPPER cpu_csr_write
 DR_WRAPPER cpu_csr_exchange
 DR_WRAPPER cpu_csr_set_bits
 DR_WRAPPER cpu_csr_clear_bits
+DR_WRAPPER cpu_mret
 
 .section .data
 dr_emu_functions:
@@ -170,5 +171,6 @@ dr_emu_functions:
 	.quad dr_cpu_csr_exchange_wrapper   /* [12] */
 	.quad dr_cpu_csr_set_bits_wrapper   /* [13] */
 	.quad dr_cpu_csr_clear_bits_wrapper /* [14] */
+	.quad dr_cpu_mret_wrapper           /* [15] */
 
 .section .note.GNU-stack, "", %progbits

@@ -54,7 +54,5 @@ void cpu_mret(emulator_t* emu) {
 	}
 
 	emu->cpu.pc = emu->cpu.csrs.mepc;
-	if (!emu->cpu.dynarec_enabled) {
-		emu->cpu.jump_pending = true;
-	}
+	emu->cpu.jump_pending = true;
 }

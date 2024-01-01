@@ -336,11 +336,7 @@ C_I_IMM(SYSTEM) {
 	} else if (f12 == F12_ECALL) {
 		EMU_FUNCTION(8);
 	} else if (f12 == F12_MRET) {
-		/* TODO : implement mret in dynarec
-		 *        for now this is a stupid (but clearly visible) stub
-		 */
-		A(XOR, OP_REG(RAX), OP_REG(RAX));
-		A(MOV, OP_REG(RAX), OP_DEREF(RAX));
+		EMU_FUNCTION(15);
 	} else {
 		abort();
 	}

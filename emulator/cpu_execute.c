@@ -350,6 +350,7 @@ void cpu_execute(emulator_t* emu) {
 	 * *current* instruction, we clean it on each new `cpu_execute`
 	 */
 	emu->cpu.exception_pending = false;
+	emu->cpu.jump_pending = false;
 
 	if ((emu->cpu.pc & 0x3) != 0) {
 		cpu_throw_exception(emu, EXC_INS_ADDR_MISALIGNED, emu->cpu.pc);
@@ -402,9 +403,7 @@ void cpu_execute(emulator_t* emu) {
 			break;
 	}
 
-	if (emu->cpu.jump_pending || emu->cpu.exception_pending) {
-		emu->cpu.jump_pending = false;
-	} else {
+	if (!(emu->cpu.jump_pending || emu->cpu.exception_pending)) {
 		emu->cpu.pc += 4;
 	}
 
