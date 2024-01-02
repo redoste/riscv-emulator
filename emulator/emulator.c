@@ -141,6 +141,8 @@ bool emu_add_mmio_device(emulator_t* emu, guest_paddr base, const device_mmio_t*
 
 #define EMU_RX(SIZE, TYPE)                                                                  \
 	TYPE emu_r##SIZE(emulator_t* emu, guest_paddr addr) {                               \
+		assert((emu->cpu.csrs.satp >> 60) == 0);                                    \
+                                                                                            \
 		mmu_pg2h_pte pte;                                                           \
 		size_t offset = addr & MMU_PG2H_OFFSET_MASK;                                \
 		if ((offset & (sizeof(TYPE) - 1)) != 0) {                                   \
@@ -175,6 +177,8 @@ bool emu_add_mmio_device(emulator_t* emu, guest_paddr base, const device_mmio_t*
 
 #define EMU_WX(SIZE, TYPE)                                                                  \
 	bool emu_w##SIZE(emulator_t* emu, guest_paddr addr, TYPE value) {                   \
+		assert((emu->cpu.csrs.satp >> 60) == 0);                                    \
+                                                                                            \
 		bool ret = cpu_invalidate_instruction_cache(emu, addr);                     \
 		mmu_pg2h_pte pte;                                                           \
 		size_t offset = addr & MMU_PG2H_OFFSET_MASK;                                \
@@ -233,6 +237,8 @@ EMU_WX(32, uint32_t)
 EMU_WX(64, uint64_t)
 
 uint32_t emu_r32_ins(emulator_t* emu, guest_paddr addr, uint8_t* exception_code) {
+	assert((emu->cpu.csrs.satp >> 60) == 0);
+
 	mmu_pg2h_pte pte;
 	size_t offset = addr & MMU_PG2H_OFFSET_MASK;
 	// Instruction alignement should be guaranteed by the caller

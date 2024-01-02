@@ -18,11 +18,15 @@ guest_reg cpu_csr_read(emulator_t* emu, guest_reg csr_num) {
 #define X_RW(NUM, NAME, MASK, BASE) \
 	case (NUM):                 \
 		return (emu->cpu.csrs.NAME & (MASK)) | (BASE);
+#define X_RW_SHADOW(NUM, SHADOW_NAME, MASK, BASE) \
+	case (NUM):                               \
+		return (emu->cpu.csrs.SHADOW_NAME & (MASK)) | (BASE);
 #define X_RO(NUM, VALUE) \
 	case (NUM):      \
 		return VALUE;
 		X_CSRS
 #undef X_RW
+#undef X_RW_SHADOW
 #undef X_RO
 		default:
 			cpu_throw_exception(emu, EXC_ILL_INS, 0);
@@ -42,11 +46,18 @@ void cpu_csr_write(emulator_t* emu, guest_reg csr_num, guest_reg value) {
 	case (NUM):                                             \
 		emu->cpu.csrs.NAME = (value & (MASK)) | (BASE); \
 		break;
+#define X_RW_SHADOW(NUM, SHADOW_NAME, MASK, BASE)                                   \
+	case (NUM):                                                                 \
+		emu->cpu.csrs.SHADOW_NAME = (emu->cpu.csrs.SHADOW_NAME & ~(MASK)) | \
+					    (value & (MASK)) |                      \
+					    (BASE);                                 \
+		break;
 #define X_RO(NUM, VALUE) \
 	case (NUM):      \
 		break;
 		X_CSRS
 #undef X_RW
+#undef X_RW_SHADOW
 #undef X_RO
 		default:
 			cpu_throw_exception(emu, EXC_ILL_INS, 0);
