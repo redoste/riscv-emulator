@@ -17,7 +17,7 @@ void cpu_throw_exception(emulator_t* emu, uint8_t exception_code, guest_reg tval
 	assert(!emu->cpu.exception_pending);
 
 	// TODO : support exception deleg to S-mode
-	assert(!((emu->cpu.csrs.medeleg >> exception_code) & 1));
+	assert(emu->cpu.priv_mode == M_MODE || !((emu->cpu.csrs.medeleg >> exception_code) & 1));
 
 	emu->cpu.csrs.mcause = (0ll << 63) | (exception_code & 0x3f);
 	emu->cpu.csrs.mepc = emu->cpu.pc;
