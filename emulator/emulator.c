@@ -256,7 +256,11 @@ uint32_t emu_r32_ins(emulator_t* emu, guest_paddr addr, uint8_t* exception_code)
 }
 
 void emu_ebreak(emulator_t* emu) {
-	assert(emu->cpu.priv_mode == UO_MODE);
+	if (emu->cpu.priv_mode != UO_MODE) {
+		cpu_throw_exception(emu, EXC_BREAKPOINT, 0);
+		return;
+	}
+
 	fprintf(stderr, "EBREAK PC=%016" PRIx64 "\n", emu->cpu.pc);
 	for (size_t i = 0; i < REG_COUNT; i++) {
 		fprintf(stderr, "x%2zu=%016" PRIx64 " ", i, emu->cpu.regs[i]);
@@ -267,7 +271,18 @@ void emu_ebreak(emulator_t* emu) {
 }
 
 void emu_ecall(emulator_t* emu) {
-	assert(emu->cpu.priv_mode == UO_MODE);
+	if (emu->cpu.priv_mode != UO_MODE) {
+		privilege_mode_t priv_mode = emu->cpu.priv_mode;
+		cpu_throw_exception(emu,
+				    priv_mode == M_MODE
+					    ? EXC_ECALL_FROM_M
+				    : priv_mode == S_MODE
+					    ? EXC_ECALL_FROM_S
+					    : EXC_ECALL_FROM_U,
+				    0);
+		return;
+	}
+
 	// Handle custom emulator calls
 	switch (emu->cpu.regs[10]) {
 		case 0x50555443:  // "PUTC"
