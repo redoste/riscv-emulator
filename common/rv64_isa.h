@@ -147,6 +147,9 @@ enum {
 	F7_AMOMAX = 0x14 << 2,
 	F7_AMOMINU = 0x18 << 2,
 	F7_AMOMAXU = 0x1c << 2,
+
+	/* OPCODE SYSTEM */
+	F7_SFENCE_VMA = 0x09,
 };
 
 /* RISC-V funct12 */

@@ -108,7 +108,7 @@ static void cpu_execute_type_r(emulator_t* emu, const ins_t* instruction) {
 		break;                                  \
 	}
 #define X_I(MNEMONIC, OPCODE, F3, EXPR)
-#define X_I_IMM(MNEMONIC, OPCODE, F3, EXPR, F12S)
+#define X_I_IMM(MNEMONIC, OPCODE, F3, EXPR, F12S, F7S)
 #define X_S(MNEMONIC, OPCODE, F3, EXPR)
 #define X_B(MNEMONIC, OPCODE, F3, EXPR)
 #define X_U(MNEMONIC, OPCODE, EXPR)
@@ -150,12 +150,17 @@ static void cpu_execute_type_i(emulator_t* emu, const ins_t* instruction) {
 		break;                      \
 	}
 #define T(...) __VA_ARGS__
-#define X_I_IMM(MNEMONIC, OPCODE, F3, EXPR, F12S)                                       \
+#define X_I_IMM(MNEMONIC, OPCODE, F3, EXPR, F12S, F7S)                                  \
 	case ((OPCODE >> 2) | (F3 << 5)): {                                             \
-		int64_t f12s[] = {F12S};                                                \
+		int64_t f12s[] = {F12S}, f7s[] = {F7S};                                 \
 		bool found = false;                                                     \
 		for (size_t i = 0; i < sizeof(f12s) / sizeof(f12s[0]) && !found; i++) { \
 			if (f12s[i] == imm) {                                           \
+				found = true;                                           \
+			}                                                               \
+		}                                                                       \
+		for (size_t i = 0; i < sizeof(f7s) / sizeof(f7s[0]) && !found; i++) {   \
+			if ((f7s[i] << 5) == (imm & 0xfe0)) {                           \
 				found = true;                                           \
 			}                                                               \
 		}                                                                       \
@@ -197,7 +202,7 @@ static void cpu_execute_type_s(emulator_t* emu, const ins_t* instruction) {
 	switch (instruction->opcode_switch) {
 #define X_R(MNEMONIC, OPCODE, F3, F7, EXPR)
 #define X_I(MNEMONIC, OPCODE, F3, EXPR)
-#define X_I_IMM(MNEMONIC, OPCODE, F3, EXPR, F12S)
+#define X_I_IMM(MNEMONIC, OPCODE, F3, EXPR, F12S, F7S)
 #define X_S(MNEMONIC, OPCODE, F3, EXPR)     \
 	case ((OPCODE >> 2) | (F3 << 5)): { \
 		EXPR;                       \
@@ -236,7 +241,7 @@ static void cpu_execute_type_b(emulator_t* emu, const ins_t* instruction) {
 	switch (instruction->opcode_switch) {
 #define X_R(MNEMONIC, OPCODE, F3, F7, EXPR)
 #define X_I(MNEMONIC, OPCODE, F3, EXPR)
-#define X_I_IMM(MNEMONIC, OPCODE, F3, EXPR, F12S)
+#define X_I_IMM(MNEMONIC, OPCODE, F3, EXPR, F12S, F7S)
 #define X_S(MNEMONIC, OPCODE, F3, EXPR)
 #define X_B(MNEMONIC, OPCODE, F3, EXPR)     \
 	case ((OPCODE >> 2) | (F3 << 5)): { \
@@ -270,7 +275,7 @@ static void cpu_execute_type_u(emulator_t* emu, const ins_t* instruction) {
 	switch (instruction->opcode_switch) {
 #define X_R(MNEMONIC, OPCODE, F3, F7, EXPR)
 #define X_I(MNEMONIC, OPCODE, F3, EXPR)
-#define X_I_IMM(MNEMONIC, OPCODE, F3, EXPR, F12S)
+#define X_I_IMM(MNEMONIC, OPCODE, F3, EXPR, F12S, F7S)
 #define X_S(MNEMONIC, OPCODE, F3, EXPR)
 #define X_B(MNEMONIC, OPCODE, F3, EXPR)
 #define X_U(MNEMONIC, OPCODE, EXPR) \
@@ -304,7 +309,7 @@ static void cpu_execute_type_j(emulator_t* emu, const ins_t* instruction) {
 
 #define X_R(MNEMONIC, OPCODE, F3, F7, EXPR)
 #define X_I(MNEMONIC, OPCODE, F3, EXPR)
-#define X_I_IMM(MNEMONIC, OPCODE, F3, EXPR, F12S)
+#define X_I_IMM(MNEMONIC, OPCODE, F3, EXPR, F12S, F7S)
 #define X_S(MNEMONIC, OPCODE, F3, EXPR)
 #define X_B(MNEMONIC, OPCODE, F3, EXPR)
 #define X_U(MNEMONIC, OPCODE, EXPR)

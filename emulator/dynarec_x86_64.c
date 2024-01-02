@@ -70,7 +70,7 @@ static inline bool dr_emit_type_r(emulator_t* emu, const ins_t* instruction, dr_
 					instruction, block);               \
 	}
 #define X_I(MNEMONIC, OPCODE, F3, EXPR)
-#define X_I_IMM(MNEMONIC, OPCODE, F3, EXPR, F12S)
+#define X_I_IMM(MNEMONIC, OPCODE, F3, EXPR, F12S, F7S)
 #define X_S(MNEMONIC, OPCODE, F3, EXPR)
 #define X_B(MNEMONIC, OPCODE, F3, EXPR)
 #define X_U(MNEMONIC, OPCODE, EXPR)
@@ -104,24 +104,34 @@ static inline bool dr_emit_type_i(emulator_t* emu, const ins_t* instruction, dr_
 					instruction, block);               \
 	}
 #define T(...) __VA_ARGS__
-#define X_I_IMM(MNEMONIC, OPCODE, F3, EXPR, F12S)                                       \
-	case ((OPCODE >> 2) | (F3 << 5)): {                                             \
-		int64_t f12s[] = {F12S};                                                \
-		size_t f12_idx = 0;                                                     \
-		bool found = false;                                                     \
-		for (; f12_idx < sizeof(f12s) / sizeof(f12s[0]) && !found; f12_idx++) { \
-			if (f12s[f12_idx] == instruction->imm) {                        \
-				found = true;                                           \
-				break;                                                  \
-			}                                                               \
-		}                                                                       \
-		if (!found) {                                                           \
-			return false;                                                   \
-		}                                                                       \
-		assert(DR_X86_##MNEMONIC[f12_idx].code_size > 0);                       \
-		return dr_emit_x86_code(emu,                                            \
-					&DR_X86_##MNEMONIC[f12_idx],                    \
-					instruction, block);                            \
+#define X_I_IMM(MNEMONIC, OPCODE, F3, EXPR, F12S, F7S)                                   \
+	case ((OPCODE >> 2) | (F3 << 5)): {                                              \
+		int64_t f12s[] = {F12S}, f7s[] = {F7S};                                  \
+		const size_t f12s_size = sizeof(f12s) / sizeof(f12s[0]);                 \
+		const size_t f7s_size = sizeof(f7s) / sizeof(f7s[0]);                    \
+		size_t idx = 0;                                                          \
+		bool found = false;                                                      \
+                                                                                         \
+		for (; idx < f12s_size && !found; idx++) {                               \
+			if (f12s[idx] == instruction->imm) {                             \
+				found = true;                                            \
+				break;                                                   \
+			}                                                                \
+		}                                                                        \
+		for (; idx < f7s_size + f12s_size && !found; idx++) {                    \
+			if ((f7s[idx - f12s_size] << 5) == (instruction->imm & 0xfe0)) { \
+				found = true;                                            \
+				break;                                                   \
+			}                                                                \
+		}                                                                        \
+                                                                                         \
+		if (!found) {                                                            \
+			return false;                                                    \
+		}                                                                        \
+		assert(DR_X86_##MNEMONIC[idx].code_size > 0);                            \
+		return dr_emit_x86_code(emu,                                             \
+					&DR_X86_##MNEMONIC[idx],                         \
+					instruction, block);                             \
 	}
 #define X_S(MNEMONIC, OPCODE, F3, EXPR)
 #define X_B(MNEMONIC, OPCODE, F3, EXPR)
@@ -150,7 +160,7 @@ static inline bool dr_emit_type_s(emulator_t* emu, const ins_t* instruction, dr_
 	switch (instruction->opcode_switch) {
 #define X_R(MNEMONIC, OPCODE, F3, F7, EXPR)
 #define X_I(MNEMONIC, OPCODE, F3, EXPR)
-#define X_I_IMM(MNEMONIC, OPCODE, F3, EXPR, F12S)
+#define X_I_IMM(MNEMONIC, OPCODE, F3, EXPR, F12S, F7S)
 #define X_S(MNEMONIC, OPCODE, F3, EXPR)                                    \
 	case ((OPCODE >> 2) | (F3 << 5)): {                                \
 		assert(DR_X86_##MNEMONIC[0].code_size > 0);                \
@@ -183,7 +193,7 @@ static inline bool dr_emit_type_b(emulator_t* emu, const ins_t* instruction, dr_
 	switch (instruction->opcode_switch) {
 #define X_R(MNEMONIC, OPCODE, F3, F7, EXPR)
 #define X_I(MNEMONIC, OPCODE, F3, EXPR)
-#define X_I_IMM(MNEMONIC, OPCODE, F3, EXPR, F12S)
+#define X_I_IMM(MNEMONIC, OPCODE, F3, EXPR, F12S, F7S)
 #define X_S(MNEMONIC, OPCODE, F3, EXPR)
 #define X_B(MNEMONIC, OPCODE, F3, EXPR)                                    \
 	case ((OPCODE >> 2) | (F3 << 5)): {                                \
@@ -215,7 +225,7 @@ static inline bool dr_emit_type_u(emulator_t* emu, const ins_t* instruction, dr_
 	switch (instruction->opcode_switch) {
 #define X_R(MNEMONIC, OPCODE, F3, F7, EXPR)
 #define X_I(MNEMONIC, OPCODE, F3, EXPR)
-#define X_I_IMM(MNEMONIC, OPCODE, F3, EXPR, F12S)
+#define X_I_IMM(MNEMONIC, OPCODE, F3, EXPR, F12S, F7S)
 #define X_S(MNEMONIC, OPCODE, F3, EXPR)
 #define X_B(MNEMONIC, OPCODE, F3, EXPR)
 #define X_U(MNEMONIC, OPCODE, EXPR)                                        \
@@ -246,7 +256,7 @@ static inline bool dr_emit_type_j(emulator_t* emu, const ins_t* instruction, dr_
 
 #define X_R(MNEMONIC, OPCODE, F3, F7, EXPR)
 #define X_I(MNEMONIC, OPCODE, F3, EXPR)
-#define X_I_IMM(MNEMONIC, OPCODE, F3, EXPR, F12S)
+#define X_I_IMM(MNEMONIC, OPCODE, F3, EXPR, F12S, F7S)
 #define X_S(MNEMONIC, OPCODE, F3, EXPR)
 #define X_B(MNEMONIC, OPCODE, F3, EXPR)
 #define X_U(MNEMONIC, OPCODE, EXPR)

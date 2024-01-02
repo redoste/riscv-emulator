@@ -328,7 +328,7 @@ C_I(JALR) {
 	E_J();
 }
 
-C_I_IMM(SYSTEM) {
+C_I_IMM_F12(SYSTEM) {
 	S_I_IMM();
 
 	if (f12 == F12_EBREAK) {
@@ -344,6 +344,16 @@ C_I_IMM(SYSTEM) {
 	}
 
 	E();
+}
+
+C_I_IMM_F7(SYSTEM) {
+	S_I_IMM();
+
+	if (f7 == F7_SFENCE_VMA) {
+		E();
+	} else {
+		abort();
+	}
 }
 
 C_I(CSRRW) {

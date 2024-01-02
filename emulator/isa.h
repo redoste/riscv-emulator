@@ -47,9 +47,9 @@ typedef struct cached_ins_t {
  *                  the emulator can emulate
  *     X_R(MNEMONIC, OPCODE, FUNCT3, FUNCT7, EXPR)      : R-type instruction
  *     X_I(MNEMONIC, OPCODE, FUNCT3, EXPR)              : I-type instruction
- *     X_I_IMM(MNEMONIC, OPCODE, FUNT3, EXPR, FUNCT12S) : I-type instruction with different implementations
- *                                                        depending on the immediate
- *                                                        F12S should be declared in the same order as in
+ *     X_I_IMM(MNEMONIC, OPCODE, FUNT3, EXPR,           : I-type instruction with different implementations
+ *             FUNCT12S, FUNCT7S)                         depending on the immediate
+ *                                                        F12S and F7S should be declared in the same order as in
  *                                                        emulator/dynarec_x86_64_codegen/isa.h
  *     X_S(MNEMONIC, OPCODE, FUNCT3, EXPR)              : S-type instruction
  *     X_B(MNEMONIC, OPCODE, FUNCT3, EXPR)              : B-type instruction
@@ -321,11 +321,15 @@ typedef struct cached_ins_t {
 					cpu_wfi(emu);                                                                                                      \
 					break;                                                                                                             \
 				default:                                                                                                                   \
-					abort();                                                                                                           \
+					if ((F7_SFENCE_VMA << 5) == (imm & 0xfe0)) {                                                                       \
+						/* nop */                                                                                                  \
+					} else {                                                                                                           \
+						abort();                                                                                                   \
+					}                                                                                                                  \
 					break;                                                                                                             \
 			}                                                                                                                                  \
 		} while (0),                                                                                                                               \
-		T(F12_EBREAK, F12_ECALL, F12_MRET, F12_WFI))                                                                                               \
+		T(F12_EBREAK, F12_ECALL, F12_MRET, F12_WFI), T(F7_SFENCE_VMA))                                                                             \
                                                                                                                                                            \
 	X_I(                                                                                                                                               \
 		CSRRW, OPCODE_SYSTEM, F3_CSRRW, do {                                                                                                       \

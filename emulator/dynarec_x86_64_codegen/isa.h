@@ -7,9 +7,9 @@
  *                  code for
  *     X_R(MNEMONIC)           : R-type instruction
  *     X_I(MNEMONIC)           : I-type instruction
- *     X_I_IMM(MNEMONIC, F12S) : I-type instruction with different implementations depending
- *                               on the immediate
- *                               F12S should be declared in the same order as in emulator/isa.h
+ *     X_I_IMM(MNEMONIC,       : I-type instruction with different implementations depending
+ *             F12S, F7S)        on the immediate
+ *                               F12S and F7S should be declared in the same order as in emulator/isa.h
  *     X_S(MNEMONIC)           : S-type instruction
  *     X_B(MNEMONIC)           : B-type instruction
  *     X_U(MNEMONIC)           : U-type instruction
@@ -99,7 +99,8 @@
 	X_I(JALR)                                            \
                                                              \
 	X_I_IMM(SYSTEM,                                      \
-		T(F12_EBREAK, F12_ECALL, F12_MRET, F12_WFI)) \
+		T(F12_EBREAK, F12_ECALL, F12_MRET, F12_WFI), \
+		T(F7_SFENCE_VMA))                            \
                                                              \
 	X_I(CSRRW)                                           \
 	X_I(CSRRS)                                           \

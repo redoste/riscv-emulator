@@ -27,12 +27,15 @@ int main(void) {
 	}                                                       \
 	codegen_end_ins();
 #define T(...) __VA_ARGS__
-#define X_I_IMM(MNEMONIC, F12S)                                               \
+#define X_I_IMM(MNEMONIC, F12S, F7S)                                          \
 	{                                                                     \
 		codegen_start_ins(#MNEMONIC);                                 \
-		int64_t f12s[] = {F12S};                                      \
+		int64_t f12s[] = {F12S}, f7s[] = {F7S};                       \
 		for (size_t i = 0; i < sizeof(f12s) / sizeof(f12s[0]); i++) { \
-			codegen_##MNEMONIC(f12s[i]);                          \
+			codegen_##MNEMONIC##_f12(f12s[i]);                    \
+		}                                                             \
+		for (size_t i = 0; i < sizeof(f7s) / sizeof(f7s[0]); i++) {   \
+			codegen_##MNEMONIC##_f7(f7s[i]);                      \
 		}                                                             \
 		codegen_end_ins();                                            \
 	}

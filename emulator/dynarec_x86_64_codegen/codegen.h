@@ -53,13 +53,14 @@ void codegen_end_line(void);
 
 /* C_X : macros used to declare the emitting function of a X-type instruction
  */
-#define C_R(MNEMONIC)     static inline void codegen_##MNEMONIC(bool rs1_zero, bool rs2_zero, bool rd_zero)
-#define C_I(MNEMONIC)     static inline void codegen_##MNEMONIC(bool rs1_zero, bool rd_zero)
-#define C_I_IMM(MNEMONIC) static inline void codegen_##MNEMONIC(int64_t f12)
-#define C_S(MNEMONIC)     static inline void codegen_##MNEMONIC(bool rs1_zero, bool rs2_zero)
-#define C_B(MNEMONIC)     static inline void codegen_##MNEMONIC(bool rs1_zero, bool rs2_zero)
-#define C_U(MNEMONIC)     static inline void codegen_##MNEMONIC(bool rd_zero)
-#define C_J(MNEMONIC)     static inline void codegen_##MNEMONIC(bool rd_zero)
+#define C_R(MNEMONIC)         static inline void codegen_##MNEMONIC(bool rs1_zero, bool rs2_zero, bool rd_zero)
+#define C_I(MNEMONIC)         static inline void codegen_##MNEMONIC(bool rs1_zero, bool rd_zero)
+#define C_I_IMM_F12(MNEMONIC) static inline void codegen_##MNEMONIC##_f12(int64_t f12)
+#define C_I_IMM_F7(MNEMONIC)  static inline void codegen_##MNEMONIC##_f7(int64_t f7)
+#define C_S(MNEMONIC)         static inline void codegen_##MNEMONIC(bool rs1_zero, bool rs2_zero)
+#define C_B(MNEMONIC)         static inline void codegen_##MNEMONIC(bool rs1_zero, bool rs2_zero)
+#define C_U(MNEMONIC)         static inline void codegen_##MNEMONIC(bool rd_zero)
+#define C_J(MNEMONIC)         static inline void codegen_##MNEMONIC(bool rd_zero)
 
 /* S_X : macros used to start the line of a X-type instruction
  */
