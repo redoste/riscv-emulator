@@ -356,6 +356,7 @@ void cpu_execute(emulator_t* emu) {
 	 */
 	emu->cpu.exception_pending = false;
 	emu->cpu.jump_pending = false;
+	emu->cpu.tlb_or_cache_flush_pending = false;
 
 	if ((emu->cpu.pc & 0x3) != 0) {
 		cpu_throw_exception(emu, EXC_INS_ADDR_MISALIGNED, emu->cpu.pc);

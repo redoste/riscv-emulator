@@ -147,3 +147,29 @@ bool cpu_invalidate_instruction_cache(emulator_t* emu, guest_paddr addr) {
 		return false;
 	}
 }
+
+void cpu_flush_instruction_cache(emulator_t* emu) {
+	size_t instruction_cache_size = emu->cpu.instruction_cache_mask + 1;
+	emu->cpu.tlb_or_cache_flush_pending = true;
+
+#ifdef RISCV_EMULATOR_DYNAREC_X86_64_SUPPORT
+	if (emu->cpu.dynarec_enabled) {
+		for (size_t i = 0; i < instruction_cache_size; i++) {
+			dr_ins_t* cached_instruction = &emu->cpu.instruction_cache.as_dr_ins[i];
+			if (cached_instruction->native_code != NULL) {
+				cpu_invalidate_instruction_cache(emu, cached_instruction->tag);
+			}
+		}
+		return;
+	}
+#else
+	assert(!emu->cpu.dynarec_enabled);
+#endif
+
+	for (size_t i = 0; i < instruction_cache_size; i++) {
+		cached_ins_t* cached_instruction = &emu->cpu.instruction_cache.as_cached_ins[i];
+		if (cached_instruction->decoded_instruction.type != INS_TYPE_INVALID) {
+			cpu_invalidate_instruction_cache(emu, cached_instruction->tag);
+		}
+	}
+}

@@ -19,6 +19,7 @@ typedef struct cpu_t {
 	 */
 	bool jump_pending;
 	bool exception_pending;
+	bool tlb_or_cache_flush_pending;
 
 	bool dynarec_enabled;
 
@@ -66,6 +67,11 @@ bool cpu_decode_and_cache(emulator_t* emu, guest_paddr instruction_addr, ins_t**
  *     guest_paddr addr : address of the instruction to invalidate
  */
 bool cpu_invalidate_instruction_cache(emulator_t* emu, guest_paddr addr);
+
+/* cpu_flush_instruction_cache : invalidate all the entries in the instruction cache
+ *     emulator_t* emu : pointer to the emulator where the cache will be updated
+ */
+void cpu_flush_instruction_cache(emulator_t* emu);
 
 /* cpu_execute : execute a single instruction at the CPU PC
  *     emulator_t* emu : pointer to the emulator state to update to the next instruction

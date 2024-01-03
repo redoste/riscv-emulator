@@ -65,8 +65,9 @@ dr_emu_w\size\()_wrapper:
 	test %dil, %dil
 	jnz dr_wrappers_short_circuit
 
+	or 10(%r12), %al /* tlb_or_cache_flush_pending */
 	test %al, %al
-	jnz dr_wrappers_write_done_short_circuit
+	jnz dr_wrappers_ins_done_short_circuit
 
 	pop %r11
 	pop %r10
@@ -75,7 +76,7 @@ dr_emu_w\size\()_wrapper:
 	ret
 .endm
 
-dr_wrappers_write_done_short_circuit:
+dr_wrappers_ins_done_short_circuit:
 	/* If some cache entry were invalidated, we drop the return pointer and
 	 * short-circuit back to `dr_exit` as the current block might have been
 	 * munmaped in the case of self-modifying code
@@ -86,7 +87,7 @@ dr_wrappers_write_done_short_circuit:
 	pop %r8
 	add $8, %rsp
 
-	// And we don't forget to increment PC as the write is now done
+	// And we don't forget to increment PC as the instruction is now done
 	add $4, %r9
 	jmp *%r10
 
@@ -114,6 +115,10 @@ dr_\name\()_wrapper:
 	or 9(%r12), %dil  /* exception_pending */
 	test %dil, %dil
 	jnz dr_wrappers_short_circuit
+
+	mov 10(%r12), %dil /* tlb_or_cache_flush_pending */
+	test %dil, %dil
+	jnz dr_wrappers_ins_done_short_circuit
 
 	pop %r11
 	pop %r10

@@ -293,6 +293,8 @@ guest_reg cpu_csr_clear_bits(emulator_t* emu, guest_reg csr_num, guest_reg mask)
 		CSR_SATP, satp, ~(0xffffll << 44), /* ASIDLEN=0 */                                               \
 		0,                                                                                               \
 		do {                                                                                             \
+			cpu_flush_instruction_cache(emu);                                                        \
+                                                                                                                 \
 			uint8_t mode = (emu->cpu.csrs.satp >> 60) & 0xf;                                         \
 			/* If the mode is unsupported (not sv39 or bare), the write is ignored */                \
 			if (mode != 8 && mode != 0) {                                                            \
