@@ -211,7 +211,7 @@ static int main_advanced(int argc, char** argv) {
 	free(rom_content);
 
 	// TODO : add proper exit
-	while (emu.cpu.pc >= rom_base && emu.cpu.pc < rom_base + rom_size) {
+	while (1) {
 		cpu_execute(&emu);
 	}
 
