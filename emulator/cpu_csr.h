@@ -51,9 +51,9 @@ guest_reg cpu_csr_clear_bits(emulator_t* emu, guest_reg csr_num, guest_reg mask)
  *         WLRL : write/read only legal values
  *         WARL : write any values, read legal values
  *
- *     X_RW(NUM, NAME, MASK, BASE)               : Read-write CSR
- *     X_RW_SHADOW(NUM, SHADOW_NAME, MASK, BASE) : Read-write CSR backed by another masked CSR
- *                                                 Some S-mode CSRs are the same as the M-mode ones
+ *     X_RW(NUM, NAME, MASK, BASE, POST_WRITE)   : Read-write CSR
+ *     X_RW_SHADOW(NUM, SHADOW_NAME, MASK, BASE, : Read-write CSR backed by another masked CSR
+ *                 POST_WRITE)                     Some S-mode CSRs are the same as the M-mode ones
  *                                                 with some bits masked
  *     X_RO(NUM, VALUE)                          : Read-only CSR
  */
@@ -79,40 +79,40 @@ guest_reg cpu_csr_clear_bits(emulator_t* emu, guest_reg csr_num, guest_reg mask)
 					   (1 << 5) |  /* SPIE : Supervisor previous interrupt-enable */         \
 					   (1 << 3) |  /* MIE : Machine interrupt-enable */                      \
 					   (1 << 1),   /* SIE : Supervisor interrupt-enable */                   \
-	     (2ll << 34) | (2ll << 32))                /* SXL & UXL : XLEN=64 */                                 \
+	     (2ll << 34) | (2ll << 32), (void)0)       /* SXL & UXL : XLEN=64 */                                 \
 	X_RO(CSR_MISA, (2ll << 62) |                   /* MXL : XLEN=64 */                                       \
 			       (1 << 20) |             /* U mode */                                              \
 			       (1 << 18) |             /* S mode */                                              \
 			       (1 << 12) |             /* M extension */                                         \
 			       (1 << 8) |              /* I base ISA */                                          \
 			       (1 << 0))               /* A extension */                                         \
-	X_RW(CSR_MEDELEG, medeleg, ~(1 << 11) /* ecall from M-mode can't be delegated */, 0)                     \
-	X_RW(CSR_MIDELEG, mideleg, ~0, 0)                                                                        \
+	X_RW(CSR_MEDELEG, medeleg, ~(1 << 11) /* ecall from M-mode can't be delegated */, 0, (void)0)            \
+	X_RW(CSR_MIDELEG, mideleg, ~0, 0, (void)0)                                                               \
 	X_RW(CSR_MIE, mie, (1 << 11) |        /* MEIE : Machine    external interrupt enabled */                 \
 				   (1 << 9) | /* SEIE : Supervisor external interrupt enabled */                 \
 				   (1 << 7) | /* MTIE : Machine    timer    interrupt enabled */                 \
 				   (1 << 5) | /* STIE : Supervisor timer    interrupt enabled */                 \
 				   (1 << 3) | /* MSIE : Machine    software interrupt enabled */                 \
 				   (1 << 1),  /* SSIE : Supervisor software interrupt enabled */                 \
-	     0)                                                                                                  \
-	X_RW(CSR_MTVEC, mtvec, ~2, 0)                                                                            \
-	X_RW(CSR_MCOUNTEREN, mcounteren, 0xffffffff, 0)                                                          \
+	     0, (void)0)                                                                                         \
+	X_RW(CSR_MTVEC, mtvec, ~2, 0, (void)0)                                                                   \
+	X_RW(CSR_MCOUNTEREN, mcounteren, 0xffffffff, 0, (void)0)                                                 \
                                                                                                                  \
 	/* Machine trap handling */                                                                              \
-	X_RW(CSR_MSCRATCH, mscratch, ~0, 0)                                                                      \
-	X_RW(CSR_MEPC, mepc, ~3, 0)                                                                              \
-	X_RW(CSR_MCAUSE, mcause, (1ll << 63) | 0x3f, 0)                                                          \
-	X_RW(CSR_MTVAL, mtval, ~0, 0)                                                                            \
+	X_RW(CSR_MSCRATCH, mscratch, ~0, 0, (void)0)                                                             \
+	X_RW(CSR_MEPC, mepc, ~3, 0, (void)0)                                                                     \
+	X_RW(CSR_MCAUSE, mcause, (1ll << 63) | 0x3f, 0, (void)0)                                                 \
+	X_RW(CSR_MTVAL, mtval, ~0, 0, (void)0)                                                                   \
 	X_RW(CSR_MIP, mip, (1 << 11) |        /* MEIP : Machine    external interrupt pending */                 \
 				   (1 << 9) | /* SEIP : Supervisor external interrupt pending */                 \
 				   (1 << 7) | /* MTIP : Machine    timer    interrupt pending */                 \
 				   (1 << 5) | /* STIP : Supervisor timer    interrupt pending */                 \
 				   (1 << 3) | /* MSIP : Machine    software interrupt pending */                 \
 				   (1 << 1),  /* SSIP : Supervisor software interrupt pending */                 \
-	     0)                                                                                                  \
+	     0, (void)0)                                                                                         \
                                                                                                                  \
 	/* Machine configuration */                                                                              \
-	X_RW(CSR_MENVCFG, menvcfg, (3ll << 62) | (0xf << 4) | 1, 0)                                              \
+	X_RW(CSR_MENVCFG, menvcfg, (3ll << 62) | (0xf << 4) | 1, 0, (void)0)                                     \
                                                                                                                  \
 	/* Machine memory protection */                                                                          \
 	/* TODO : find a way to declare ranges easily */                                                         \
@@ -190,8 +190,8 @@ guest_reg cpu_csr_clear_bits(emulator_t* emu, guest_reg csr_num, guest_reg mask)
 	X_RO(CSR_PMPADDR0 + 63, 0)                                                                               \
                                                                                                                  \
 	/* Machine counter/timers */                                                                             \
-	X_RW(CSR_MCYCLE, mcycle, ~0, 0)                                                                          \
-	X_RW(CSR_MINSTRET, minstret, ~0, 0)                                                                      \
+	X_RW(CSR_MCYCLE, mcycle, ~0, 0, (void)0)                                                                 \
+	X_RW(CSR_MINSTRET, minstret, ~0, 0, (void)0)                                                             \
 	X_RO(CSR_MHPMCOUNTER3 + 0, 0)                                                                            \
 	X_RO(CSR_MHPMCOUNTER3 + 1, 0)                                                                            \
 	X_RO(CSR_MHPMCOUNTER3 + 2, 0)                                                                            \
@@ -260,37 +260,44 @@ guest_reg cpu_csr_clear_bits(emulator_t* emu, guest_reg csr_num, guest_reg mask)
 						  (1 << 8) |  /* SPP : Supervisor previous privilege mode */     \
 						  (1 << 5) |  /* SPIE : Supervisor previous interrupt-enable */  \
 						  (1 << 1),   /* SIE : Supervisor interrupt-enable */            \
-		    (2ll << 32))                              /* UXL : XLEN=64 */                                \
+		    (2ll << 32), (void)0)                     /* UXL : XLEN=64 */                                \
 	X_RW_SHADOW(CSR_SIE, mie, (1 << 9) |                  /* SEIE : Supervisor external interrupt enabled */ \
 					  (1 << 5) |          /* STIE : Supervisor timer    interrupt enabled */ \
 					  (1 << 1),           /* SSIE : Supervisor software interrupt enabled */ \
-		    0)                                                                                           \
-	X_RW(CSR_STVEC, stvec, ~2, 0)                                                                            \
-	X_RW(CSR_SCOUNTEREN, scounteren, 0xffffffff, 0)                                                          \
+		    0, (void)0)                                                                                  \
+	X_RW(CSR_STVEC, stvec, ~2, 0, (void)0)                                                                   \
+	X_RW(CSR_SCOUNTEREN, scounteren, 0xffffffff, 0, (void)0)                                                 \
                                                                                                                  \
 	/* Supervisor configuration */                                                                           \
-	X_RW(CSR_SENVCFG, senvcfg, (0xf << 4) | 1, 0)                                                            \
+	X_RW(CSR_SENVCFG, senvcfg, (0xf << 4) | 1, 0, (void)0)                                                   \
                                                                                                                  \
 	/* Supervisor trap handling */                                                                           \
-	X_RW(CSR_SSCRATCH, sscratch, ~0, 0)                                                                      \
-	X_RW(CSR_SEPC, sepc, ~3, 0)                                                                              \
-	X_RW(CSR_SCAUSE, scause, (1ll << 63) | 0x3f, 0)                                                          \
-	X_RW(CSR_STVAL, stval, ~0, 0)                                                                            \
+	X_RW(CSR_SSCRATCH, sscratch, ~0, 0, (void)0)                                                             \
+	X_RW(CSR_SEPC, sepc, ~3, 0, (void)0)                                                                     \
+	X_RW(CSR_SCAUSE, scause, (1ll << 63) | 0x3f, 0, (void)0)                                                 \
+	X_RW(CSR_STVAL, stval, ~0, 0, (void)0)                                                                   \
 	X_RW_SHADOW(CSR_SIP, mip, (1 << 9) |         /* SEIP : Supervisor external interrupt pending */          \
 					  (1 << 5) | /* STIP : Supervisor timer    interrupt pending */          \
 					  (1 << 1),  /* SSIP : Supervisor software interrupt pending */          \
-		    0)                                                                                           \
+		    0, (void)0)                                                                                  \
                                                                                                                  \
 	/* Supervisor protection and translation */                                                              \
-	X_RW(CSR_SATP, satp, ~((7ll << 60) |      /* sv39 and bare are supported */                              \
-			       (0xffffll << 44)), /* ASIDLEN=0 */                                                \
-	     0)
+	X_RW(                                                                                                    \
+		CSR_SATP, satp, ~(0xffffll << 44), /* ASIDLEN=0 */                                               \
+		0,                                                                                               \
+		do {                                                                                             \
+			uint8_t mode = (emu->cpu.csrs.satp >> 60) & 0xf;                                         \
+			/* If the mode is unsupported (not sv39 or bare), the write is ignored */                \
+			if (mode != 8 && mode != 0) {                                                            \
+				emu->cpu.csrs.satp = old_value;                                                  \
+			}                                                                                        \
+		} while (0))
 
 /* cpu_csrs_t : structure storing the current value of the CSRs
  */
 typedef struct cpu_csrs_t {
-#define X_RW(NUM, NAME, MASK, BASE) guest_reg NAME;
-#define X_RW_SHADOW(NUM, SHADOW_NAME, MASK, BASE)
+#define X_RW(NUM, NAME, MASK, BASE, POST_WRITE) guest_reg NAME;
+#define X_RW_SHADOW(NUM, SHADOW_NAME, MASK, BASE, POST_WRITE)
 #define X_RO(NUM, VALUE)
 	X_CSRS
 #undef X_RW

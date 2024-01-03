@@ -15,11 +15,11 @@ guest_reg cpu_csr_read(emulator_t* emu, guest_reg csr_num) {
 	}
 
 	switch (csr_num) {
-#define X_RW(NUM, NAME, MASK, BASE) \
-	case (NUM):                 \
+#define X_RW(NUM, NAME, MASK, BASE, POST_WRITE) \
+	case (NUM):                             \
 		return (emu->cpu.csrs.NAME & (MASK)) | (BASE);
-#define X_RW_SHADOW(NUM, SHADOW_NAME, MASK, BASE) \
-	case (NUM):                               \
+#define X_RW_SHADOW(NUM, SHADOW_NAME, MASK, BASE, POST_WRITE) \
+	case (NUM):                                           \
 		return (emu->cpu.csrs.SHADOW_NAME & (MASK)) | (BASE);
 #define X_RO(NUM, VALUE) \
 	case (NUM):      \
@@ -42,16 +42,26 @@ void cpu_csr_write(emulator_t* emu, guest_reg csr_num, guest_reg value) {
 	}
 
 	switch (csr_num) {
-#define X_RW(NUM, NAME, MASK, BASE)                             \
-	case (NUM):                                             \
+#define X_RW(NUM, NAME, MASK, BASE, POST_WRITE)                 \
+	case (NUM): {                                           \
+		guest_reg old_value = emu->cpu.csrs.NAME;       \
+		(void)old_value;                                \
+                                                                \
 		emu->cpu.csrs.NAME = (value & (MASK)) | (BASE); \
-		break;
-#define X_RW_SHADOW(NUM, SHADOW_NAME, MASK, BASE)                                   \
-	case (NUM):                                                                 \
+		POST_WRITE;                                     \
+		break;                                          \
+	}
+#define X_RW_SHADOW(NUM, SHADOW_NAME, MASK, BASE, POST_WRITE)                       \
+	case (NUM): {                                                               \
+		guest_reg old_value = emu->cpu.csrs.SHADOW_NAME;                    \
+		(void)old_value;                                                    \
+                                                                                    \
 		emu->cpu.csrs.SHADOW_NAME = (emu->cpu.csrs.SHADOW_NAME & ~(MASK)) | \
 					    (value & (MASK)) |                      \
 					    (BASE);                                 \
-		break;
+		POST_WRITE;                                                         \
+		break;                                                              \
+	}
 #define X_RO(NUM, VALUE) \
 	case (NUM):      \
 		break;
