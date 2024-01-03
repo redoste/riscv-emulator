@@ -66,8 +66,8 @@ guest_reg cpu_csr_clear_bits(emulator_t* emu, guest_reg csr_num, guest_reg mask)
 	X_RO(CSR_MCONFIGPTR, 0)                                                                                  \
                                                                                                                  \
 	/* Machine trap setup */                                                                                 \
-	/* TODO : detect invalid privilege modes in xPP */                                                       \
-	X_RW(CSR_MSTATUS, mstatus, (1 << 22) |         /* TSR : Trap sret */                                     \
+	X_RW(                                          /* TODO : handle TSR and TVM */                           \
+	     CSR_MSTATUS, mstatus, (1 << 22) |         /* TSR : Trap sret */                                     \
 					   (1 << 21) | /* TW : Timeout wait */                                   \
 					   (1 << 20) | /* TVM : Trap virtual memory */                           \
 					   (1 << 19) | /* MXR : Make executable readable */                      \
@@ -79,13 +79,20 @@ guest_reg cpu_csr_clear_bits(emulator_t* emu, guest_reg csr_num, guest_reg mask)
 					   (1 << 5) |  /* SPIE : Supervisor previous interrupt-enable */         \
 					   (1 << 3) |  /* MIE : Machine interrupt-enable */                      \
 					   (1 << 1),   /* SIE : Supervisor interrupt-enable */                   \
-	     (2ll << 34) | (2ll << 32), (void)0)       /* SXL & UXL : XLEN=64 */                                 \
-	X_RO(CSR_MISA, (2ll << 62) |                   /* MXL : XLEN=64 */                                       \
-			       (1 << 20) |             /* U mode */                                              \
-			       (1 << 18) |             /* S mode */                                              \
-			       (1 << 12) |             /* M extension */                                         \
-			       (1 << 8) |              /* I base ISA */                                          \
-			       (1 << 0))               /* A extension */                                         \
+	     (2ll << 34) | (2ll << 32),                /* SXL & UXL : XLEN=64 */                                 \
+	     do {                                                                                                \
+		     privilege_mode_t mpp = (emu->cpu.csrs.mstatus >> 11) & 3;                                   \
+		     /* We set back MPP to 0 if an invalid privilege mode was written */                         \
+		     if (mpp != U_MODE && mpp != S_MODE && mpp != M_MODE) {                                      \
+			     emu->cpu.csrs.mstatus &= ~(3 << 11);                                                \
+		     }                                                                                           \
+	     } while (0))                                                                                        \
+	X_RO(CSR_MISA, (2ll << 62) |       /* MXL : XLEN=64 */                                                   \
+			       (1 << 20) | /* U mode */                                                          \
+			       (1 << 18) | /* S mode */                                                          \
+			       (1 << 12) | /* M extension */                                                     \
+			       (1 << 8) |  /* I base ISA */                                                      \
+			       (1 << 0))   /* A extension */                                                     \
 	X_RW(CSR_MEDELEG, medeleg, ~(1 << 11) /* ecall from M-mode can't be delegated */, 0, (void)0)            \
 	X_RW(CSR_MIDELEG, mideleg, ~0, 0, (void)0)                                                               \
 	X_RW(CSR_MIE, mie, (1 << 11) |        /* MEIE : Machine    external interrupt enabled */                 \
