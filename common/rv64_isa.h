@@ -397,6 +397,10 @@ typedef enum privilege_mode_t {
  */
 typedef uint64_t guest_paddr;
 
+/* guest_vaddr : typedef used to declare a value storing a guest virtual address
+ */
+typedef uint64_t guest_vaddr;
+
 /* guest_reg : typedef used to declare a value storing an unsigned guest register
  */
 typedef uint64_t guest_reg;

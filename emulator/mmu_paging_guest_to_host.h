@@ -12,7 +12,7 @@
  */
 #define MMU_PG2H_OFFSET_MASK 0xfff
 
-/* MMU_PG2H_OFFSET_SIZE : size of a page in the guest physical to host page table
+/* MMU_PG2H_PAGE_SIZE : size of a page in the guest physical to host page table
  */
 #define MMU_PG2H_PAGE_SIZE (MMU_PG2H_OFFSET_MASK + 1)
 

@@ -15,6 +15,7 @@
 #include "dynarec_x86_64.h"
 #include "emulator.h"
 #include "emulator_sdl.h"
+#include "mmu_paging_guest_to_guest.h"
 #include "mmu_paging_guest_to_host.h"
 
 void emu_create(emulator_t* emu, guest_reg pc, size_t cache_bits, bool dynarec_enabled, bool user_only_mode) {
@@ -131,28 +132,37 @@ bool emu_add_mmio_device(emulator_t* emu, guest_paddr base, const device_mmio_t*
 #define htole8(x) (x)
 
 #define EMU_RX_MISALIGNED(SIZE, TYPE)                                                      \
-	static inline TYPE emu_r##SIZE##_misaligned(emulator_t* emu, guest_paddr addr) {   \
+	static inline TYPE emu_r##SIZE##_misaligned(emulator_t* emu, guest_vaddr vaddr) {  \
 		TYPE value = 0;                                                            \
 		for (size_t i = 0; i < sizeof(TYPE) && !emu->cpu.exception_pending; i++) { \
-			value |= (TYPE)emu_r8(emu, addr + i) << (i * 8);                   \
+			value |= (TYPE)emu_r8(emu, vaddr + i) << (i * 8);                  \
 		}                                                                          \
 		return value;                                                              \
 	}
 
 #define EMU_RX(SIZE, TYPE)                                                                  \
-	TYPE emu_r##SIZE(emulator_t* emu, guest_paddr addr) {                               \
-		assert((emu->cpu.csrs.satp >> 60) == 0);                                    \
-                                                                                            \
-		mmu_pg2h_pte pte;                                                           \
-		size_t offset = addr & MMU_PG2H_OFFSET_MASK;                                \
+	TYPE emu_r##SIZE(emulator_t* emu, guest_vaddr vaddr) {                              \
+		size_t offset = vaddr & MMU_PG2H_OFFSET_MASK;                               \
 		if ((offset & (sizeof(TYPE) - 1)) != 0) {                                   \
-			return emu_r##SIZE##_misaligned(emu, addr);                         \
+			return emu_r##SIZE##_misaligned(emu, vaddr);                        \
 		}                                                                           \
 		/* Read across page boudaries should be handled by the misaligned case */   \
 		assert(offset + sizeof(TYPE) <= MMU_PG2H_PAGE_SIZE);                        \
                                                                                             \
-		if (!mmu_pg2h_get_pte(emu, addr, &pte)) {                                   \
-			cpu_throw_exception(emu, EXC_LOAD_ACCESS_FAULT, addr);              \
+		guest_paddr paddr;                                                          \
+		if (mmu_vg2pg_should_translate(emu, true)) {                                \
+			if (!mmu_vg2pg_translate(emu, MMU_VG2PG_ACCESS_READ,                \
+						 vaddr, &paddr)) {                          \
+				cpu_throw_exception(emu, EXC_LOAD_PAGE_FAULT, vaddr);       \
+				return 0;                                                   \
+			}                                                                   \
+		} else {                                                                    \
+			paddr = vaddr;                                                      \
+		}                                                                           \
+                                                                                            \
+		mmu_pg2h_pte pte;                                                           \
+		if (!mmu_pg2h_get_pte(emu, paddr, &pte)) {                                  \
+			cpu_throw_exception(emu, EXC_LOAD_ACCESS_FAULT, paddr);             \
 			return 0;                                                           \
 		}                                                                           \
                                                                                             \
@@ -167,30 +177,41 @@ bool emu_add_mmio_device(emulator_t* emu, guest_paddr base, const device_mmio_t*
 		}                                                                           \
 	}
 
-#define EMU_WX_MISALIGNED(SIZE, TYPE)                                                                \
-	static inline void emu_w##SIZE##_misaligned(emulator_t* emu, guest_paddr addr, TYPE value) { \
-		for (size_t i = 0; i < sizeof(TYPE) && !emu->cpu.exception_pending; i++) {           \
-			emu_w8(emu, addr + i, value & 0xff);                                         \
-			value >>= 8;                                                                 \
-		}                                                                                    \
+#define EMU_WX_MISALIGNED(SIZE, TYPE)                                                                 \
+	static inline bool emu_w##SIZE##_misaligned(emulator_t* emu, guest_vaddr vaddr, TYPE value) { \
+		bool ret = false;                                                                     \
+		for (size_t i = 0; i < sizeof(TYPE) && !emu->cpu.exception_pending; i++) {            \
+			ret |= emu_w8(emu, vaddr + i, value & 0xff);                                  \
+			value >>= 8;                                                                  \
+		}                                                                                     \
+		return ret;                                                                           \
 	}
 
 #define EMU_WX(SIZE, TYPE)                                                                  \
-	bool emu_w##SIZE(emulator_t* emu, guest_paddr addr, TYPE value) {                   \
-		assert((emu->cpu.csrs.satp >> 60) == 0);                                    \
-                                                                                            \
-		bool ret = cpu_invalidate_instruction_cache(emu, addr);                     \
-		mmu_pg2h_pte pte;                                                           \
-		size_t offset = addr & MMU_PG2H_OFFSET_MASK;                                \
+	bool emu_w##SIZE(emulator_t* emu, guest_vaddr vaddr, TYPE value) {                  \
+		size_t offset = vaddr & MMU_PG2H_OFFSET_MASK;                               \
 		if ((offset & (sizeof(TYPE) - 1)) != 0) {                                   \
-			emu_w##SIZE##_misaligned(emu, addr, value);                         \
-			return ret;                                                         \
+			return emu_w##SIZE##_misaligned(emu, vaddr, value);                 \
 		}                                                                           \
 		/* Write across page boudaries should be handled by the misaligned case */  \
 		assert(offset + sizeof(TYPE) <= MMU_PG2H_PAGE_SIZE);                        \
                                                                                             \
-		if (!mmu_pg2h_get_pte(emu, addr, &pte)) {                                   \
-			cpu_throw_exception(emu, EXC_STORE_ACCESS_FAULT, addr);             \
+		guest_paddr paddr;                                                          \
+		if (mmu_vg2pg_should_translate(emu, true)) {                                \
+			if (!mmu_vg2pg_translate(emu, MMU_VG2PG_ACCESS_WRITE,               \
+						 vaddr, &paddr)) {                          \
+				cpu_throw_exception(emu, EXC_STORE_PAGE_FAULT, vaddr);      \
+				return false;                                               \
+			}                                                                   \
+		} else {                                                                    \
+			paddr = vaddr;                                                      \
+		}                                                                           \
+                                                                                            \
+		bool ret = cpu_invalidate_instruction_cache(emu, vaddr);                    \
+                                                                                            \
+		mmu_pg2h_pte pte;                                                           \
+		if (!mmu_pg2h_get_pte(emu, paddr, &pte)) {                                  \
+			cpu_throw_exception(emu, EXC_STORE_ACCESS_FAULT, paddr);            \
 			return ret;                                                         \
 		}                                                                           \
                                                                                             \
@@ -207,15 +228,15 @@ bool emu_add_mmio_device(emulator_t* emu, guest_paddr base, const device_mmio_t*
 	}
 
 // Reading or writing a 8 bit value misaligned shouldn't be possible
-static inline uint8_t emu_r8_misaligned(emulator_t* emu, guest_paddr addr) {
+static inline uint8_t emu_r8_misaligned(emulator_t* emu, guest_vaddr vaddr) {
 	(void)emu;
-	(void)addr;
+	(void)vaddr;
 	abort();
 }
 
-static inline void emu_w8_misaligned(emulator_t* emu, guest_paddr addr, uint8_t value) {
+static inline bool emu_w8_misaligned(emulator_t* emu, guest_vaddr vaddr, uint8_t value) {
 	(void)emu;
-	(void)addr;
+	(void)vaddr;
 	(void)value;
 	abort();
 }
@@ -236,17 +257,28 @@ EMU_WX(16, uint16_t)
 EMU_WX(32, uint32_t)
 EMU_WX(64, uint64_t)
 
-uint32_t emu_r32_ins(emulator_t* emu, guest_paddr addr, uint8_t* exception_code) {
-	assert((emu->cpu.csrs.satp >> 60) == 0);
-
-	mmu_pg2h_pte pte;
-	size_t offset = addr & MMU_PG2H_OFFSET_MASK;
+uint32_t emu_r32_ins(emulator_t* emu, guest_vaddr vaddr, uint8_t* exception_code, guest_reg* exception_tval) {
+	size_t offset = vaddr & MMU_PG2H_OFFSET_MASK;
 	// Instruction alignement should be guaranteed by the caller
 	assert((offset & 3) == 0);
 
 	*exception_code = (uint8_t)-1;
-	if (!mmu_pg2h_get_pte(emu, addr, &pte)) {
+
+	guest_paddr paddr;
+	if (mmu_vg2pg_should_translate(emu, false)) {
+		if (!mmu_vg2pg_translate(emu, MMU_VG2PG_ACCESS_EXEC, vaddr, &paddr)) {
+			*exception_code = EXC_INS_PAGE_FAULT;
+			*exception_tval = vaddr;
+			return 0;
+		}
+	} else {
+		paddr = vaddr;
+	}
+
+	mmu_pg2h_pte pte;
+	if (!mmu_pg2h_get_pte(emu, paddr, &pte)) {
 		*exception_code = EXC_INS_ACCESS_FAULT;
+		*exception_tval = paddr;
 		return 0;
 	}
 

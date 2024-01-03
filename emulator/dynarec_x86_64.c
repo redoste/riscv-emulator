@@ -297,13 +297,14 @@ bool dr_emit_block(emulator_t* emu, guest_paddr base) {
 	bool cont = true;
 	while (cont) {
 		uint8_t exception_code;
-		uint32_t encoded_instruction = emu_r32_ins(emu, block.pc, &exception_code);
+		guest_reg exception_tval;
+		uint32_t encoded_instruction = emu_r32_ins(emu, block.pc, &exception_code, &exception_tval);
 		if (exception_code != (uint8_t)-1) {
 			/* We don't throw an exception if we're not at the block base as it might
 			 * just be unreachable code
 			 */
 			if (block.pc == block.base) {
-				cpu_throw_exception(emu, exception_code, block.pc);
+				cpu_throw_exception(emu, exception_code, exception_tval);
 			}
 			break;
 		}

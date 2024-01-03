@@ -64,35 +64,36 @@ bool emu_add_mmio_device(emulator_t* emu, guest_paddr base, const device_mmio_t*
 /* emu_wx : write a x bits value to the guest memory
  *          returns true if a cache entry was invalidated in the process
  *          returns false otherwise
- *     emulator_t* emu  : pointer to the emulator
- *     guest_paddr addr : guest physical address to write to
- *     uintx_t value    : value to write to the guest memory
+ *     emulator_t* emu   : pointer to the emulator
+ *     guest_vaddr vaddr : guest virtual address to write to
+ *     uintx_t value     : value to write to the guest memory
  */
-bool emu_w8(emulator_t* emu, guest_paddr addr, uint8_t value);
-bool emu_w16(emulator_t* emu, guest_paddr addr, uint16_t value);
-bool emu_w32(emulator_t* emu, guest_paddr addr, uint32_t value);
-bool emu_w64(emulator_t* emu, guest_paddr addr, uint64_t value);
+bool emu_w8(emulator_t* emu, guest_vaddr vaddr, uint8_t value);
+bool emu_w16(emulator_t* emu, guest_vaddr vaddr, uint16_t value);
+bool emu_w32(emulator_t* emu, guest_vaddr vaddr, uint32_t value);
+bool emu_w64(emulator_t* emu, guest_vaddr vaddr, uint64_t value);
 
 /* emu_rx : read a x bits value from the guest memory
  *          returns the value read
- *     emulator_t* emu  : pointer to the emulator
- *     guest_paddr addr : guest physical address to read from
+ *     emulator_t* emu   : pointer to the emulator
+ *     guest_vaddr vaddr : guest virtual address to read from
  */
-uint8_t emu_r8(emulator_t* emu, guest_paddr addr);
-uint16_t emu_r16(emulator_t* emu, guest_paddr addr);
-uint32_t emu_r32(emulator_t* emu, guest_paddr addr);
-uint64_t emu_r64(emulator_t* emu, guest_paddr addr);
+uint8_t emu_r8(emulator_t* emu, guest_vaddr vaddr);
+uint16_t emu_r16(emulator_t* emu, guest_vaddr vaddr);
+uint32_t emu_r32(emulator_t* emu, guest_vaddr vaddr);
+uint64_t emu_r64(emulator_t* emu, guest_vaddr vaddr);
 
 /* emu_r32_ins : read a 32 bits instruction from the guest memory
  *               reading instructions doesn't use emu_r32 because exception codes are
  *               different and the caller might want to ignore the exception
  *               returns the value read
- *     emulator_t* emu         : pointer to the emulator
- *     guest_paddr addr        : guest physical address to read from
- *     uint8_t* exception_code : exception code if an exception should occur during the read
- *                               (uint8_t)-1 otherwise
+ *     emulator_t* emu           : pointer to the emulator
+ *     guest_vaddr vaddr         : guest virtual address to read from
+ *     uint8_t* exception_code   : exception code if an exception should occur during the read
+ *                                 (uint8_t)-1 otherwise
+ *     guest_reg* exception_tval : exception tval if an exception should occur during the read
  */
-uint32_t emu_r32_ins(emulator_t* emu, guest_paddr addr, uint8_t* exception_code);
+uint32_t emu_r32_ins(emulator_t* emu, guest_vaddr vaddr, uint8_t* exception_code, guest_reg* exception_tval);
 
 /* emu_ebreak : handle the ebreak instruction
  *     emulator_t* emu : pointer to the emulator

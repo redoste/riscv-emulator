@@ -92,9 +92,10 @@ bool cpu_decode_and_cache(emulator_t* emu, guest_paddr instruction_addr, ins_t**
 	}
 
 	uint8_t exception_code;
-	uint32_t encoded_instruction = emu_r32_ins(emu, instruction_addr, &exception_code);
+	guest_reg exception_tval;
+	uint32_t encoded_instruction = emu_r32_ins(emu, instruction_addr, &exception_code, &exception_tval);
 	if (exception_code != (uint8_t)-1) {
-		cpu_throw_exception(emu, exception_code, instruction_addr);
+		cpu_throw_exception(emu, exception_code, exception_tval);
 		return false;
 	}
 	if (!cpu_decode(encoded_instruction, &cached_instruction->decoded_instruction)) {
