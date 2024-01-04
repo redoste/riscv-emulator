@@ -51,7 +51,7 @@ $(OBJ): %.o: %.c
 	$(CC) -MMD -MT $@ $(CFLAGS) -c $< -o $@
 
 $(DYNAREC_CODEGEN_FILE): $(DYNAREC_CODEGEN_OUT)
-	./$< > $@
+	(./$< > $@) || (rm $@ && exit 1)
 
 $(DYNAREC_CODEGEN_OUT): $(DYNAREC_CODEGEN_OBJ)
 	$(HOST_CC) $^ -o $@ $(HOST_LDFLAGS)
