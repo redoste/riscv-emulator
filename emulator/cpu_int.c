@@ -16,22 +16,36 @@ void cpu_throw_exception(emulator_t* emu, uint8_t exception_code, guest_reg tval
 
 	assert(!emu->cpu.exception_pending);
 
-	// TODO : support exception deleg to S-mode
-	assert(emu->cpu.priv_mode == M_MODE || !((emu->cpu.csrs.medeleg >> exception_code) & 1));
+	if (emu->cpu.priv_mode != M_MODE && ((emu->cpu.csrs.medeleg >> exception_code) & 1)) {
+		emu->cpu.csrs.scause = (0ll << 63) | (exception_code & 0x3f);
+		emu->cpu.csrs.sepc = emu->cpu.pc;
+		emu->cpu.csrs.stval = tval;
 
-	emu->cpu.csrs.mcause = (0ll << 63) | (exception_code & 0x3f);
-	emu->cpu.csrs.mepc = emu->cpu.pc;
-	emu->cpu.csrs.mtval = tval;
+		uint8_t spie = (emu->cpu.csrs.mstatus >> 1) & 1;
+		emu->cpu.csrs.mstatus = (emu->cpu.csrs.mstatus & ~((1 << 8) | (1 << 5) | (1 << 1))) |
+					((emu->cpu.priv_mode & 1) << 8) |  // SPP
+					((spie & 1) << 5) |                // SPIE
+					(0 << 1);                          // SIE
+		emu->cpu.priv_mode = S_MODE;
 
-	uint8_t mpie = (emu->cpu.csrs.mstatus >> 3) & 1;
-	emu->cpu.csrs.mstatus = (emu->cpu.csrs.mstatus & ~((3 << 11) | (1 << 7) | (1 << 3))) |
-				((emu->cpu.priv_mode & 3) << 11) |  // MPP
-				((mpie & 1) << 7) |                 // MPIE
-				(0 << 3);                           // MIE
-	emu->cpu.priv_mode = M_MODE;
+		// Even in vectored mode, exceptions set PC to the base of xtvec
+		emu->cpu.pc = (emu->cpu.csrs.stvec) & ~3;
+	} else {
+		emu->cpu.csrs.mcause = (0ll << 63) | (exception_code & 0x3f);
+		emu->cpu.csrs.mepc = emu->cpu.pc;
+		emu->cpu.csrs.mtval = tval;
 
-	// Even in vectored mode, exceptions set PC to the base of xtvec
-	emu->cpu.pc = (emu->cpu.csrs.mtvec) & ~3;
+		uint8_t mpie = (emu->cpu.csrs.mstatus >> 3) & 1;
+		emu->cpu.csrs.mstatus = (emu->cpu.csrs.mstatus & ~((3 << 11) | (1 << 7) | (1 << 3))) |
+					((emu->cpu.priv_mode & 3) << 11) |  // MPP
+					((mpie & 1) << 7) |                 // MPIE
+					(0 << 3);                           // MIE
+		emu->cpu.priv_mode = M_MODE;
+
+		// Even in vectored mode, exceptions set PC to the base of xtvec
+		emu->cpu.pc = (emu->cpu.csrs.mtvec) & ~3;
+	}
+
 	emu->cpu.exception_pending = true;
 }
 
