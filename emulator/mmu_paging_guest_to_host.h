@@ -69,6 +69,24 @@ typedef struct mmu_pg2h_tlb_entry_t {
  */
 #define MMU_PG2H_PTE_TYPE_MMIO (1 << 1)
 
+/* MMU_PG2H_PTE_DEVICE_SHIFT : number of bits to shift to get the device index in a MMIO
+ *                             PTE
+ */
+#define MMU_PG2H_PTE_DEVICE_SHIFT 12
+
+/* MMU_PG2H_PTE_DEVICE_MASK : mask used to get the device index in a MMIO PTE
+ */
+#define MMU_PG2H_PTE_DEVICE_MASK 0x3ffffff
+
+/* MMU_PG2H_PTE_DEVICE_PAGE_SHIFT : number of bits to shift to get the page index in a
+ *                                  MMIO PTE
+ */
+#define MMU_PG2H_PTE_DEVICE_PAGE_SHIFT 38
+
+/* MMU_PG2H_PTE_DEVICE_PAGE_MASK : mask used to get the page index in a MMIO PTE
+ */
+#define MMU_PG2H_PTE_DEVICE_PAGE_MASK 0x3ffffff
+
 // NOTE : forward declaration to deal with a cyclic dependency with emulator.h
 typedef struct emulator_t emulator_t;
 
@@ -86,9 +104,10 @@ bool mmu_pg2h_map(emulator_t* emu, guest_paddr guest_physical_page, void* host_p
  *                     returns false otherwise
  *     emulator_t* emu                 : pointer to the emulator
  *     guest_paddr guest_physical_page : guest physical page to map
+ *     size_t page_index               : index of the page to map within the MMIO region
  *     size_t device_index             : index of the device to map
  */
-bool mmu_pg2h_map_mmio(emulator_t* emu, guest_paddr guest_physical_page, size_t device_index);
+bool mmu_pg2h_map_mmio(emulator_t* emu, guest_paddr guest_physical_page, size_t page_index, size_t device_index);
 
 /* mmu_pg2h_unmap : unmap a guest physical page
  *                  returns true if the page was successfully unmapped

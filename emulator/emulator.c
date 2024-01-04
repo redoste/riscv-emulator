@@ -109,7 +109,12 @@ bool emu_map_memory(emulator_t* emu, guest_paddr base, size_t size) {
 	return true;
 }
 
-bool emu_add_mmio_device(emulator_t* emu, guest_paddr base, const device_mmio_t* device) {
+bool emu_add_mmio_device(emulator_t* emu, guest_paddr base, size_t size, const device_mmio_t* device) {
+	if ((base & MMU_PG2H_OFFSET_MASK) != 0 ||
+	    (size & MMU_PG2H_OFFSET_MASK) != 0) {
+		return false;
+	}
+
 	if (emu->mmio_devices_capacity == 0) {
 		emu->mmio_devices_capacity = 16;
 		emu->mmio_devices = malloc(sizeof(device_mmio_t) * emu->mmio_devices_capacity);
@@ -121,8 +126,13 @@ bool emu_add_mmio_device(emulator_t* emu, guest_paddr base, const device_mmio_t*
 	}
 
 	emu->mmio_devices[emu->mmio_devices_len] = *device;
-	if (!mmu_pg2h_map_mmio(emu, base, emu->mmio_devices_len)) {
-		return false;
+	for (size_t i = 0; i < size / MMU_PG2H_PAGE_SIZE; i++) {
+		if (!mmu_pg2h_map_mmio(emu, base + (i * MMU_PG2H_PAGE_SIZE), i, emu->mmio_devices_len)) {
+			for (size_t j = 0; j < i; j++) {
+				mmu_pg2h_unmap(emu, base + (j * MMU_PG2H_PAGE_SIZE));
+			}
+			return false;
+		}
 	}
 	emu->mmio_devices_len++;
 	return true;
@@ -140,41 +150,42 @@ bool emu_add_mmio_device(emulator_t* emu, guest_paddr base, const device_mmio_t*
 		return value;                                                              \
 	}
 
-#define EMU_RX(SIZE, TYPE)                                                                  \
-	TYPE emu_r##SIZE(emulator_t* emu, guest_vaddr vaddr) {                              \
-		size_t offset = vaddr & MMU_PG2H_OFFSET_MASK;                               \
-		if ((offset & (sizeof(TYPE) - 1)) != 0) {                                   \
-			return emu_r##SIZE##_misaligned(emu, vaddr);                        \
-		}                                                                           \
-		/* Read across page boudaries should be handled by the misaligned case */   \
-		assert(offset + sizeof(TYPE) <= MMU_PG2H_PAGE_SIZE);                        \
-                                                                                            \
-		guest_paddr paddr;                                                          \
-		if (mmu_vg2pg_should_translate(emu, true)) {                                \
-			if (!mmu_vg2pg_translate(emu, MMU_VG2PG_ACCESS_READ,                \
-						 vaddr, &paddr)) {                          \
-				cpu_throw_exception(emu, EXC_LOAD_PAGE_FAULT, vaddr);       \
-				return 0;                                                   \
-			}                                                                   \
-		} else {                                                                    \
-			paddr = vaddr;                                                      \
-		}                                                                           \
-                                                                                            \
-		mmu_pg2h_pte pte;                                                           \
-		if (!mmu_pg2h_get_pte(emu, paddr, &pte)) {                                  \
-			cpu_throw_exception(emu, EXC_LOAD_ACCESS_FAULT, paddr);             \
-			return 0;                                                           \
-		}                                                                           \
-                                                                                            \
-		if (pte & MMU_PG2H_PTE_TYPE_MMIO) {                                         \
-			size_t device_index = pte >> MMU_PG2H_PAGE_SHIFT;                   \
-			device_mmio_t* device = &emu->mmio_devices[device_index];           \
-			return device->r##SIZE##_handler(emu, device->device_data, offset); \
-		} else {                                                                    \
-			uint8_t* pool = (uint8_t*)(pte & MMU_PG2H_PAGE_MASK);               \
-			TYPE* value = (TYPE*)&pool[offset];                                 \
-			return le##SIZE##toh(*value);                                       \
-		}                                                                           \
+#define EMU_RX(SIZE, TYPE)                                                                                                      \
+	TYPE emu_r##SIZE(emulator_t* emu, guest_vaddr vaddr) {                                                                  \
+		size_t offset = vaddr & MMU_PG2H_OFFSET_MASK;                                                                   \
+		if ((offset & (sizeof(TYPE) - 1)) != 0) {                                                                       \
+			return emu_r##SIZE##_misaligned(emu, vaddr);                                                            \
+		}                                                                                                               \
+		/* Read across page boudaries should be handled by the misaligned case */                                       \
+		assert(offset + sizeof(TYPE) <= MMU_PG2H_PAGE_SIZE);                                                            \
+                                                                                                                                \
+		guest_paddr paddr;                                                                                              \
+		if (mmu_vg2pg_should_translate(emu, true)) {                                                                    \
+			if (!mmu_vg2pg_translate(emu, MMU_VG2PG_ACCESS_READ,                                                    \
+						 vaddr, &paddr)) {                                                              \
+				cpu_throw_exception(emu, EXC_LOAD_PAGE_FAULT, vaddr);                                           \
+				return 0;                                                                                       \
+			}                                                                                                       \
+		} else {                                                                                                        \
+			paddr = vaddr;                                                                                          \
+		}                                                                                                               \
+                                                                                                                                \
+		mmu_pg2h_pte pte;                                                                                               \
+		if (!mmu_pg2h_get_pte(emu, paddr, &pte)) {                                                                      \
+			cpu_throw_exception(emu, EXC_LOAD_ACCESS_FAULT, paddr);                                                 \
+			return 0;                                                                                               \
+		}                                                                                                               \
+                                                                                                                                \
+		if (pte & MMU_PG2H_PTE_TYPE_MMIO) {                                                                             \
+			size_t device_index = (pte >> MMU_PG2H_PTE_DEVICE_SHIFT) & MMU_PG2H_PTE_DEVICE_MASK;                    \
+			size_t page_index = (pte >> MMU_PG2H_PTE_DEVICE_PAGE_SHIFT) & MMU_PG2H_PTE_DEVICE_PAGE_MASK;            \
+			device_mmio_t* device = &emu->mmio_devices[device_index];                                               \
+			return device->r##SIZE##_handler(emu, device->device_data, (page_index * MMU_PG2H_PAGE_SIZE) + offset); \
+		} else {                                                                                                        \
+			uint8_t* pool = (uint8_t*)(pte & MMU_PG2H_PAGE_MASK);                                                   \
+			TYPE* value = (TYPE*)&pool[offset];                                                                     \
+			return le##SIZE##toh(*value);                                                                           \
+		}                                                                                                               \
 	}
 
 #define EMU_WX_MISALIGNED(SIZE, TYPE)                                                                 \
@@ -187,44 +198,45 @@ bool emu_add_mmio_device(emulator_t* emu, guest_paddr base, const device_mmio_t*
 		return ret;                                                                           \
 	}
 
-#define EMU_WX(SIZE, TYPE)                                                                  \
-	bool emu_w##SIZE(emulator_t* emu, guest_vaddr vaddr, TYPE value) {                  \
-		size_t offset = vaddr & MMU_PG2H_OFFSET_MASK;                               \
-		if ((offset & (sizeof(TYPE) - 1)) != 0) {                                   \
-			return emu_w##SIZE##_misaligned(emu, vaddr, value);                 \
-		}                                                                           \
-		/* Write across page boudaries should be handled by the misaligned case */  \
-		assert(offset + sizeof(TYPE) <= MMU_PG2H_PAGE_SIZE);                        \
-                                                                                            \
-		guest_paddr paddr;                                                          \
-		if (mmu_vg2pg_should_translate(emu, true)) {                                \
-			if (!mmu_vg2pg_translate(emu, MMU_VG2PG_ACCESS_WRITE,               \
-						 vaddr, &paddr)) {                          \
-				cpu_throw_exception(emu, EXC_STORE_PAGE_FAULT, vaddr);      \
-				return false;                                               \
-			}                                                                   \
-		} else {                                                                    \
-			paddr = vaddr;                                                      \
-		}                                                                           \
-                                                                                            \
-		bool ret = cpu_invalidate_instruction_cache(emu, vaddr);                    \
-                                                                                            \
-		mmu_pg2h_pte pte;                                                           \
-		if (!mmu_pg2h_get_pte(emu, paddr, &pte)) {                                  \
-			cpu_throw_exception(emu, EXC_STORE_ACCESS_FAULT, paddr);            \
-			return ret;                                                         \
-		}                                                                           \
-                                                                                            \
-		if (pte & MMU_PG2H_PTE_TYPE_MMIO) {                                         \
-			size_t device_index = pte >> MMU_PG2H_PAGE_SHIFT;                   \
-			device_mmio_t* device = &emu->mmio_devices[device_index];           \
-			device->w##SIZE##_handler(emu, device->device_data, offset, value); \
-		} else {                                                                    \
-			uint8_t* pool = (uint8_t*)(pte & MMU_PG2H_PAGE_MASK);               \
-			TYPE* host_addr = (TYPE*)&pool[offset];                             \
-			*host_addr = htole##SIZE(value);                                    \
-		}                                                                           \
-		return ret;                                                                 \
+#define EMU_WX(SIZE, TYPE)                                                                                                      \
+	bool emu_w##SIZE(emulator_t* emu, guest_vaddr vaddr, TYPE value) {                                                      \
+		size_t offset = vaddr & MMU_PG2H_OFFSET_MASK;                                                                   \
+		if ((offset & (sizeof(TYPE) - 1)) != 0) {                                                                       \
+			return emu_w##SIZE##_misaligned(emu, vaddr, value);                                                     \
+		}                                                                                                               \
+		/* Write across page boudaries should be handled by the misaligned case */                                      \
+		assert(offset + sizeof(TYPE) <= MMU_PG2H_PAGE_SIZE);                                                            \
+                                                                                                                                \
+		guest_paddr paddr;                                                                                              \
+		if (mmu_vg2pg_should_translate(emu, true)) {                                                                    \
+			if (!mmu_vg2pg_translate(emu, MMU_VG2PG_ACCESS_WRITE,                                                   \
+						 vaddr, &paddr)) {                                                              \
+				cpu_throw_exception(emu, EXC_STORE_PAGE_FAULT, vaddr);                                          \
+				return false;                                                                                   \
+			}                                                                                                       \
+		} else {                                                                                                        \
+			paddr = vaddr;                                                                                          \
+		}                                                                                                               \
+                                                                                                                                \
+		bool ret = cpu_invalidate_instruction_cache(emu, vaddr);                                                        \
+                                                                                                                                \
+		mmu_pg2h_pte pte;                                                                                               \
+		if (!mmu_pg2h_get_pte(emu, paddr, &pte)) {                                                                      \
+			cpu_throw_exception(emu, EXC_STORE_ACCESS_FAULT, paddr);                                                \
+			return ret;                                                                                             \
+		}                                                                                                               \
+                                                                                                                                \
+		if (pte & MMU_PG2H_PTE_TYPE_MMIO) {                                                                             \
+			size_t device_index = (pte >> MMU_PG2H_PTE_DEVICE_SHIFT) & MMU_PG2H_PTE_DEVICE_MASK;                    \
+			size_t page_index = (pte >> MMU_PG2H_PTE_DEVICE_PAGE_SHIFT) & MMU_PG2H_PTE_DEVICE_PAGE_MASK;            \
+			device_mmio_t* device = &emu->mmio_devices[device_index];                                               \
+			device->w##SIZE##_handler(emu, device->device_data, (page_index * MMU_PG2H_PAGE_SIZE) + offset, value); \
+		} else {                                                                                                        \
+			uint8_t* pool = (uint8_t*)(pte & MMU_PG2H_PAGE_MASK);                                                   \
+			TYPE* host_addr = (TYPE*)&pool[offset];                                                                 \
+			*host_addr = htole##SIZE(value);                                                                        \
+		}                                                                                                               \
+		return ret;                                                                                                     \
 	}
 
 // Reading or writing a 8 bit value misaligned shouldn't be possible
@@ -283,9 +295,10 @@ uint32_t emu_r32_ins(emulator_t* emu, guest_vaddr vaddr, uint8_t* exception_code
 	}
 
 	if (pte & MMU_PG2H_PTE_TYPE_MMIO) {
-		size_t device_index = pte >> MMU_PG2H_PAGE_SHIFT;
+		size_t device_index = (pte >> MMU_PG2H_PTE_DEVICE_SHIFT) & MMU_PG2H_PTE_DEVICE_MASK;
+		size_t page_index = (pte >> MMU_PG2H_PTE_DEVICE_PAGE_SHIFT) & MMU_PG2H_PTE_DEVICE_PAGE_MASK;
 		device_mmio_t* device = &emu->mmio_devices[device_index];
-		return device->r32_handler(emu, device->device_data, offset);
+		return device->r32_handler(emu, device->device_data, (page_index * MMU_PG2H_PAGE_SIZE) + offset);
 	} else {
 		uint8_t* pool = (uint8_t*)(pte & MMU_PG2H_PAGE_MASK);
 		uint32_t* value = (uint32_t*)&pool[offset];

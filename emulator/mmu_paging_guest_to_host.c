@@ -82,7 +82,7 @@ bool mmu_pg2h_map(emulator_t* emu, guest_paddr guest_physical_page, void* host_p
 	return true;
 }
 
-bool mmu_pg2h_map_mmio(emulator_t* emu, guest_paddr guest_physical_page, size_t device_index) {
+bool mmu_pg2h_map_mmio(emulator_t* emu, guest_paddr guest_physical_page, size_t page_index, size_t device_index) {
 	mmu_pg2h_pte* level0_entry;
 	if (!mmu_pg2h_walk_and_allocate(emu, guest_physical_page, &level0_entry)) {
 		return false;
@@ -92,7 +92,8 @@ bool mmu_pg2h_map_mmio(emulator_t* emu, guest_paddr guest_physical_page, size_t 
 		// This guest physical page is already mapped
 		return false;
 	}
-	*level0_entry = (device_index << MMU_PG2H_PAGE_SHIFT) |
+	*level0_entry = ((page_index & MMU_PG2H_PTE_DEVICE_PAGE_MASK) << MMU_PG2H_PTE_DEVICE_PAGE_SHIFT) |
+			((device_index & MMU_PG2H_PTE_DEVICE_MASK) << MMU_PG2H_PTE_DEVICE_SHIFT) |
 			MMU_PG2H_PTE_VALID | MMU_PG2H_PTE_TYPE_MMIO;
 
 	/* NOTE : we don't invalidate the TLB as there shouldn't be any valid entry with this tag,
