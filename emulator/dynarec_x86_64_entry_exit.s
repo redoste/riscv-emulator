@@ -158,10 +158,12 @@ DR_WRAPPER cpu_csr_exchange
 DR_WRAPPER cpu_csr_set_bits
 DR_WRAPPER cpu_csr_clear_bits
 DR_WRAPPER cpu_mret
+DR_WRAPPER cpu_sret
 DR_WRAPPER cpu_wfi
 
 // We use negative offsets to keep all the functions accessible with a [-128;127] disp
 .section .data
+	.quad dr_cpu_sret_wrapper           /* [-2] */
 	.quad dr_cpu_wfi_wrapper            /* [-1] */
 dr_emu_functions:
 	.quad dr_emu_w8_wrapper             /* [0]  */

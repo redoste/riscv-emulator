@@ -331,16 +331,24 @@ C_I(JALR) {
 C_I_IMM_F12(SYSTEM) {
 	S_I_IMM();
 
-	if (f12 == F12_EBREAK) {
-		EMU_FUNCTION(9);
-	} else if (f12 == F12_ECALL) {
-		EMU_FUNCTION(8);
-	} else if (f12 == F12_MRET) {
-		EMU_FUNCTION(15);
-	} else if (f12 == F12_WFI) {
-		EMU_FUNCTION(-1);
-	} else {
-		abort();
+	switch (f12) {
+		case F12_EBREAK:
+			EMU_FUNCTION(9);
+			break;
+		case F12_ECALL:
+			EMU_FUNCTION(8);
+			break;
+		case F12_MRET:
+			EMU_FUNCTION(15);
+			break;
+		case F12_SRET:
+			EMU_FUNCTION(-2);
+			break;
+		case F12_WFI:
+			EMU_FUNCTION(-1);
+			break;
+		default:
+			abort();
 	}
 
 	E();

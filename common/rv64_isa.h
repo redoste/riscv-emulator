@@ -71,6 +71,7 @@ enum {
 	F3_ECALL = 0,
 	F3_EBREAK = 0,
 	F3_MRET = 0,
+	F3_SRET = 0,
 	F3_WFI = 0,
 
 	/* OPCODE SYSTEM : Zicsr extension */
@@ -161,6 +162,7 @@ enum {
 	F12_ECALL = 0,
 	F12_EBREAK = 1,
 	F12_MRET = 0x302,
+	F12_SRET = 0x102,
 	F12_WFI = 0x105,
 };
 
