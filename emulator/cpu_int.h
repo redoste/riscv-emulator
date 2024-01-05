@@ -31,4 +31,9 @@ void cpu_sret(emulator_t* emu);
  */
 void cpu_wfi(emulator_t* emu);
 
+/* cpu_check_interrupt : check if an interrupt should be thrown and throw it if required
+ *     emulator_t* emu : pointer to the emulator
+ */
+void cpu_check_interrupt(emulator_t* emu);
+
 #endif

@@ -103,3 +103,66 @@ void cpu_wfi(emulator_t* emu) {
 		emu->cpu.pc);
 	abort();
 }
+
+static bool cpu_throw_interrupt(emulator_t* emu, size_t interrupt) {
+	if (emu->cpu.priv_mode == UO_MODE) {
+		fprintf(stderr, "Uncaught interrupt %zu (PC=%016" PRIx64 ")\n",
+			interrupt, emu->cpu.pc);
+		abort();
+	}
+
+	bool deleg = (emu->cpu.csrs.mideleg >> interrupt) & 1;
+	bool xie = (emu->cpu.csrs.mie >> interrupt) & 1;
+	bool sie = (emu->cpu.csrs.mstatus >> 1) & 1;
+	bool mie = (emu->cpu.csrs.mstatus >> 3) & 1;
+
+	privilege_mode_t priv_mode = emu->cpu.priv_mode;
+
+	if (deleg &&
+	    ((priv_mode == S_MODE && sie) || (priv_mode < S_MODE)) &&
+	    xie) {
+		emu->cpu.csrs.scause = (1ll << 63) | (interrupt & 0x3f);
+		emu->cpu.csrs.sepc = emu->cpu.pc;
+
+		emu->cpu.csrs.mstatus = (emu->cpu.csrs.mstatus & ~((1 << 8) | (1 << 5) | (1 << 1))) |
+					((priv_mode & 1) << 8) |  // SPP
+					((sie & 1) << 5) |        // SPIE
+					(0 << 1);                 // SIE
+		emu->cpu.priv_mode = S_MODE;
+
+		emu->cpu.pc = (emu->cpu.csrs.stvec) & ~3;
+		if (emu->cpu.csrs.stvec & 1) {
+			emu->cpu.pc += 4 * interrupt;
+		}
+		return true;
+	} else if (!deleg &&
+		   ((priv_mode == M_MODE && mie) || (priv_mode < M_MODE)) &&
+		   xie) {
+		emu->cpu.csrs.mcause = (1ll << 63) | (interrupt & 0x3f);
+		emu->cpu.csrs.mepc = emu->cpu.pc;
+
+		emu->cpu.csrs.mstatus = (emu->cpu.csrs.mstatus & ~((3 << 11) | (1 << 7) | (1 << 3))) |
+					((priv_mode & 3) << 11) |  // MPP
+					((mie & 1) << 7) |         // MPIE
+					(0 << 3);                  // MIE
+		emu->cpu.priv_mode = M_MODE;
+
+		emu->cpu.pc = (emu->cpu.csrs.mtvec) & ~3;
+		if (emu->cpu.csrs.mtvec & 1) {
+			emu->cpu.pc += 4 * interrupt;
+		}
+		return true;
+	} else {
+		return false;
+	}
+}
+
+void cpu_check_interrupt(emulator_t* emu) {
+	for (size_t i = 0; i < 12; i++) {
+		if ((emu->cpu.csrs.mip >> i) & 1) {
+			if (cpu_throw_interrupt(emu, i)) {
+				return;
+			}
+		}
+	}
+}

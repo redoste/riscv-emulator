@@ -363,6 +363,8 @@ void cpu_execute(emulator_t* emu) {
 		return;
 	}
 
+	cpu_check_interrupt(emu);
+
 #ifdef RISCV_EMULATOR_DYNAREC_X86_64_SUPPORT
 	if (emu->cpu.dynarec_enabled) {
 		cpu_execute_dynarec(emu);
