@@ -67,7 +67,9 @@ void emu_create(emulator_t* emu, guest_reg pc, size_t cache_bits, bool dynarec_e
 
 void emu_destroy(emulator_t* emu) {
 	for (size_t i = 0; i < emu->mmio_devices_len; i++) {
-		emu->mmio_devices[i].free_handler(emu, emu->mmio_devices[i].device_data);
+		if (emu->mmio_devices[i].free_handler != NULL) {
+			emu->mmio_devices[i].free_handler(emu, emu->mmio_devices[i].device_data);
+		}
 	}
 	free(emu->mmio_devices);
 
