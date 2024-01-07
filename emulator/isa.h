@@ -43,6 +43,14 @@ typedef struct cached_ins_t {
 	ins_t decoded_instruction;
 } cached_ins_t;
 
+/* BREAK_IF_EXCEPTION_PENDING : macro used to quickly break out of the cpu_execute switch
+ *                              when an exception is pending
+ */
+#define BREAK_IF_EXCEPTION_PENDING()  \
+	if (cpu->exception_pending) { \
+		break;                \
+	}
+
 /* X_INSTRUCTIONS : X-macro storing informations about all the instructions
  *                  the emulator can emulate
  *     X_R(MNEMONIC, OPCODE, FUNCT3, FUNCT7, EXPR)      : R-type instruction
@@ -115,171 +123,218 @@ typedef struct cached_ins_t {
 	/* NOTE : The instructions from the A extension are implemented "naively" as the emulator does everything in synchronized way */                   \
 	/*        However this is more or less a violation of the spec as `SC` will always succeed even if it should fail */                               \
 	/*        when no corresponding `LR` was executed */                                                                                               \
-	X_R(LR_W, OPCODE_AMO, F3_AMO_W, F7_LR, *rds = (int32_t)emu_r32(emu, *rs1))                                                                         \
+	X_R(                                                                                                                                               \
+		LR_W, OPCODE_AMO, F3_AMO_W, F7_LR, do {                                                                                                    \
+			int32_t value = (int32_t)emu_r32(emu, *rs1);                                                                                       \
+			BREAK_IF_EXCEPTION_PENDING();                                                                                                      \
+			*rds = value;                                                                                                                      \
+		} while (0))                                                                                                                               \
 	X_R(                                                                                                                                               \
 		SC_W, OPCODE_AMO, F3_AMO_W, F7_SC, do {                                                                                                    \
 			emu_w32(emu, *rs1, *rs2w);                                                                                                         \
+			BREAK_IF_EXCEPTION_PENDING();                                                                                                      \
 			*rd = 0;                                                                                                                           \
 		} while (0))                                                                                                                               \
 	X_R(                                                                                                                                               \
 		AMOSWAP_W, OPCODE_AMO, F3_AMO_W, F7_AMOSWAP, do {                                                                                          \
 			int32_t value = (int32_t)emu_r32(emu, *rs1);                                                                                       \
-			if (!cpu->exception_pending) {                                                                                                     \
-				emu_w32(emu, *rs1, *rs2w);                                                                                                 \
-				*rds = value;                                                                                                              \
-			}                                                                                                                                  \
+			BREAK_IF_EXCEPTION_PENDING();                                                                                                      \
+			emu_w32(emu, *rs1, *rs2w);                                                                                                         \
+			BREAK_IF_EXCEPTION_PENDING();                                                                                                      \
+			*rds = value;                                                                                                                      \
 		} while (0))                                                                                                                               \
 	X_R(                                                                                                                                               \
 		AMOADD_W, OPCODE_AMO, F3_AMO_W, F7_AMOADD, do {                                                                                            \
 			int32_t value = (int32_t)emu_r32(emu, *rs1);                                                                                       \
-			if (!cpu->exception_pending) {                                                                                                     \
-				emu_w32(emu, *rs1, *rs2ws + value);                                                                                        \
-				*rds = value;                                                                                                              \
-			}                                                                                                                                  \
+			BREAK_IF_EXCEPTION_PENDING();                                                                                                      \
+			emu_w32(emu, *rs1, *rs2ws + value);                                                                                                \
+			BREAK_IF_EXCEPTION_PENDING();                                                                                                      \
+			*rds = value;                                                                                                                      \
 		} while (0))                                                                                                                               \
 	X_R(                                                                                                                                               \
 		AMOXOR_W, OPCODE_AMO, F3_AMO_W, F7_AMOXOR, do {                                                                                            \
 			int32_t value = (int32_t)emu_r32(emu, *rs1);                                                                                       \
-			if (!cpu->exception_pending) {                                                                                                     \
-				emu_w32(emu, *rs1, *rs2w ^ value);                                                                                         \
-				*rds = value;                                                                                                              \
-			}                                                                                                                                  \
+			BREAK_IF_EXCEPTION_PENDING();                                                                                                      \
+			emu_w32(emu, *rs1, *rs2w ^ value);                                                                                                 \
+			BREAK_IF_EXCEPTION_PENDING();                                                                                                      \
+			*rds = value;                                                                                                                      \
 		} while (0))                                                                                                                               \
 	X_R(                                                                                                                                               \
 		AMOAND_W, OPCODE_AMO, F3_AMO_W, F7_AMOAND, do {                                                                                            \
 			int32_t value = (int32_t)emu_r32(emu, *rs1);                                                                                       \
-			if (!cpu->exception_pending) {                                                                                                     \
-				emu_w32(emu, *rs1, *rs2w& value);                                                                                          \
-				*rds = value;                                                                                                              \
-			}                                                                                                                                  \
+			BREAK_IF_EXCEPTION_PENDING();                                                                                                      \
+			emu_w32(emu, *rs1, *rs2w& value);                                                                                                  \
+			BREAK_IF_EXCEPTION_PENDING();                                                                                                      \
+			*rds = value;                                                                                                                      \
 		} while (0))                                                                                                                               \
 	X_R(                                                                                                                                               \
 		AMOOR_W, OPCODE_AMO, F3_AMO_W, F7_AMOOR, do {                                                                                              \
 			int32_t value = (int32_t)emu_r32(emu, *rs1);                                                                                       \
-			if (!cpu->exception_pending) {                                                                                                     \
-				emu_w32(emu, *rs1, *rs2w | value);                                                                                         \
-				*rds = value;                                                                                                              \
-			}                                                                                                                                  \
+			BREAK_IF_EXCEPTION_PENDING();                                                                                                      \
+			emu_w32(emu, *rs1, *rs2w | value);                                                                                                 \
+			BREAK_IF_EXCEPTION_PENDING();                                                                                                      \
+			*rds = value;                                                                                                                      \
 		} while (0))                                                                                                                               \
 	X_R(                                                                                                                                               \
 		AMOMIN_W, OPCODE_AMO, F3_AMO_W, F7_AMOMIN, do {                                                                                            \
 			int32_t value = (int32_t)emu_r32(emu, *rs1);                                                                                       \
-			if (!cpu->exception_pending) {                                                                                                     \
-				emu_w32(emu, *rs1, *rs2ws < value ? *rs2ws : value);                                                                       \
-				*rds = value;                                                                                                              \
-			}                                                                                                                                  \
+			BREAK_IF_EXCEPTION_PENDING();                                                                                                      \
+			emu_w32(emu, *rs1, *rs2ws < value ? *rs2ws : value);                                                                               \
+			BREAK_IF_EXCEPTION_PENDING();                                                                                                      \
+			*rds = value;                                                                                                                      \
 		} while (0))                                                                                                                               \
 	X_R(                                                                                                                                               \
 		AMOMAX_W, OPCODE_AMO, F3_AMO_W, F7_AMOMAX, do {                                                                                            \
 			int32_t value = (int32_t)emu_r32(emu, *rs1);                                                                                       \
-			if (!cpu->exception_pending) {                                                                                                     \
-				emu_w32(emu, *rs1, *rs2ws > value ? *rs2ws : value);                                                                       \
-				*rds = value;                                                                                                              \
-			}                                                                                                                                  \
+			BREAK_IF_EXCEPTION_PENDING();                                                                                                      \
+			emu_w32(emu, *rs1, *rs2ws > value ? *rs2ws : value);                                                                               \
+			BREAK_IF_EXCEPTION_PENDING();                                                                                                      \
+			*rds = value;                                                                                                                      \
 		} while (0))                                                                                                                               \
 	X_R(                                                                                                                                               \
 		AMOMINU_W, OPCODE_AMO, F3_AMO_W, F7_AMOMINU, do {                                                                                          \
 			uint32_t value = emu_r32(emu, *rs1);                                                                                               \
-			if (!cpu->exception_pending) {                                                                                                     \
-				emu_w32(emu, *rs1, *rs2w < value ? *rs2w : value);                                                                         \
-				*rds = (int32_t)value;                                                                                                     \
-			}                                                                                                                                  \
+			BREAK_IF_EXCEPTION_PENDING();                                                                                                      \
+			emu_w32(emu, *rs1, *rs2w < value ? *rs2w : value);                                                                                 \
+			BREAK_IF_EXCEPTION_PENDING();                                                                                                      \
+			*rds = (int32_t)value;                                                                                                             \
 		} while (0))                                                                                                                               \
 	X_R(                                                                                                                                               \
 		AMOMAXU_W, OPCODE_AMO, F3_AMO_W, F7_AMOMAXU, do {                                                                                          \
 			uint32_t value = emu_r32(emu, *rs1);                                                                                               \
-			if (!cpu->exception_pending) {                                                                                                     \
-				emu_w32(emu, *rs1, *rs2w > value ? *rs2w : value);                                                                         \
-				*rds = (int32_t)value;                                                                                                     \
-			}                                                                                                                                  \
+			BREAK_IF_EXCEPTION_PENDING();                                                                                                      \
+			emu_w32(emu, *rs1, *rs2w > value ? *rs2w : value);                                                                                 \
+			BREAK_IF_EXCEPTION_PENDING();                                                                                                      \
+			*rds = (int32_t)value;                                                                                                             \
 		} while (0))                                                                                                                               \
                                                                                                                                                            \
-	X_R(LR_D, OPCODE_AMO, F3_AMO_D, F7_LR, *rd = emu_r64(emu, *rs1))                                                                                   \
+	X_R(                                                                                                                                               \
+		LR_D, OPCODE_AMO, F3_AMO_D, F7_LR, do {                                                                                                    \
+			uint64_t value = emu_r64(emu, *rs1);                                                                                               \
+			BREAK_IF_EXCEPTION_PENDING();                                                                                                      \
+			*rd = value;                                                                                                                       \
+		} while (0))                                                                                                                               \
 	X_R(                                                                                                                                               \
 		SC_D, OPCODE_AMO, F3_AMO_D, F7_SC, do {                                                                                                    \
 			emu_w64(emu, *rs1, *rs2);                                                                                                          \
+			BREAK_IF_EXCEPTION_PENDING();                                                                                                      \
 			*rd = 0;                                                                                                                           \
 		} while (0))                                                                                                                               \
 	X_R(                                                                                                                                               \
 		AMOSWAP_D, OPCODE_AMO, F3_AMO_D, F7_AMOSWAP, do {                                                                                          \
 			int64_t value = (int64_t)emu_r64(emu, *rs1);                                                                                       \
-			if (!cpu->exception_pending) {                                                                                                     \
-				emu_w64(emu, *rs1, *rs2);                                                                                                  \
-				*rds = value;                                                                                                              \
-			}                                                                                                                                  \
+			BREAK_IF_EXCEPTION_PENDING();                                                                                                      \
+			emu_w64(emu, *rs1, *rs2);                                                                                                          \
+			BREAK_IF_EXCEPTION_PENDING();                                                                                                      \
+			*rds = value;                                                                                                                      \
 		} while (0))                                                                                                                               \
 	X_R(                                                                                                                                               \
 		AMOADD_D, OPCODE_AMO, F3_AMO_D, F7_AMOADD, do {                                                                                            \
 			int64_t value = (int64_t)emu_r64(emu, *rs1);                                                                                       \
-			if (!cpu->exception_pending) {                                                                                                     \
-				emu_w64(emu, *rs1, *rs2s + value);                                                                                         \
-				*rds = value;                                                                                                              \
-			}                                                                                                                                  \
+			BREAK_IF_EXCEPTION_PENDING();                                                                                                      \
+			emu_w64(emu, *rs1, *rs2s + value);                                                                                                 \
+			BREAK_IF_EXCEPTION_PENDING();                                                                                                      \
+			*rds = value;                                                                                                                      \
 		} while (0))                                                                                                                               \
 	X_R(                                                                                                                                               \
 		AMOXOR_D, OPCODE_AMO, F3_AMO_D, F7_AMOXOR, do {                                                                                            \
 			int64_t value = (int64_t)emu_r64(emu, *rs1);                                                                                       \
-			if (!cpu->exception_pending) {                                                                                                     \
-				emu_w64(emu, *rs1, *rs2 ^ value);                                                                                          \
-				*rds = value;                                                                                                              \
-			}                                                                                                                                  \
+			BREAK_IF_EXCEPTION_PENDING();                                                                                                      \
+			emu_w64(emu, *rs1, *rs2 ^ value);                                                                                                  \
+			BREAK_IF_EXCEPTION_PENDING();                                                                                                      \
+			*rds = value;                                                                                                                      \
 		} while (0))                                                                                                                               \
 	X_R(                                                                                                                                               \
 		AMOAND_D, OPCODE_AMO, F3_AMO_D, F7_AMOAND, do {                                                                                            \
 			int64_t value = (int64_t)emu_r64(emu, *rs1);                                                                                       \
-			if (!cpu->exception_pending) {                                                                                                     \
-				emu_w64(emu, *rs1, *rs2& value);                                                                                           \
-				*rds = value;                                                                                                              \
-			}                                                                                                                                  \
+			BREAK_IF_EXCEPTION_PENDING();                                                                                                      \
+			emu_w64(emu, *rs1, *rs2& value);                                                                                                   \
+			BREAK_IF_EXCEPTION_PENDING();                                                                                                      \
+			*rds = value;                                                                                                                      \
 		} while (0))                                                                                                                               \
 	X_R(                                                                                                                                               \
 		AMOOR_D, OPCODE_AMO, F3_AMO_D, F7_AMOOR, do {                                                                                              \
 			int64_t value = (int64_t)emu_r64(emu, *rs1);                                                                                       \
-			if (!cpu->exception_pending) {                                                                                                     \
-				emu_w64(emu, *rs1, *rs2 | value);                                                                                          \
-				*rds = value;                                                                                                              \
-			}                                                                                                                                  \
+			BREAK_IF_EXCEPTION_PENDING();                                                                                                      \
+			emu_w64(emu, *rs1, *rs2 | value);                                                                                                  \
+			BREAK_IF_EXCEPTION_PENDING();                                                                                                      \
+			*rds = value;                                                                                                                      \
 		} while (0))                                                                                                                               \
 	X_R(                                                                                                                                               \
 		AMOMIN_D, OPCODE_AMO, F3_AMO_D, F7_AMOMIN, do {                                                                                            \
 			int64_t value = (int64_t)emu_r64(emu, *rs1);                                                                                       \
-			if (!cpu->exception_pending) {                                                                                                     \
-				emu_w64(emu, *rs1, *rs2s < value ? *rs2s : value);                                                                         \
-				*rds = value;                                                                                                              \
-			}                                                                                                                                  \
+			BREAK_IF_EXCEPTION_PENDING();                                                                                                      \
+			emu_w64(emu, *rs1, *rs2s < value ? *rs2s : value);                                                                                 \
+			BREAK_IF_EXCEPTION_PENDING();                                                                                                      \
+			*rds = value;                                                                                                                      \
 		} while (0))                                                                                                                               \
 	X_R(                                                                                                                                               \
 		AMOMAX_D, OPCODE_AMO, F3_AMO_D, F7_AMOMAX, do {                                                                                            \
 			int64_t value = (int64_t)emu_r64(emu, *rs1);                                                                                       \
-			if (!cpu->exception_pending) {                                                                                                     \
-				emu_w64(emu, *rs1, *rs2s > value ? *rs2s : value);                                                                         \
-				*rds = value;                                                                                                              \
-			}                                                                                                                                  \
+			BREAK_IF_EXCEPTION_PENDING();                                                                                                      \
+			emu_w64(emu, *rs1, *rs2s > value ? *rs2s : value);                                                                                 \
+			BREAK_IF_EXCEPTION_PENDING();                                                                                                      \
+			*rds = value;                                                                                                                      \
 		} while (0))                                                                                                                               \
 	X_R(                                                                                                                                               \
 		AMOMINU_D, OPCODE_AMO, F3_AMO_D, F7_AMOMINU, do {                                                                                          \
 			uint64_t value = emu_r64(emu, *rs1);                                                                                               \
-			if (!cpu->exception_pending) {                                                                                                     \
-				emu_w64(emu, *rs1, *rs2 < value ? *rs2 : value);                                                                           \
-				*rd = value;                                                                                                               \
-			}                                                                                                                                  \
+			BREAK_IF_EXCEPTION_PENDING();                                                                                                      \
+			emu_w64(emu, *rs1, *rs2 < value ? *rs2 : value);                                                                                   \
+			BREAK_IF_EXCEPTION_PENDING();                                                                                                      \
+			*rd = value;                                                                                                                       \
 		} while (0))                                                                                                                               \
 	X_R(                                                                                                                                               \
 		AMOMAXU_D, OPCODE_AMO, F3_AMO_D, F7_AMOMAXU, do {                                                                                          \
 			uint64_t value = emu_r64(emu, *rs1);                                                                                               \
-			if (!cpu->exception_pending) {                                                                                                     \
-				emu_w64(emu, *rs1, *rs2 > value ? *rs2 : value);                                                                           \
-				*rd = value;                                                                                                               \
-			}                                                                                                                                  \
+			BREAK_IF_EXCEPTION_PENDING();                                                                                                      \
+			emu_w64(emu, *rs1, *rs2 > value ? *rs2 : value);                                                                                   \
+			BREAK_IF_EXCEPTION_PENDING();                                                                                                      \
+			*rd = value;                                                                                                                       \
 		} while (0))                                                                                                                               \
                                                                                                                                                            \
-	X_I(LB, OPCODE_LOAD, F3_LB, *rds = (int8_t)emu_r8(emu, *rs1 + imm))                                                                                \
-	X_I(LH, OPCODE_LOAD, F3_LH, *rds = (int16_t)emu_r16(emu, *rs1 + imm))                                                                              \
-	X_I(LW, OPCODE_LOAD, F3_LW, *rds = (int32_t)emu_r32(emu, *rs1 + imm))                                                                              \
-	X_I(LD, OPCODE_LOAD, F3_LD, *rd = emu_r64(emu, *rs1 + imm))                                                                                        \
-	X_I(LBU, OPCODE_LOAD, F3_LBU, *rd = (uint8_t)emu_r8(emu, *rs1 + imm))                                                                              \
-	X_I(LHU, OPCODE_LOAD, F3_LHU, *rd = (uint16_t)emu_r16(emu, *rs1 + imm))                                                                            \
-	X_I(LWU, OPCODE_LOAD, F3_LWU, *rd = (uint32_t)emu_r32(emu, *rs1 + imm))                                                                            \
+	X_I(                                                                                                                                               \
+		LB, OPCODE_LOAD, F3_LB, do {                                                                                                               \
+			int8_t value = (int8_t)emu_r8(emu, *rs1 + imm);                                                                                    \
+			BREAK_IF_EXCEPTION_PENDING();                                                                                                      \
+			*rds = value;                                                                                                                      \
+		} while (0))                                                                                                                               \
+	X_I(                                                                                                                                               \
+		LH, OPCODE_LOAD, F3_LH, do {                                                                                                               \
+			int16_t value = (int16_t)emu_r16(emu, *rs1 + imm);                                                                                 \
+			BREAK_IF_EXCEPTION_PENDING();                                                                                                      \
+			*rds = value;                                                                                                                      \
+		} while (0))                                                                                                                               \
+	X_I(                                                                                                                                               \
+		LW, OPCODE_LOAD, F3_LW, do {                                                                                                               \
+			int32_t value = (int32_t)emu_r32(emu, *rs1 + imm);                                                                                 \
+			BREAK_IF_EXCEPTION_PENDING();                                                                                                      \
+			*rds = value;                                                                                                                      \
+		} while (0))                                                                                                                               \
+	X_I(                                                                                                                                               \
+		LD, OPCODE_LOAD, F3_LD, do {                                                                                                               \
+			uint64_t value = emu_r64(emu, *rs1 + imm);                                                                                         \
+			BREAK_IF_EXCEPTION_PENDING();                                                                                                      \
+			*rd = value;                                                                                                                       \
+		} while (0))                                                                                                                               \
+	X_I(                                                                                                                                               \
+		LBU, OPCODE_LOAD, F3_LBU, do {                                                                                                             \
+			uint8_t value = (uint8_t)emu_r8(emu, *rs1 + imm);                                                                                  \
+			BREAK_IF_EXCEPTION_PENDING();                                                                                                      \
+			*rd = value;                                                                                                                       \
+		} while (0))                                                                                                                               \
+	X_I(                                                                                                                                               \
+		LHU, OPCODE_LOAD, F3_LHU, do {                                                                                                             \
+			uint16_t value = (uint16_t)emu_r16(emu, *rs1 + imm);                                                                               \
+			BREAK_IF_EXCEPTION_PENDING();                                                                                                      \
+			*rd = value;                                                                                                                       \
+		} while (0))                                                                                                                               \
+	X_I(                                                                                                                                               \
+		LWU, OPCODE_LOAD, F3_LWU, do {                                                                                                             \
+			uint32_t value = (uint32_t)emu_r32(emu, *rs1 + imm);                                                                               \
+			BREAK_IF_EXCEPTION_PENDING();                                                                                                      \
+			*rd = value;                                                                                                                       \
+		} while (0))                                                                                                                               \
                                                                                                                                                            \
 	X_I(FENCE, OPCODE_MISC_MEM, F3_FENCE, /* nop */)                                                                                                   \
 	X_I(FENCEI, OPCODE_MISC_MEM, F3_FENCEI, /* nop */)                                                                                                 \
@@ -339,23 +394,34 @@ typedef struct cached_ins_t {
 			if (rd == &cpu->regs[0]) {                                                                                                         \
 				cpu_csr_write(emu, imm& CSR_MASK, *rs1);                                                                                   \
 			} else {                                                                                                                           \
-				*rd = cpu_csr_exchange(emu, imm & CSR_MASK, *rs1);                                                                         \
+				uint64_t value = cpu_csr_exchange(emu, imm & CSR_MASK, *rs1);                                                              \
+				if (!cpu->exception_pending) {                                                                                             \
+					*rd = value;                                                                                                       \
+				}                                                                                                                          \
 			}                                                                                                                                  \
 		} while (0))                                                                                                                               \
 	X_I(                                                                                                                                               \
 		CSRRS, OPCODE_SYSTEM, F3_CSRRS, do {                                                                                                       \
+			uint64_t value;                                                                                                                    \
 			if (rs1 == &cpu->regs[0]) {                                                                                                        \
-				*rd = cpu_csr_read(emu, imm & CSR_MASK);                                                                                   \
+				value = cpu_csr_read(emu, imm & CSR_MASK);                                                                                 \
 			} else {                                                                                                                           \
-				*rd = cpu_csr_set_bits(emu, imm & CSR_MASK, *rs1);                                                                         \
+				value = cpu_csr_set_bits(emu, imm & CSR_MASK, *rs1);                                                                       \
+			}                                                                                                                                  \
+			if (!cpu->exception_pending) {                                                                                                     \
+				*rd = value;                                                                                                               \
 			}                                                                                                                                  \
 		} while (0))                                                                                                                               \
 	X_I(                                                                                                                                               \
 		CSRRC, OPCODE_SYSTEM, F3_CSRRC, do {                                                                                                       \
+			uint64_t value;                                                                                                                    \
 			if (rs1 == &cpu->regs[0]) {                                                                                                        \
-				*rd = cpu_csr_read(emu, imm & CSR_MASK);                                                                                   \
+				value = cpu_csr_read(emu, imm & CSR_MASK);                                                                                 \
 			} else {                                                                                                                           \
-				*rd = cpu_csr_clear_bits(emu, imm & CSR_MASK, *rs1);                                                                       \
+				value = cpu_csr_clear_bits(emu, imm & CSR_MASK, *rs1);                                                                     \
+			}                                                                                                                                  \
+			if (!cpu->exception_pending) {                                                                                                     \
+				*rd = value;                                                                                                               \
 			}                                                                                                                                  \
 		} while (0))                                                                                                                               \
                                                                                                                                                            \
@@ -364,23 +430,34 @@ typedef struct cached_ins_t {
 			if (rd == &cpu->regs[0]) {                                                                                                         \
 				cpu_csr_write(emu, imm& CSR_MASK, (guest_reg)instruction->rs1);                                                            \
 			} else {                                                                                                                           \
-				*rd = cpu_csr_exchange(emu, imm & CSR_MASK, (guest_reg)instruction->rs1);                                                  \
+				uint64_t value = cpu_csr_exchange(emu, imm & CSR_MASK, (guest_reg)instruction->rs1);                                       \
+				if (!cpu->exception_pending) {                                                                                             \
+					*rd = value;                                                                                                       \
+				}                                                                                                                          \
 			}                                                                                                                                  \
 		} while (0))                                                                                                                               \
 	X_I(                                                                                                                                               \
 		CSRRSI, OPCODE_SYSTEM, F3_CSRRSI, do {                                                                                                     \
+			uint64_t value;                                                                                                                    \
 			if (instruction->rs1 == 0) {                                                                                                       \
-				*rd = cpu_csr_read(emu, imm & CSR_MASK);                                                                                   \
+				value = cpu_csr_read(emu, imm & CSR_MASK);                                                                                 \
 			} else {                                                                                                                           \
-				*rd = cpu_csr_set_bits(emu, imm & CSR_MASK, instruction->rs1);                                                             \
+				value = cpu_csr_set_bits(emu, imm & CSR_MASK, instruction->rs1);                                                           \
+			}                                                                                                                                  \
+			if (!cpu->exception_pending) {                                                                                                     \
+				*rd = value;                                                                                                               \
 			}                                                                                                                                  \
 		} while (0))                                                                                                                               \
 	X_I(                                                                                                                                               \
 		CSRRCI, OPCODE_SYSTEM, F3_CSRRCI, do {                                                                                                     \
+			uint64_t value;                                                                                                                    \
 			if (instruction->rs1 == 0) {                                                                                                       \
-				*rd = cpu_csr_read(emu, imm & CSR_MASK);                                                                                   \
+				value = cpu_csr_read(emu, imm & CSR_MASK);                                                                                 \
 			} else {                                                                                                                           \
-				*rd = cpu_csr_clear_bits(emu, imm & CSR_MASK, instruction->rs1);                                                           \
+				value = cpu_csr_clear_bits(emu, imm & CSR_MASK, instruction->rs1);                                                         \
+			}                                                                                                                                  \
+			if (!cpu->exception_pending) {                                                                                                     \
+				*rd = value;                                                                                                               \
 			}                                                                                                                                  \
 		} while (0))                                                                                                                               \
                                                                                                                                                            \
