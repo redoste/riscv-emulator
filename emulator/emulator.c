@@ -57,6 +57,12 @@ void emu_create(emulator_t* emu, guest_reg pc, size_t cache_bits, bool dynarec_e
 	assert(emu->pg2h_tlb != NULL);
 	memset(emu->pg2h_tlb, 0, pg2h_tlb_size);
 
+	const size_t vg2pg_tlb_size = (1ull << cache_bits) * sizeof(emu->cpu.vg2pg_tlb[0]);
+	emu->cpu.vg2pg_tlb = malloc(vg2pg_tlb_size);
+	emu->cpu.vg2pg_tlb_mask = caches_mask;
+	assert(emu->cpu.vg2pg_tlb != NULL);
+	memset(emu->cpu.vg2pg_tlb, 0, vg2pg_tlb_size);
+
 	emu->mmio_devices = NULL;
 	emu->mmio_devices_capacity = emu->mmio_devices_len = 0;
 
@@ -81,6 +87,7 @@ void emu_destroy(emulator_t* emu) {
 #endif
 	free(emu->cpu.instruction_cache.as_ptr);
 	free(emu->pg2h_tlb);
+	free(emu->cpu.vg2pg_tlb);
 #ifdef RISCV_EMULATOR_SDL_SUPPORT
 	emu_sdl_destory(emu);
 #endif
@@ -148,6 +155,15 @@ void emu_update_mmio_devices(emulator_t* emu) {
 	}
 }
 
+static inline bool emu_paging_should_translate(emulator_t* emu, bool with_mprv) {
+	bool mprv = (emu->cpu.csrs.mstatus >> 17) & 1;
+	privilege_mode_t mpp = (emu->cpu.csrs.mstatus >> 11) & 3;
+	return ((emu->cpu.csrs.satp >> 60) != 0) &&  // not bare
+	       ((emu->cpu.priv_mode == S_MODE) ||
+		(emu->cpu.priv_mode == U_MODE) ||
+		(with_mprv && mprv && (mpp == S_MODE || mpp == U_MODE)));
+}
+
 #define le8toh(x) (x)
 #define htole8(x) (x)
 
@@ -170,7 +186,7 @@ void emu_update_mmio_devices(emulator_t* emu) {
 		assert(offset + sizeof(TYPE) <= MMU_PG2H_PAGE_SIZE);                                                            \
                                                                                                                                 \
 		guest_paddr paddr;                                                                                              \
-		if (mmu_vg2pg_should_translate(emu, true)) {                                                                    \
+		if (emu_paging_should_translate(emu, true)) {                                                                   \
 			if (!mmu_vg2pg_translate(emu, MMU_VG2PG_ACCESS_READ,                                                    \
 						 vaddr, &paddr)) {                                                              \
 				cpu_throw_exception(emu, EXC_LOAD_PAGE_FAULT, vaddr);                                           \
@@ -218,7 +234,7 @@ void emu_update_mmio_devices(emulator_t* emu) {
 		assert(offset + sizeof(TYPE) <= MMU_PG2H_PAGE_SIZE);                                                            \
                                                                                                                                 \
 		guest_paddr paddr;                                                                                              \
-		if (mmu_vg2pg_should_translate(emu, true)) {                                                                    \
+		if (emu_paging_should_translate(emu, true)) {                                                                   \
 			if (!mmu_vg2pg_translate(emu, MMU_VG2PG_ACCESS_WRITE,                                                   \
 						 vaddr, &paddr)) {                                                              \
 				cpu_throw_exception(emu, EXC_STORE_PAGE_FAULT, vaddr);                                          \
@@ -287,7 +303,7 @@ uint32_t emu_r32_ins(emulator_t* emu, guest_vaddr vaddr, uint8_t* exception_code
 	*exception_code = (uint8_t)-1;
 
 	guest_paddr paddr;
-	if (mmu_vg2pg_should_translate(emu, false)) {
+	if (emu_paging_should_translate(emu, false)) {
 		if (!mmu_vg2pg_translate(emu, MMU_VG2PG_ACCESS_EXEC, vaddr, &paddr)) {
 			*exception_code = EXC_INS_PAGE_FAULT;
 			*exception_tval = vaddr;

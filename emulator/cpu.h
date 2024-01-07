@@ -8,6 +8,7 @@
 #include "cpu_int.h"
 #include "dynarec_x86_64.h"
 #include "isa.h"
+#include "mmu_paging_guest_to_guest.h"
 
 /* cpu_t : structure storing the current state of the emulated CPU
  */
@@ -28,6 +29,9 @@ typedef struct cpu_t {
 	cpu_csrs_t csrs;
 
 	privilege_mode_t priv_mode;
+
+	mmu_vg2pg_tlb_entry_t* vg2pg_tlb;
+	guest_vaddr vg2pg_tlb_mask;
 
 	union {
 		void* as_ptr;

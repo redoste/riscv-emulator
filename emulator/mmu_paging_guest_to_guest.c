@@ -1,6 +1,8 @@
 #include <assert.h>
 #include <endian.h>
 #include <stdbool.h>
+#include <stdio.h>
+#include <string.h>
 
 #include "emulator.h"
 #include "isa.h"
@@ -44,8 +46,7 @@ static bool mmu_vg2pg_w64(emulator_t* emu, guest_paddr paddr, uint64_t value) {
 	}
 }
 
-// TODO : add a VG2PG TLB
-bool mmu_vg2pg_translate(emulator_t* emu, mmu_vg2pg_access_type_t access_type, guest_vaddr vaddr, guest_paddr* paddr) {
+static bool mmu_vg2pg_walk(emulator_t* emu, guest_vaddr vaddr, mmu_vg2pg_pte* pte_out, ssize_t* levels_remaining, guest_paddr* pte_paddr) {
 	if (MMU_SV39_VPN_TOP(vaddr) != MMU_SV39_VPN_TOPP &&
 	    MMU_SV39_VPN_TOP(vaddr) != MMU_SV39_VPN_TOPN) {
 		// The virtual address isn't cannonical
@@ -61,11 +62,11 @@ bool mmu_vg2pg_translate(emulator_t* emu, mmu_vg2pg_access_type_t access_type, g
 	// 1. Let a be satp.ppn * PAGESIZE, and let i = LEVELS - 1.
 	guest_paddr a = (emu->cpu.csrs.satp & 0xfffffffffff) << MMU_VG2PG_PAGE_SHIFT;
 	ssize_t i = 3 - 1;
-	mmu_pg2h_pte pte;
+	mmu_vg2pg_pte pte;
 
 	while (1) {
 		// 2. Let pte be the value of the PTE at address a+va.vpn[i]*PTESIZE.
-		if (!mmu_vg2pg_r64(emu, a + vpn[i] * sizeof(mmu_pg2h_pte), &pte)) {
+		if (!mmu_vg2pg_r64(emu, a + vpn[i] * sizeof(mmu_vg2pg_pte), &pte)) {
 			return false;
 		}
 
@@ -94,6 +95,37 @@ bool mmu_vg2pg_translate(emulator_t* emu, mmu_vg2pg_access_type_t access_type, g
 			}
 			a = MMU_SV39_PTE_PPN(pte) << MMU_VG2PG_PAGE_SHIFT;
 		}
+	}
+
+	*pte_out = pte;
+	*levels_remaining = i;
+	*pte_paddr = a + vpn[i] * sizeof(mmu_vg2pg_pte);
+	return true;
+}
+
+bool mmu_vg2pg_translate(emulator_t* emu, mmu_vg2pg_access_type_t access_type, guest_vaddr vaddr, guest_paddr* paddr) {
+	guest_vaddr vpn[] = {MMU_SV39_VPN_0(vaddr), MMU_SV39_VPN_1(vaddr), MMU_SV39_VPN_2(vaddr)};
+
+	size_t tlb_index = (vaddr >> MMU_VG2PG_PAGE_SHIFT) & emu->cpu.vg2pg_tlb_mask;
+	mmu_vg2pg_tlb_entry_t* tlb_entry = &emu->cpu.vg2pg_tlb[tlb_index];
+
+	mmu_vg2pg_pte pte;
+	ssize_t levels_remaining;
+	guest_paddr pte_paddr;
+
+	if ((tlb_entry->tag & MMU_VG2PG_PAGE_MASK) == (vaddr & MMU_VG2PG_PAGE_MASK) &&
+	    (tlb_entry->tag & MMU_VG2PG_OFFSET_MASK) != 0) {
+		pte = tlb_entry->pte;
+		levels_remaining = (tlb_entry->tag & MMU_VG2PG_OFFSET_MASK) - 1;
+		pte_paddr = (guest_paddr)-1;
+	} else {
+		if (!mmu_vg2pg_walk(emu, vaddr, &pte, &levels_remaining, &pte_paddr)) {
+			return false;
+		}
+
+		tlb_entry->tag = (vaddr & MMU_VG2PG_PAGE_MASK) |
+				 ((levels_remaining + 1) & MMU_VG2PG_OFFSET_MASK);
+		tlb_entry->pte = pte;
 	}
 
 	/* 5. A leaf PTE has been found. Determine if the requested memory access is allowed by the
@@ -135,9 +167,9 @@ bool mmu_vg2pg_translate(emulator_t* emu, mmu_vg2pg_access_type_t access_type, g
 	/* 6. If i > 0 and pte.ppn[i - 1 : 0] != 0, this is a misaligned superpage; stop and raise a page-fault
 	 *    exception corresponding to the original access type.
 	 */
-	if (i == 2 && (MMU_SV39_PTE_PPN_1(pte) != 0 || MMU_SV39_PTE_PPN_0(pte) != 0)) {
+	if (levels_remaining == 2 && (MMU_SV39_PTE_PPN_1(pte) != 0 || MMU_SV39_PTE_PPN_0(pte) != 0)) {
 		return false;
-	} else if (i == 1 && MMU_SV39_PTE_PPN_0(pte) != 0) {
+	} else if (levels_remaining == 1 && MMU_SV39_PTE_PPN_0(pte) != 0) {
 		return false;
 	}
 
@@ -147,9 +179,22 @@ bool mmu_vg2pg_translate(emulator_t* emu, mmu_vg2pg_access_type_t access_type, g
 	 */
 	if (!(pte & MMU_VG2PG_PTE_ACCESSED) ||
 	    (access_type == MMU_VG2PG_ACCESS_WRITE && !(pte & MMU_VG2PG_PTE_DIRTY))) {
-		pte |= MMU_VG2PG_PTE_ACCESSED | ((access_type == MMU_VG2PG_ACCESS_WRITE) ? MMU_VG2PG_PTE_DIRTY : 0);
-		if (!mmu_vg2pg_w64(emu, a + vpn[i] * sizeof(mmu_vg2pg_pte), pte)) {
-			return false;
+		bool update_pte;
+		if (pte_paddr == (guest_paddr)-1) {
+			mmu_vg2pg_pte new_pte;
+			update_pte = mmu_vg2pg_walk(emu, vaddr, &new_pte, &levels_remaining, &pte_paddr);
+			update_pte &= new_pte == pte;
+		} else {
+			update_pte = true;
+		}
+
+		if (update_pte) {
+			assert(pte_paddr != (guest_paddr)-1);
+			pte |= MMU_VG2PG_PTE_ACCESSED | ((access_type == MMU_VG2PG_ACCESS_WRITE) ? MMU_VG2PG_PTE_DIRTY : 0);
+			if (!mmu_vg2pg_w64(emu, pte_paddr, pte)) {
+				return false;
+			}
+			tlb_entry->pte = pte;
 		}
 	}
 
@@ -159,8 +204,14 @@ bool mmu_vg2pg_translate(emulator_t* emu, mmu_vg2pg_access_type_t access_type, g
 	 *     * pa.ppn[LEVELS - 1 : i] = pte.ppn[LEVELS - 1 : i].
 	 */
 	*paddr = (MMU_SV39_PTE_PPN(pte) << MMU_VG2PG_PAGE_SHIFT) |
-		 (i >= 2 ? vpn[1] << 21 : 0) |
-		 (i >= 1 ? vpn[0] << 12 : 0) |
+		 (levels_remaining >= 2 ? vpn[1] << 21 : 0) |
+		 (levels_remaining >= 1 ? vpn[0] << 12 : 0) |
 		 (vaddr & MMU_VG2PG_OFFSET_MASK);
 	return true;
+}
+
+void mmu_vg2pg_flush_tlb(emulator_t* emu) {
+	size_t tlb_size = emu->cpu.vg2pg_tlb_mask + 1;
+	emu->cpu.tlb_or_cache_flush_pending = true;
+	memset(emu->cpu.vg2pg_tlb, 0, tlb_size * sizeof(emu->cpu.vg2pg_tlb[0]));
 }

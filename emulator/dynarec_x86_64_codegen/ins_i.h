@@ -358,6 +358,7 @@ C_I_IMM_F7(SYSTEM) {
 	S_I_IMM();
 
 	if (f7 == F7_SFENCE_VMA) {
+		EMU_FUNCTION(-3);
 		E();
 	} else {
 		abort();

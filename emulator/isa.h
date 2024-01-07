@@ -380,7 +380,7 @@ typedef struct cached_ins_t {
 					break;                                                                                                             \
 				default:                                                                                                                   \
 					if ((F7_SFENCE_VMA << 5) == (imm & 0xfe0)) {                                                                       \
-						/* nop */                                                                                                  \
+						mmu_vg2pg_flush_tlb(emu);                                                                                  \
 					} else {                                                                                                           \
 						abort();                                                                                                   \
 					}                                                                                                                  \

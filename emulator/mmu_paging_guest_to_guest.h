@@ -4,7 +4,6 @@
 #include <assert.h>
 #include <stdbool.h>
 
-#include "emulator.h"
 #include "isa.h"
 #include "mmu_paging_guest_to_host.h"
 
@@ -70,6 +69,14 @@ static_assert(MMU_VG2PG_OFFSET_MASK == MMU_PG2H_OFFSET_MASK &&
  */
 typedef guest_paddr mmu_vg2pg_pte;
 
+/* mmu_vg2pg_tlb_entry_t : structure representing an entry in the VG2PG TLB
+ */
+typedef struct mmu_vg2pg_tlb_entry_t {
+	// NOTE : we store the remaining levels in the lower bits of the tag
+	guest_vaddr tag;
+	mmu_vg2pg_pte pte;
+} mmu_vg2pg_tlb_entry_t;
+
 /* mmu_vg2pg_access_type_t : enum of the kinds of access that can be requested from the MMU
  */
 typedef enum mmu_vg2pg_access_type_t {
@@ -88,18 +95,9 @@ typedef enum mmu_vg2pg_access_type_t {
  */
 bool mmu_vg2pg_translate(emulator_t* emu, mmu_vg2pg_access_type_t access_type, guest_vaddr vaddr, guest_paddr* paddr);
 
-/* mmu_vg2pg_should_translate : check if an address should be translated
- *                              returns true if it should be translated in the current CPU state
+/* mmu_vg2pg_flush_tlb : invalidate all the entries in the VG2PG TLB
  *     emulator_t* emu : pointer to the emulator
- *     bool with_mprv  : take mstatus.MPRV into account
  */
-static inline bool mmu_vg2pg_should_translate(emulator_t* emu, bool with_mprv) {
-	bool mprv = (emu->cpu.csrs.mstatus >> 17) & 1;
-	privilege_mode_t mpp = (emu->cpu.csrs.mstatus >> 11) & 3;
-	return ((emu->cpu.csrs.satp >> 60) != 0) &&  // not bare
-	       ((emu->cpu.priv_mode == S_MODE) ||
-		(emu->cpu.priv_mode == U_MODE) ||
-		(with_mprv && mprv && (mpp == S_MODE || mpp == U_MODE)));
-}
+void mmu_vg2pg_flush_tlb(emulator_t* emu);
 
 #endif

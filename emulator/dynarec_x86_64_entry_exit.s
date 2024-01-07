@@ -160,27 +160,29 @@ DR_WRAPPER cpu_csr_clear_bits
 DR_WRAPPER cpu_mret
 DR_WRAPPER cpu_sret
 DR_WRAPPER cpu_wfi
+DR_WRAPPER mmu_vg2pg_flush_tlb
 
 // We use negative offsets to keep all the functions accessible with a [-128;127] disp
 .section .data
-	.quad dr_cpu_sret_wrapper           /* [-2] */
-	.quad dr_cpu_wfi_wrapper            /* [-1] */
+	.quad dr_mmu_vg2pg_flush_tlb_wrapper /* [-3] */
+	.quad dr_cpu_sret_wrapper            /* [-2] */
+	.quad dr_cpu_wfi_wrapper             /* [-1] */
 dr_emu_functions:
-	.quad dr_emu_w8_wrapper             /* [0]  */
-	.quad dr_emu_w16_wrapper            /* [1]  */
-	.quad dr_emu_w32_wrapper            /* [2]  */
-	.quad dr_emu_w64_wrapper            /* [3]  */
-	.quad dr_emu_r8_wrapper             /* [4]  */
-	.quad dr_emu_r16_wrapper            /* [5]  */
-	.quad dr_emu_r32_wrapper            /* [6]  */
-	.quad dr_emu_r64_wrapper            /* [7]  */
-	.quad dr_emu_ecall_wrapper          /* [8]  */
-	.quad dr_emu_ebreak_wrapper         /* [9]  */
-	.quad dr_cpu_csr_read_wrapper       /* [10] */
-	.quad dr_cpu_csr_write_wrapper      /* [11] */
-	.quad dr_cpu_csr_exchange_wrapper   /* [12] */
-	.quad dr_cpu_csr_set_bits_wrapper   /* [13] */
-	.quad dr_cpu_csr_clear_bits_wrapper /* [14] */
-	.quad dr_cpu_mret_wrapper           /* [15] */
+	.quad dr_emu_w8_wrapper              /* [0]  */
+	.quad dr_emu_w16_wrapper             /* [1]  */
+	.quad dr_emu_w32_wrapper             /* [2]  */
+	.quad dr_emu_w64_wrapper             /* [3]  */
+	.quad dr_emu_r8_wrapper              /* [4]  */
+	.quad dr_emu_r16_wrapper             /* [5]  */
+	.quad dr_emu_r32_wrapper             /* [6]  */
+	.quad dr_emu_r64_wrapper             /* [7]  */
+	.quad dr_emu_ecall_wrapper           /* [8]  */
+	.quad dr_emu_ebreak_wrapper          /* [9]  */
+	.quad dr_cpu_csr_read_wrapper        /* [10] */
+	.quad dr_cpu_csr_write_wrapper       /* [11] */
+	.quad dr_cpu_csr_exchange_wrapper    /* [12] */
+	.quad dr_cpu_csr_set_bits_wrapper    /* [13] */
+	.quad dr_cpu_csr_clear_bits_wrapper  /* [14] */
+	.quad dr_cpu_mret_wrapper            /* [15] */
 
 .section .note.GNU-stack, "", %progbits
