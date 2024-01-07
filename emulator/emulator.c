@@ -138,6 +138,14 @@ bool emu_add_mmio_device(emulator_t* emu, guest_paddr base, size_t size, const d
 	return true;
 }
 
+void emu_update_mmio_devices(emulator_t* emu) {
+	for (size_t i = 0; i < emu->mmio_devices_len; i++) {
+		if (emu->mmio_devices[i].update_handler != NULL) {
+			emu->mmio_devices[i].update_handler(emu, emu->mmio_devices[i].device_data);
+		}
+	}
+}
+
 #define le8toh(x) (x)
 #define htole8(x) (x)
 

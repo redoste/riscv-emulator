@@ -62,6 +62,11 @@ bool emu_map_memory(emulator_t* emu, guest_paddr base, size_t size);
  */
 bool emu_add_mmio_device(emulator_t* emu, guest_paddr base, size_t size, const device_mmio_t* device);
 
+/* emu_update_mmio_devices : update the state of all the MMIO devices
+ *     emulator_t* emu : pointer to the emulator
+ */
+void emu_update_mmio_devices(emulator_t* emu);
+
 /* emu_wx : write a x bits value to the guest memory
  *          returns true if a cache entry was invalidated in the process
  *          returns false otherwise

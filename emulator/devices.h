@@ -14,6 +14,12 @@ typedef struct emulator_t emulator_t;
  */
 typedef void (*device_free_handler_t)(emulator_t*, void*);
 
+/* device_update_handler_t : typedef for the MMIO device update handler
+ *                           it will be called regularly by the emulator to let the device
+ *                           update its state
+ */
+typedef void (*device_update_handler_t)(emulator_t*, void*);
+
 /* device_{r,w}x_handler_t : typedef for the MMIO device R/W handlers
  */
 typedef uint8_t (*device_r8_handler_t)(emulator_t*, void*, guest_paddr);
@@ -31,6 +37,7 @@ typedef struct device_mmio_t {
 	void* device_data;
 
 	device_free_handler_t free_handler;
+	device_update_handler_t update_handler;
 
 	device_r8_handler_t r8_handler;
 	device_r16_handler_t r16_handler;
