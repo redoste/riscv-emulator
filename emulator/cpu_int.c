@@ -99,9 +99,7 @@ void cpu_wfi(emulator_t* emu) {
 		return;
 	}
 
-	fprintf(stderr, "Waiting for interrupts but no interrupts are implemented (PC=%016" PRIx64 ")\n",
-		emu->cpu.pc);
-	abort();
+	// TODO : Implement a select(2) based WFI, for now this is a nop which is really inefficient
 }
 
 static bool cpu_throw_interrupt(emulator_t* emu, size_t interrupt) {
