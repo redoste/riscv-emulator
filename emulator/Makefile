@@ -4,6 +4,7 @@ SRC := cpu_decode.c \
        cpu_execute.c \
        cpu_csr.c \
        cpu_int.c \
+       device_clint.c \
        emulator.c \
        isa.c \
        main.c \
