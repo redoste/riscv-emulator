@@ -76,16 +76,16 @@ typedef struct mmu_pg2h_tlb_entry_t {
 
 /* MMU_PG2H_PTE_DEVICE_MASK : mask used to get the device index in a MMIO PTE
  */
-#define MMU_PG2H_PTE_DEVICE_MASK 0x3ffffff
+#define MMU_PG2H_PTE_DEVICE_MASK 0x3ff
 
 /* MMU_PG2H_PTE_DEVICE_PAGE_SHIFT : number of bits to shift to get the page index in a
  *                                  MMIO PTE
  */
-#define MMU_PG2H_PTE_DEVICE_PAGE_SHIFT 38
+#define MMU_PG2H_PTE_DEVICE_PAGE_SHIFT 22
 
 /* MMU_PG2H_PTE_DEVICE_PAGE_MASK : mask used to get the page index in a MMIO PTE
  */
-#define MMU_PG2H_PTE_DEVICE_PAGE_MASK 0x3ffffff
+#define MMU_PG2H_PTE_DEVICE_PAGE_MASK 0x3ff
 
 // NOTE : forward declaration to deal with a cyclic dependency with emulator.h
 typedef struct emulator_t emulator_t;
