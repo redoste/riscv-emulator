@@ -9,43 +9,6 @@
 #include "mmu_paging_guest_to_guest.h"
 #include "mmu_paging_guest_to_host.h"
 
-static bool mmu_vg2pg_r64(emulator_t* emu, guest_paddr paddr, uint64_t* value) {
-	size_t offset = paddr & MMU_PG2H_OFFSET_MASK;
-	assert((offset & 7) == 0);
-
-	mmu_pg2h_pte pte;
-	if (!mmu_pg2h_get_pte(emu, paddr, &pte)) {
-		return false;
-	}
-
-	if (pte & MMU_PG2H_PTE_TYPE_MMIO) {
-		return false;
-	} else {
-		uint8_t* pool = (uint8_t*)(pte & MMU_PG2H_PAGE_MASK);
-		*value = le64toh(*(uint64_t*)&pool[offset]);
-		return true;
-	}
-}
-
-static bool mmu_vg2pg_w64(emulator_t* emu, guest_paddr paddr, uint64_t value) {
-	size_t offset = paddr & MMU_PG2H_OFFSET_MASK;
-	assert((offset & 7) == 0);
-
-	mmu_pg2h_pte pte;
-	if (!mmu_pg2h_get_pte(emu, paddr, &pte)) {
-		return false;
-	}
-
-	if (pte & MMU_PG2H_PTE_TYPE_MMIO) {
-		return false;
-	} else {
-		uint8_t* pool = (uint8_t*)(pte & MMU_PG2H_PAGE_MASK);
-		uint64_t* host_addr = (uint64_t*)&pool[offset];
-		*host_addr = htole64(value);
-		return true;
-	}
-}
-
 static bool mmu_vg2pg_walk(emulator_t* emu, guest_vaddr vaddr, mmu_vg2pg_pte* pte_out, ssize_t* levels_remaining, guest_paddr* pte_paddr) {
 	if (MMU_SV39_VPN_TOP(vaddr) != MMU_SV39_VPN_TOPP &&
 	    MMU_SV39_VPN_TOP(vaddr) != MMU_SV39_VPN_TOPN) {
@@ -66,7 +29,7 @@ static bool mmu_vg2pg_walk(emulator_t* emu, guest_vaddr vaddr, mmu_vg2pg_pte* pt
 
 	while (1) {
 		// 2. Let pte be the value of the PTE at address a+va.vpn[i]*PTESIZE.
-		if (!mmu_vg2pg_r64(emu, a + vpn[i] * sizeof(mmu_vg2pg_pte), &pte)) {
+		if (!emu_physical_r64(emu, a + vpn[i] * sizeof(mmu_vg2pg_pte), &pte)) {
 			return false;
 		}
 
@@ -191,7 +154,7 @@ bool mmu_vg2pg_translate(emulator_t* emu, mmu_vg2pg_access_type_t access_type, g
 		if (update_pte) {
 			assert(pte_paddr != (guest_paddr)-1);
 			pte |= MMU_VG2PG_PTE_ACCESSED | ((access_type == MMU_VG2PG_ACCESS_WRITE) ? MMU_VG2PG_PTE_DIRTY : 0);
-			if (!mmu_vg2pg_w64(emu, pte_paddr, pte)) {
+			if (!emu_physical_w64(emu, pte_paddr, pte)) {
 				return false;
 			}
 			tlb_entry->pte = pte;

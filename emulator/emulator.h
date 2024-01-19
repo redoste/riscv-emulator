@@ -71,7 +71,7 @@ bool emu_add_mmio_device(emulator_t* emu, guest_paddr base, size_t size, const d
  */
 void emu_update_mmio_devices(emulator_t* emu);
 
-/* emu_wx : write a x bits value to the guest memory
+/* emu_wx : write a x bits value to the guest memory using a virtual address
  *          returns true if a cache entry was invalidated in the process
  *          returns false otherwise
  *     emulator_t* emu   : pointer to the emulator
@@ -83,7 +83,7 @@ bool emu_w16(emulator_t* emu, guest_vaddr vaddr, uint16_t value);
 bool emu_w32(emulator_t* emu, guest_vaddr vaddr, uint32_t value);
 bool emu_w64(emulator_t* emu, guest_vaddr vaddr, uint64_t value);
 
-/* emu_rx : read a x bits value from the guest memory
+/* emu_rx : read a x bits value from the guest memory using a virtual address
  *          returns the value read
  *     emulator_t* emu   : pointer to the emulator
  *     guest_vaddr vaddr : guest virtual address to read from
@@ -104,6 +104,28 @@ uint64_t emu_r64(emulator_t* emu, guest_vaddr vaddr);
  *     guest_reg* exception_tval : exception tval if an exception should occur during the read
  */
 uint32_t emu_r32_ins(emulator_t* emu, guest_vaddr vaddr, uint8_t* exception_code, guest_reg* exception_tval);
+
+/* emu_physical_rx : read a x bits value from the guest memory using a physical address
+ *                   returns true if the value was read
+ *     emulator_t* emu   : pointer to the emulator
+ *     guest_paddr paddr : guest physical address to read from
+ *     uintx_t* value    : pointer to the value read
+ */
+bool emu_physical_r8(emulator_t* emu, guest_paddr paddr, uint8_t* value);
+bool emu_physical_r16(emulator_t* emu, guest_paddr paddr, uint16_t* value);
+bool emu_physical_r32(emulator_t* emu, guest_paddr paddr, uint32_t* value);
+bool emu_physical_r64(emulator_t* emu, guest_paddr paddr, uint64_t* value);
+
+/* emu_physical_wx : write a x bits value to the guest memory using a physical address
+ *                   returns true if the value was written
+ *     emulator_t* emu   : pointer to the emulator
+ *     guest_paddr paddr : guest physical address to write to
+ *     uintx_t value     : value to write to the guest memory
+ */
+bool emu_physical_w8(emulator_t* emu, guest_paddr paddr, uint8_t value);
+bool emu_physical_w16(emulator_t* emu, guest_paddr paddr, uint16_t value);
+bool emu_physical_w32(emulator_t* emu, guest_paddr paddr, uint32_t value);
+bool emu_physical_w64(emulator_t* emu, guest_paddr paddr, uint64_t value);
 
 /* emu_ebreak : handle the ebreak instruction
  *     emulator_t* emu : pointer to the emulator
