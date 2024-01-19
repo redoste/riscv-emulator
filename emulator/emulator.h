@@ -11,10 +11,14 @@
 #include "isa.h"
 #include "mmu_paging_guest_to_host.h"
 
+// NOTE : forward declaration to deal with a cyclic dependency with device_plic.h
+typedef struct plic_t plic_t;
+
 /* emulator_t : structure storing the emulator state
  */
 typedef struct emulator_t {
 	cpu_t cpu;
+	plic_t* plic;
 
 	mmu_pg2h_pte pg2h_paging_table;
 	mmu_pg2h_tlb_entry_t* pg2h_tlb;
