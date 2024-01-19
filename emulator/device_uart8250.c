@@ -7,6 +7,7 @@
 #include <sys/ioctl.h>
 #include <unistd.h>
 
+#include "device_plic.h"
 #include "device_uart8250.h"
 #include "devices.h"
 #include "emulator.h"
@@ -24,10 +25,15 @@
 #define COM_MODEM_STATUS_REG  6
 #define COM_SCRATCH_REG       7
 
+#define COM_INT_NONE 0x1
+#define COM_INT_DR   0x4  // Data Ready interrupt
+#define COM_INT_THRE 0x2  // Transmitter Holding Register Empty interrupt
+
 typedef struct uart8250_t {
 	guest_paddr base;
 	int fd_tx;
 	int fd_rx;
+	size_t int_number;
 
 	uint16_t baud_rate_divisor;
 	uint8_t int_enable_reg;
@@ -37,7 +43,16 @@ typedef struct uart8250_t {
 	uint8_t modem_control_reg;
 } uart8250_t;
 
-static void uart_free(emulator_t* emu, void* device_data) {
+static bool uart8250_get_dr(uart8250_t* uart) {
+	bool dr = false;
+	int bytes_fd;
+	if (ioctl(uart->fd_rx, FIONREAD, &bytes_fd) == 0) {
+		dr = bytes_fd > 0;
+	}
+	return dr;
+}
+
+static void uart8250_free(emulator_t* emu, void* device_data) {
 	(void)emu;
 
 	uart8250_t* uart = (uart8250_t*)device_data;
@@ -73,13 +88,7 @@ static uint8_t uart8250_r8(emulator_t* emu, void* device_data, guest_paddr addr)
 			return uart->modem_control_reg;
 		}
 		case COM_LINE_STATUS_REG: {
-			bool dr = false;
-
-			int bytes_fd;
-			if (ioctl(uart->fd_rx, FIONREAD, &bytes_fd) == 0) {
-				dr = bytes_fd > 0;
-			}
-
+			bool dr = uart8250_get_dr(uart);
 			return (1 << 5) | /* Transmitter Holding Register Empty */
 			       (dr << 0) /* Data Ready */;
 		}
@@ -178,18 +187,38 @@ static void uart8250_w64(emulator_t* emu, void* device_data, guest_paddr addr, u
 	cpu_throw_exception(emu, EXC_LOAD_ACCESS_FAULT, uart->base + addr);
 }
 
-bool uart8250_create(emulator_t* emu, guest_paddr base, int fd_tx, int fd_rx) {
+static void uart8250_update(emulator_t* emu, void* device_data) {
+	uart8250_t* uart = (uart8250_t*)device_data;
+	if (uart->int_number != 0 && emu->plic != NULL) {
+		if (uart->int_enable_reg & (1 << 0) /* DR int */ &&
+		    uart8250_get_dr(uart)) {
+			uart->int_id_reg = COM_INT_DR;
+		} else if (uart->int_enable_reg & (1 << 1) /* THRE int */) {
+			uart->int_id_reg = COM_INT_THRE;
+		} else {
+			uart->int_id_reg = COM_INT_NONE;
+		}
+
+		if (uart->int_id_reg != COM_INT_NONE) {
+			plic_throw_interrupt(emu, uart->int_number);
+		}
+	}
+}
+
+bool uart8250_create(emulator_t* emu, guest_paddr base, size_t int_number, int fd_tx, int fd_rx) {
 	uart8250_t* uart = malloc(sizeof(uart8250_t));
 	assert(uart != NULL);
 	memset(uart, 0, sizeof(*uart));
 	uart->base = base;
 	uart->fd_tx = fd_tx;
 	uart->fd_rx = fd_rx;
+	uart->int_number = int_number;
+	uart->int_id_reg = COM_INT_NONE;
 
 	device_mmio_t device = {
 		uart,
-		uart_free,
-		NULL,
+		uart8250_free,
+		uart8250_update,
 		uart8250_r8,
 		uart8250_r16,
 		uart8250_r32,

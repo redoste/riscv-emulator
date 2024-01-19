@@ -12,11 +12,12 @@
  */
 
 /* uart8250_create : create and attach a UART 8250 to the emulator
- *     emulator_t* emu  : pointer to the emulator
- *     guest_paddr base : base address of the UART
- *     int fd_tx        : TX file descriptor (the one being written to)
- *     int fd_rx        : RX file descriptor (the one being read from)
+ *     emulator_t* emu   : pointer to the emulator
+ *     guest_paddr base  : base address of the UART
+ *     size_t int_number : interrupt source number if the UART is connected to the PLIC
+ *     int fd_tx         : TX file descriptor (the one being written to)
+ *     int fd_rx         : RX file descriptor (the one being read from)
  */
-bool uart8250_create(emulator_t* emu, guest_paddr base, int fd_tx, int fd_rx);
+bool uart8250_create(emulator_t* emu, guest_paddr base, size_t int_number, int fd_tx, int fd_rx);
 
 #endif
