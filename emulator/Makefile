@@ -8,6 +8,7 @@ SRC := cpu_decode.c \
        device_plic.c \
        device_uart8250.c \
        device_virtio.c \
+       device_virtio_block.c \
        emulator.c \
        isa.c \
        main.c \
