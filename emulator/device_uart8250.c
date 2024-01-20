@@ -170,21 +170,21 @@ static void uart8250_w16(emulator_t* emu, void* device_data, guest_paddr addr, u
 	(void)value;
 
 	uart8250_t* uart = (uart8250_t*)device_data;
-	cpu_throw_exception(emu, EXC_LOAD_ACCESS_FAULT, uart->base + addr);
+	cpu_throw_exception(emu, EXC_STORE_ACCESS_FAULT, uart->base + addr);
 }
 
 static void uart8250_w32(emulator_t* emu, void* device_data, guest_paddr addr, uint32_t value) {
 	(void)value;
 
 	uart8250_t* uart = (uart8250_t*)device_data;
-	cpu_throw_exception(emu, EXC_LOAD_ACCESS_FAULT, uart->base + addr);
+	cpu_throw_exception(emu, EXC_STORE_ACCESS_FAULT, uart->base + addr);
 }
 
 static void uart8250_w64(emulator_t* emu, void* device_data, guest_paddr addr, uint64_t value) {
 	(void)value;
 
 	uart8250_t* uart = (uart8250_t*)device_data;
-	cpu_throw_exception(emu, EXC_LOAD_ACCESS_FAULT, uart->base + addr);
+	cpu_throw_exception(emu, EXC_STORE_ACCESS_FAULT, uart->base + addr);
 }
 
 static void uart8250_update(emulator_t* emu, void* device_data) {
