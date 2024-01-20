@@ -18,7 +18,8 @@ SRC := cpu_decode.c \
 SRC_A :=
 
 ifdef SDL
-	SRC += emulator_sdl.c
+	SRC += device_framebuffer.c \
+	       emulator_sdl.c
 	CFLAGS += -DRISCV_EMULATOR_SDL_SUPPORT
 	LDFLAGS += -lSDL2
 endif

@@ -63,7 +63,7 @@ void emu_sdl_draw(emulator_t* emu, guest_paddr addr) {
 
 	const size_t frame_size = emu->sdl_data.width * emu->sdl_data.height;
 	for (size_t i = 0; i < frame_size && !emu->cpu.exception_pending; i++) {
-		emu->sdl_data.framebuffer[i] = emu_r32(emu, addr + (i * sizeof(uint32_t)));
+		emu_physical_r32(emu, addr + (i * sizeof(uint32_t)), &emu->sdl_data.framebuffer[i]);
 	}
 
 	int ret = SDL_UpdateTexture(emu->sdl_data.texture, NULL, emu->sdl_data.framebuffer, emu->sdl_data.width * sizeof(uint32_t));
