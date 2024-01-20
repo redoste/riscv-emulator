@@ -146,11 +146,13 @@ unsigned int emu_sdl_poll_events(emulator_t* emu, unsigned int* pressed, uint8_t
 }
 
 void emu_sdl_destory(emulator_t* emu) {
-	free(emu->sdl_data.framebuffer);
-	SDL_DestroyTexture(emu->sdl_data.texture);
-	SDL_DestroyRenderer(emu->sdl_data.renderer);
-	SDL_DestroyWindow(emu->sdl_data.window);
-	memset(&emu->sdl_data, 0, sizeof(emu->sdl_data));
+	if (emu->sdl_data.window || emu->sdl_data.renderer || emu->sdl_data.texture) {
+		free(emu->sdl_data.framebuffer);
+		SDL_DestroyTexture(emu->sdl_data.texture);
+		SDL_DestroyRenderer(emu->sdl_data.renderer);
+		SDL_DestroyWindow(emu->sdl_data.window);
+		memset(&emu->sdl_data, 0, sizeof(emu->sdl_data));
+	}
 }
 
 #endif
