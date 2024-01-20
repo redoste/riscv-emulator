@@ -214,8 +214,13 @@ static int main_advanced(int argc, char** argv) {
 		cpu_execute(&emu);
 	}
 
+	bool reboot = emu.reboot;
 	emu_destroy(&emu);
-	return 0;
+	if (reboot) {
+		return main_advanced(argc, argv);
+	} else {
+		return 0;
+	}
 }
 
 int main(int argc, char** argv) {

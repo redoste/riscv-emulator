@@ -6,6 +6,7 @@ SRC := cpu_decode.c \
        cpu_int.c \
        device_clint.c \
        device_plic.c \
+       device_syscon.c \
        device_uart8250.c \
        device_virtio.c \
        device_virtio_block.c \

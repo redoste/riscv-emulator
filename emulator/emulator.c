@@ -65,12 +65,14 @@ void emu_create(emulator_t* emu, guest_reg pc, size_t cache_bits, bool dynarec_e
 
 	emu->mmio_devices = NULL;
 	emu->mmio_devices_capacity = emu->mmio_devices_len = 0;
+	emu->plic = NULL;
 
 #ifdef RISCV_EMULATOR_SDL_SUPPORT
 	memset(&emu->sdl_data, 0, sizeof(emu->sdl_data));
 #endif
 
 	emu->running = true;
+	emu->reboot = false;
 }
 
 void emu_destroy(emulator_t* emu) {

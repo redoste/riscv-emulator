@@ -33,6 +33,7 @@ typedef struct emulator_t {
 #endif
 
 	bool running;
+	bool reboot;
 } emulator_t;
 
 /* emu_create : create an emulator
