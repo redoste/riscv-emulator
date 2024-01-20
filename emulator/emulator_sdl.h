@@ -24,6 +24,8 @@ typedef struct emu_sdl_data_t {
 	unsigned int height;
 	uint32_t* framebuffer;
 	struct timespec previous_frame_time;
+
+	bool mouse_grabbed;
 } emu_sdl_data_t;
 
 /* emu_sdl_init : initialize the SDL subsystem

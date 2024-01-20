@@ -19,6 +19,7 @@ SRC_A :=
 
 ifdef SDL
 	SRC += device_framebuffer.c \
+	       device_virtio_input.c \
 	       emulator_sdl.c
 	CFLAGS += -DRISCV_EMULATOR_SDL_SUPPORT
 	LDFLAGS += -lSDL2

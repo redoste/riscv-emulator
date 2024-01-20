@@ -80,13 +80,17 @@ void emu_sdl_draw(emulator_t* emu, guest_paddr addr) {
 					(current_time.tv_nsec - emu->sdl_data.previous_frame_time.tv_nsec) / 1000000;
 	emu->sdl_data.previous_frame_time = current_time;
 
+	char frame_time_str[8];
 	if (frame_time > 0) {
-		char title_buffer[64] = {0};
-		snprintf(title_buffer, sizeof(title_buffer) - 1, "riscv-emulator (FPS:%3llu)", 1000 / frame_time);
-		SDL_SetWindowTitle(emu->sdl_data.window, title_buffer);
+		snprintf(frame_time_str, sizeof(frame_time_str) - 1, "%3llu", 1000 / frame_time);
 	} else {
-		SDL_SetWindowTitle(emu->sdl_data.window, "riscv-emulator (FPS: inf)");
+		strncpy(frame_time_str, " inf", sizeof(frame_time_str) - 1);
 	}
+	char title_buffer[128] = {0};
+	snprintf(title_buffer, sizeof(title_buffer) - 1, "riscv-emulator (FPS:%s)%s",
+		 frame_time_str,
+		 emu->sdl_data.mouse_grabbed ? " (use scroll lock to release the mouse)" : "");
+	SDL_SetWindowTitle(emu->sdl_data.window, title_buffer);
 }
 
 unsigned int emu_sdl_poll_events(emulator_t* emu, unsigned int* pressed, uint8_t* key) {
