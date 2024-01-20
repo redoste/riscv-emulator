@@ -103,7 +103,7 @@ unsigned int emu_sdl_poll_events(emulator_t* emu, unsigned int* pressed, uint8_t
 	while (SDL_PollEvent(&event)) {
 		if (event.type == SDL_QUIT) {
 			fprintf(stderr, "SDL_QUIT forced an exit\n");
-			exit(0);
+			emu->running = false;
 		} else if ((event.type == SDL_KEYDOWN || event.type == SDL_KEYUP) &&
 			   event.key.repeat == 0) {
 			switch (event.key.keysym.sym) {

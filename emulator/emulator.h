@@ -31,6 +31,8 @@ typedef struct emulator_t {
 #ifdef RISCV_EMULATOR_SDL_SUPPORT
 	emu_sdl_data_t sdl_data;
 #endif
+
+	bool running;
 } emulator_t;
 
 /* emu_create : create an emulator

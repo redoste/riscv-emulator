@@ -69,6 +69,8 @@ void emu_create(emulator_t* emu, guest_reg pc, size_t cache_bits, bool dynarec_e
 #ifdef RISCV_EMULATOR_SDL_SUPPORT
 	memset(&emu->sdl_data, 0, sizeof(emu->sdl_data));
 #endif
+
+	emu->running = true;
 }
 
 void emu_destroy(emulator_t* emu) {
@@ -393,7 +395,7 @@ void emu_ecall(emulator_t* emu) {
 			break;
 		case 0x45584954:  // "EXIT"
 			fprintf(stderr, "guest exited\n");
-			exit(emu->cpu.regs[11]);
+			emu->running = false;
 			break;
 		case 0x4754494b: {  // "GTIK"
 			struct timespec tp;

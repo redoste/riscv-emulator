@@ -210,8 +210,7 @@ static int main_advanced(int argc, char** argv) {
 	}
 	free(rom_content);
 
-	// TODO : add proper exit
-	while (1) {
+	while (emu.running) {
 		cpu_execute(&emu);
 	}
 

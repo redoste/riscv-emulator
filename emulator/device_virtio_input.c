@@ -222,7 +222,7 @@ static void virtio_input_update(emulator_t* emu, virtio_t* virtio) {
 		switch (event.type) {
 			case SDL_QUIT:
 				fprintf(stderr, "SDL_QUIT forced an exit\n");
-				exit(0);
+				emu->running = false;
 				break;
 			case SDL_KEYDOWN:
 			case SDL_KEYUP: {
