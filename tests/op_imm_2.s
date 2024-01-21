@@ -48,3 +48,4 @@ andi s9, a1, 0xff
 # s10: 0xfffffffffffff8aa
 # s11: 0xfffffffffffff8ff
 # t5: 0xffffffffffffff00
+# sp: 16384

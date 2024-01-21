@@ -47,6 +47,9 @@ static int usage(const char* argv0) {
 	return 1;
 }
 
+#define SIMPLE_ROM_BASE 0x0
+#define SIMPLE_ROM_SIZE (16 << 10)
+
 #ifdef RISCV_EMULATOR_DYNAREC_X86_64_SUPPORT
 #define SIMPLE_DYNAREC_ENABLED true
 #else
@@ -65,16 +68,15 @@ static int main_simple(const char* hex_input_filename, const char* emu_output_fi
 		return 1;
 	}
 
-	// TODO : follow the subject requirements (load code at 0, etc.)
 	emulator_t emu;
-	emu_create(&emu, DEFAULT_ROM_BASE,
+	emu_create(&emu, SIMPLE_ROM_BASE,
 		   DEFAULT_CACHE_BITS, DEFAULT_DEVICE_UPDATE_PERIOD,
 		   SIMPLE_DYNAREC_ENABLED, true);
-	bool map_ret = emu_map_memory(&emu, DEFAULT_ROM_BASE, DEFAULT_ROM_SIZE);
+	bool map_ret = emu_map_memory(&emu, SIMPLE_ROM_BASE, SIMPLE_ROM_SIZE);
 	map_ret &= emu_map_memory(&emu, DEFAULT_RAM_BASE, DEFAULT_RAM_SIZE);
 	assert(map_ret);
 
-	guest_paddr max_rom_code_addr = DEFAULT_ROM_BASE;
+	guest_paddr max_rom_code_addr = SIMPLE_ROM_BASE;
 	do {
 		char buffer[32] = {0};
 		if (fgets(buffer, sizeof(buffer) - 1, input_file)) {
@@ -87,10 +89,11 @@ static int main_simple(const char* hex_input_filename, const char* emu_output_fi
 			emu_destroy(&emu);
 			return 1;
 		}
-	} while (!feof(input_file) && max_rom_code_addr < (DEFAULT_ROM_BASE + DEFAULT_ROM_SIZE));
+	} while (!feof(input_file) && max_rom_code_addr < (SIMPLE_ROM_BASE + SIMPLE_ROM_SIZE));
 	fclose(input_file);
 
-	while (emu.cpu.pc >= DEFAULT_ROM_BASE && emu.cpu.pc < max_rom_code_addr) {
+	emu.cpu.regs[2] = SIMPLE_ROM_SIZE;  // sp
+	while (emu.cpu.pc >= SIMPLE_ROM_BASE && emu.cpu.pc < max_rom_code_addr) {
 		cpu_execute(&emu);
 	}
 

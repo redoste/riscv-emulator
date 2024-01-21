@@ -20,3 +20,4 @@ ecall
 # EXPECTED
 # a0: 0x504f4e47
 # a1: 0x50494e47
+# sp: 16384

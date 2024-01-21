@@ -37,3 +37,4 @@ mulhu s1, a0, a1
 # t6: 0xf8a328ec38f52956
 # s0: 0x014b6619fbef2b66
 # s1: 0x0ad77a0f38f52dac
+# sp: 16384

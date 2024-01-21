@@ -23,12 +23,13 @@ lui s0, 0x1000
 lui s1, 0x80000
 
 # EXPECTED
-# t0: 0x80000024
-# t1: 0x7ffff028
-# t2: 0x8000102c
-# t3: 0x81000030
+# t0: 0x0024
+# t1: 0xfffffffffffff028
+# t2: 0x102c
+# t3: 0x1000030
 # t4: 0x1000
 # t5: 0xfffffffffffff000
 # t6: 0
 # s0: 0x1000000
 # s1: 0xffffffff80000000
+# sp: 16384

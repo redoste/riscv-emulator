@@ -52,3 +52,4 @@ sraw s11, a0, a4
 # s9: 0xffffffffffffffff
 # s10: 0xffffffffffffffff
 # s11: 0xffffffffffffffff
+# sp: 16384
