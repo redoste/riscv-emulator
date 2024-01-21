@@ -333,7 +333,7 @@ static void cpu_execute_dynarec(emulator_t* emu) {
 
 	size_t cache_index = (emu->cpu.pc >> 2) & emu->cpu.instruction_cache_mask;
 	dr_ins_t* cached_instruction = &emu->cpu.instruction_cache.as_dr_ins[cache_index];
-	if (cached_instruction->tag != emu->cpu.pc) {
+	if (cached_instruction->tag != emu->cpu.pc || cached_instruction->native_code == NULL) {
 		if (!dr_emit_block(emu, emu->cpu.pc)) {
 			if (!emu->cpu.exception_pending) {
 				cpu_throw_exception(emu, EXC_ILL_INS, 0);
