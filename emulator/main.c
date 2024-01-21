@@ -15,7 +15,7 @@
 #define DEFAULT_ROM_SIZE   0x2000
 #define DEFAULT_RAM_BASE   0xc0000000
 #define DEFAULT_RAM_SIZE   0x2000
-#define DEFAULT_CACHE_BITS 12
+#define DEFAULT_CACHE_BITS 16
 
 static int usage(const char* argv0) {
 	fprintf(stderr,
