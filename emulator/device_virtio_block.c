@@ -106,7 +106,7 @@ static uint32_t virtio_block_r32_config(emulator_t* emu, virtio_t* virtio, guest
 	if (addr == VIRTIO_BLK_CFG_CAPACITY_LOW_BASE) {
 		return virtio_block->capacity & 0xffffffff;
 	} else if (addr == VIRTIO_BLK_CFG_CAPACITY_HIGH_BASE) {
-		return virtio_block->capacity >> 32;
+		return (uint64_t)virtio_block->capacity >> 32;
 	} else {
 		cpu_throw_exception(emu, EXC_LOAD_ACCESS_FAULT, virtio->base + VIRTIO_CONFIG_BASE + addr);
 		return 0;
