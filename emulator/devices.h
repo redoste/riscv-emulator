@@ -1,6 +1,7 @@
 #ifndef DEVICES_H
 #define DEVICES_H
 
+#include <stdbool.h>
 #include <stdint.h>
 
 #include "isa.h"
@@ -48,5 +49,12 @@ typedef struct device_mmio_t {
 	device_w32_handler_t w32_handler;
 	device_w64_handler_t w64_handler;
 } device_mmio_t;
+
+/* devices_create_virt_machine : create a simple "virt" style machine
+ *                               returns true if all the devices were successfully created
+ *     emulator_t* emu      : pointer to the emulator
+ *     const char* hdd_file : file path to the HDD image
+ */
+bool devices_create_virt_machine(emulator_t* emu, const char* hdd_file);
 
 #endif

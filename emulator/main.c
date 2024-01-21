@@ -7,6 +7,7 @@
 #include <string.h>
 
 #include "cpu.h"
+#include "devices.h"
 #include "emulator.h"
 #include "isa.h"
 
@@ -31,6 +32,8 @@ static int usage(const char* argv0) {
 		"    --ram-size 0x[RAM SIZE]  : Size of the ROM (default 0x%08x)\n"
 		"    --user-only              : Keep the emulated CPU in U-mode and expose emulator calls through ecall\n"
 		"                               (as used by the provided `DOOM` port)\n"
+		"    --virt [HDD IMAGE]       : Create a QEMU \"virt\" style machine following the device tree described\n"
+		"                               in `linux/emulator.dts`\n"
 #ifdef RISCV_EMULATOR_DYNAREC_X86_64_SUPPORT
 		"    --dynarec                : Enable dynamic recompilation to x86-64 assembly\n"
 #endif
@@ -120,7 +123,7 @@ static int main_advanced(int argc, char** argv) {
 	assert(argc >= 3);
 	ssize_t argc_iter = 1;
 
-	const char* rom_file = NULL;
+	const char *rom_file = NULL, *hdd_file = NULL;
 	guest_paddr rom_base = DEFAULT_ROM_BASE, ram_base = DEFAULT_RAM_BASE;
 	size_t rom_size = DEFAULT_ROM_SIZE, ram_size = DEFAULT_RAM_SIZE;
 	size_t cache_bits = DEFAULT_CACHE_BITS;
@@ -156,6 +159,10 @@ static int main_advanced(int argc, char** argv) {
 		else if (strcmp(argv[argc_iter], "--user-only") == 0) {
 			argc_iter++;
 			user_only_mode = true;
+		}
+		else if (strcmp(argv[argc_iter], "--virt") == 0) {
+			argc_iter++;
+			hdd_file = argv[argc_iter++];
 		}
 		else {
 			return usage(argv[0]);
@@ -209,6 +216,13 @@ static int main_advanced(int argc, char** argv) {
 		emu_w8(&emu, rom_base + i, rom_content[i]);
 	}
 	free(rom_content);
+
+	if (hdd_file != NULL &&
+	    !devices_create_virt_machine(&emu, hdd_file)) {
+		fprintf(stderr, "Unable to create a \"virt\" machine\n");
+		emu_destroy(&emu);
+		return 1;
+	}
 
 	while (emu.running) {
 		cpu_execute(&emu);

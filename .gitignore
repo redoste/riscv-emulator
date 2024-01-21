@@ -16,6 +16,9 @@ Makefile.config
 emulator/dynarec_x86_64_codegen/codegen
 emulator/dynarec_x86_64_codegen.c
 
+# Device trees
+*.dtb
+
 # Tests artifacts
 *.hex
 *.bin

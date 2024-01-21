@@ -1,0 +1,115 @@
+/dts-v1/;
+
+/ {
+	#address-cells = <2>;
+	#size-cells = <2>;
+	compatible = "riscv-emulator";
+
+	chosen {
+		#address-cells = <2>;
+		#size-cells = <2>;
+		ranges;
+		stdout-path = "/serial@10000000";
+
+		framebuffer@50000000 {
+			compatible = "simple-framebuffer";
+			reg = <0x00 0x50000000 0x00 (800*600*4)>;
+			status = "okay";
+
+			width = <800>;
+			height = <600>;
+			stride = <(800*4)>;
+			format = "x8r8g8b8";
+		};
+	};
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		timebase-frequency = <10000000>;
+
+		cpu@0 {
+			device_type = "cpu";
+			reg = <0>;
+			compatible = "riscv";
+			mmu-type = "riscv,sv39";
+			riscv,isa = "rv64ima_zicsr_zifencei";
+			cpuintc: interrupt-controller {
+				#interrupt-cells = <0x01>;
+				interrupt-controller;
+				compatible = "riscv,cpu-intc";
+			};
+		};
+	};
+
+	serial@10000000 {
+		compatible = "ns16550a";
+		reg = <0x00 0x10000000 0x00 0x1000>;
+		clock-frequency = <3686400>;
+
+		interrupts = <1>;
+		interrupt-parent = <&plic>;
+	};
+
+	timer@20000000 {
+		compatible = "riscv,clint0";
+		interrupts-extended = <&cpuintc 3>, <&cpuintc 7>;
+		reg = <0x00 0x20000000 0x00 0x10000>;
+	};
+
+	plic: plic@30000000 {
+		compatible = "riscv,plic0";
+		reg = <0x00 0x30000000 0x00 0x4000000>;
+		interrupts-extended = <&cpuintc 11>, <&cpuintc 9>;
+		interrupt-controller;
+		riscv,ndev = <31>;
+
+		#address-cells = <0>;
+		#interrupt-cells = <1>;
+	};
+
+	virtio_block@40000000 {
+		compatible = "virtio,mmio";
+		reg = <0x00 0x40000000 0x00 0x1000>;
+		interrupts = <2>;
+		interrupt-parent = <&plic>;
+	};
+
+	virtio_input@40001000 {
+		compatible = "virtio,mmio";
+		reg = <0x00 0x40001000 0x00 0x1000>;
+		interrupts = <3>;
+		interrupt-parent = <&plic>;
+	};
+
+	syscon: syscon@60000000 {
+		compatible = "syscon";
+		reg = <0x00 0x60000000 0x00 0x1000>;
+	};
+
+	poweroff {
+		compatible = "syscon-poweroff";
+		regmap = <&syscon>;
+
+		value = <0x5555>;
+		offset = <0x00>;
+	};
+
+	reboot {
+		compatible = "syscon-reboot";
+		regmap = <&syscon>;
+
+		value = <0x7777>;
+		offset = <0x00>;
+	};
+
+	memory@80000000 {
+		device_type = "memory";
+		reg = <0x00 0x80000000 0x00 0x4000000>; // 64 MiB
+	};
+
+	memory@c0000000 {
+		device_type = "memory";
+		reg = <0x00 0xc0000000 0x00 0x10000000>; // 256 MiB
+	};
+};
