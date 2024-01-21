@@ -363,10 +363,10 @@ void cpu_execute(emulator_t* emu) {
 		return;
 	}
 
-	/* TODO : find a sensible interval between each device updates instead of executing
-	 *        them at each block entry (dynarec) or instruction
-	 */
-	emu_update_mmio_devices(emu);
+	if ((emu->device_update_iter & emu->device_update_iter_mask) == 0) {
+		emu_update_mmio_devices(emu);
+	}
+	emu->device_update_iter++;
 	cpu_check_interrupt(emu);
 
 #ifdef RISCV_EMULATOR_DYNAREC_X86_64_SUPPORT

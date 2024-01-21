@@ -28,6 +28,9 @@ typedef struct emulator_t {
 	size_t mmio_devices_len;
 	size_t mmio_devices_capacity;
 
+	uint32_t device_update_iter;
+	uint32_t device_update_iter_mask;
+
 #ifdef RISCV_EMULATOR_SDL_SUPPORT
 	emu_sdl_data_t sdl_data;
 #endif
@@ -40,10 +43,11 @@ typedef struct emulator_t {
  *     emulator_t* emu               : pointer to the emulator_t struct to initialize
  *     guest_reg pc                  : initial value for the program counter
  *     size_t cache_bits             : number of significant bits for the different caches
+ *     size_t device_update_period   : device update period in powers of 2
  *     bool dynarec_enabled          : enable dynamic recompilation
  *     bool user_only_mode           : enable user only mode
  */
-void emu_create(emulator_t* emu, guest_reg pc, size_t cache_bits, bool dynarec_enabled, bool user_only_mode);
+void emu_create(emulator_t* emu, guest_reg pc, size_t cache_bits, size_t device_update_period, bool dynarec_enabled, bool user_only_mode);
 
 /* emu_destroy : destroy an emulator and free its associated ressources
  *     emulator_t* emu : pointer to the emulator_t struct to destroy

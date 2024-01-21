@@ -18,7 +18,7 @@
 #include "mmu_paging_guest_to_guest.h"
 #include "mmu_paging_guest_to_host.h"
 
-void emu_create(emulator_t* emu, guest_reg pc, size_t cache_bits, bool dynarec_enabled, bool user_only_mode) {
+void emu_create(emulator_t* emu, guest_reg pc, size_t cache_bits, size_t device_update_period, bool dynarec_enabled, bool user_only_mode) {
 	emu->pg2h_paging_table = 0;
 
 	memset(&emu->cpu, 0, sizeof(emu->cpu));
@@ -66,6 +66,13 @@ void emu_create(emulator_t* emu, guest_reg pc, size_t cache_bits, bool dynarec_e
 	emu->mmio_devices = NULL;
 	emu->mmio_devices_capacity = emu->mmio_devices_len = 0;
 	emu->plic = NULL;
+
+	if (device_update_period > 24) {
+		fprintf(stderr, "The device update period is over 2^24\n");
+		abort();
+	}
+	emu->device_update_iter = 0;
+	emu->device_update_iter_mask = (1 << device_update_period) - 1;
 
 #ifdef RISCV_EMULATOR_SDL_SUPPORT
 	memset(&emu->sdl_data, 0, sizeof(emu->sdl_data));

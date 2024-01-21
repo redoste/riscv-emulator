@@ -11,11 +11,12 @@
 #include "emulator.h"
 #include "isa.h"
 
-#define DEFAULT_ROM_BASE   0x80000000
-#define DEFAULT_ROM_SIZE   0x2000
-#define DEFAULT_RAM_BASE   0xc0000000
-#define DEFAULT_RAM_SIZE   0x2000
-#define DEFAULT_CACHE_BITS 16
+#define DEFAULT_ROM_BASE             0x80000000
+#define DEFAULT_ROM_SIZE             0x2000
+#define DEFAULT_RAM_BASE             0xc0000000
+#define DEFAULT_RAM_SIZE             0x2000
+#define DEFAULT_CACHE_BITS           16
+#define DEFAULT_DEVICE_UPDATE_PERIOD 18
 
 static int usage(const char* argv0) {
 	fprintf(stderr,
@@ -37,8 +38,12 @@ static int usage(const char* argv0) {
 #ifdef RISCV_EMULATOR_DYNAREC_X86_64_SUPPORT
 		"    --dynarec                : Enable dynamic recompilation to x86-64 assembly\n"
 #endif
-		"    --cache-bits [BITS]      : Number of significant bits for the different caches (default %d)\n",
-		argv0, argv0, DEFAULT_ROM_BASE, DEFAULT_ROM_SIZE, DEFAULT_RAM_BASE, DEFAULT_RAM_SIZE, DEFAULT_CACHE_BITS);
+		"    --cache-bits [BITS]      : Number of significant bits for the different caches (default %d)\n"
+		"    --dev-update-period [T]  : Device update period in powers of 2 (default %d)\n",
+		argv0, argv0,
+		DEFAULT_ROM_BASE, DEFAULT_ROM_SIZE,
+		DEFAULT_RAM_BASE, DEFAULT_RAM_SIZE,
+		DEFAULT_CACHE_BITS, DEFAULT_DEVICE_UPDATE_PERIOD);
 	return 1;
 }
 
@@ -62,7 +67,9 @@ static int main_simple(const char* hex_input_filename, const char* emu_output_fi
 
 	// TODO : follow the subject requirements (load code at 0, etc.)
 	emulator_t emu;
-	emu_create(&emu, DEFAULT_ROM_BASE, DEFAULT_CACHE_BITS, SIMPLE_DYNAREC_ENABLED, true);
+	emu_create(&emu, DEFAULT_ROM_BASE,
+		   DEFAULT_CACHE_BITS, DEFAULT_DEVICE_UPDATE_PERIOD,
+		   SIMPLE_DYNAREC_ENABLED, true);
 	bool map_ret = emu_map_memory(&emu, DEFAULT_ROM_BASE, DEFAULT_ROM_SIZE);
 	map_ret &= emu_map_memory(&emu, DEFAULT_RAM_BASE, DEFAULT_RAM_SIZE);
 	assert(map_ret);
@@ -126,7 +133,7 @@ static int main_advanced(int argc, char** argv) {
 	const char *rom_file = NULL, *hdd_file = NULL;
 	guest_paddr rom_base = DEFAULT_ROM_BASE, ram_base = DEFAULT_RAM_BASE;
 	size_t rom_size = DEFAULT_ROM_SIZE, ram_size = DEFAULT_RAM_SIZE;
-	size_t cache_bits = DEFAULT_CACHE_BITS;
+	size_t cache_bits = DEFAULT_CACHE_BITS, device_update_period = DEFAULT_DEVICE_UPDATE_PERIOD;
 	bool dynarec_enabled = false, user_only_mode = false;
 
 	while (argc_iter < argc) {
@@ -149,6 +156,7 @@ static int main_advanced(int argc, char** argv) {
 		PARSE_NUM_ARG("--ram-base", &ram_base)
 		PARSE_NUM_ARG("--ram-size", &ram_size)
 		PARSE_NUM_ARG("--cache-bits", &cache_bits)
+		PARSE_NUM_ARG("--dev-update-period", &device_update_period)
 #undef PARSE_NUM_ARG
 #ifdef RISCV_EMULATOR_DYNAREC_X86_64_SUPPORT
 		else if (strcmp(argv[argc_iter], "--dynarec") == 0) {
@@ -190,7 +198,7 @@ static int main_advanced(int argc, char** argv) {
 	}
 
 	emulator_t emu;
-	emu_create(&emu, rom_base, cache_bits, dynarec_enabled, user_only_mode);
+	emu_create(&emu, rom_base, cache_bits, device_update_period, dynarec_enabled, user_only_mode);
 	if (!emu_map_memory(&emu, rom_base, rom_size) ||
 	    !emu_map_memory(&emu, ram_base, ram_size)) {
 		fprintf(stderr,
