@@ -39,7 +39,7 @@ typedef struct ins_t {
  *                the CPU instruction cache
  */
 typedef struct cached_ins_t {
-	guest_paddr tag;
+	guest_vaddr tag;
 	ins_t decoded_instruction;
 } cached_ins_t;
 

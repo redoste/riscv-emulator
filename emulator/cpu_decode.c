@@ -78,7 +78,7 @@ bool cpu_decode(uint32_t encoded_instruction, ins_t* decoded_instruction) {
 	return true;
 }
 
-bool cpu_decode_and_cache(emulator_t* emu, guest_paddr instruction_addr, ins_t** decoded_instruction) {
+bool cpu_decode_and_cache(emulator_t* emu, guest_vaddr instruction_addr, ins_t** decoded_instruction) {
 	assert(!emu->cpu.dynarec_enabled);
 	assert((instruction_addr & 3) == 0);
 
@@ -106,7 +106,7 @@ bool cpu_decode_and_cache(emulator_t* emu, guest_paddr instruction_addr, ins_t**
 	return true;
 }
 
-bool cpu_invalidate_instruction_cache(emulator_t* emu, guest_paddr addr) {
+bool cpu_invalidate_instruction_cache(emulator_t* emu, guest_vaddr addr) {
 #ifdef RISCV_EMULATOR_DYNAREC_X86_64_SUPPORT
 	if (emu->cpu.dynarec_enabled) {
 		size_t cache_index = (addr >> 2) & emu->cpu.instruction_cache_mask;

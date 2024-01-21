@@ -277,7 +277,7 @@ static inline bool dr_emit_type_j(emulator_t* emu, const ins_t* instruction, dr_
 #undef X_J
 }
 
-bool dr_emit_block(emulator_t* emu, guest_paddr base) {
+bool dr_emit_block(emulator_t* emu, guest_vaddr base) {
 	assert(emu->cpu.dynarec_enabled);
 	assert((base & 3) == 0);
 

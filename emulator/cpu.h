@@ -13,7 +13,7 @@
 /* cpu_t : structure storing the current state of the emulated CPU
  */
 typedef struct cpu_t {
-	guest_paddr pc;
+	guest_reg pc;
 
 	/* NOTE : Putting bools here is not optimal for padding but it helps to keep a consistent offset
 	 *        for the assembly code that reads them (see emulator/dynarec_x86_64_entry_exit.s)
@@ -40,7 +40,7 @@ typedef struct cpu_t {
 		dr_ins_t* as_dr_ins;
 #endif
 	} instruction_cache;
-	guest_paddr instruction_cache_mask;
+	guest_vaddr instruction_cache_mask;
 } cpu_t;
 
 // NOTE : forward declaration to deal with a cyclic dependency with emulator.h
@@ -59,18 +59,18 @@ bool cpu_decode(uint32_t encoded_instruction, ins_t* decoded_instruction);
  *                        returns true if the instruction was successfully decoded
  *                        returns false otherwise
  *     emulator_t* emu              : pointer to the emulator where the cache will be updated
- *     guest_paddr instruction_addr : address of the instruction to decode and cache
+ *     guest_vaddr instruction_addr : address of the instruction to decode and cache
  *     ins_t** decoded_instruction  : pointer to the ins_t* to fill with the address of the decoded instruction
  */
-bool cpu_decode_and_cache(emulator_t* emu, guest_paddr instruction_addr, ins_t** decoded_instruction);
+bool cpu_decode_and_cache(emulator_t* emu, guest_vaddr instruction_addr, ins_t** decoded_instruction);
 
 /* cpu_invalidate_instruction_cache : invalidate an entry in the instruction cache
  *                                    returns true if an entry was invalidated
  *                                    returns false otherwise
  *     emulator_t* emu  : pointer to the emulator where the cache will be updated
- *     guest_paddr addr : address of the instruction to invalidate
+ *     guest_vaddr addr : address of the instruction to invalidate
  */
-bool cpu_invalidate_instruction_cache(emulator_t* emu, guest_paddr addr);
+bool cpu_invalidate_instruction_cache(emulator_t* emu, guest_vaddr addr);
 
 /* cpu_flush_instruction_cache : invalidate all the entries in the instruction cache
  *     emulator_t* emu : pointer to the emulator where the cache will be updated

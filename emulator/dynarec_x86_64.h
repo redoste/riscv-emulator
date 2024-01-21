@@ -46,16 +46,16 @@ typedef struct dr_x86_code_t {
 typedef struct dr_block_t {
 	uint8_t* page;
 	size_t pos;
-	guest_reg base;
-	guest_reg pc;
+	guest_vaddr base;
+	guest_vaddr pc;
 } dr_block_t;
 
 /* dr_ins_t : structure storing informations about a recompiled instruction in the
  *            instruction cache
  */
 typedef struct dr_ins_t {
-	guest_reg tag;
-	guest_reg block_entry;
+	guest_vaddr tag;
+	guest_vaddr block_entry;
 	uint8_t* native_code;
 } dr_ins_t;
 
@@ -66,9 +66,9 @@ typedef struct emulator_t emulator_t;
  *                 returns true if some x86-64 code was added to the instruction cache
  *                 returns false otherwise
  *     emulator_t* emu  : pointer to the emulator
- *     guest_paddr base : base RISC-V program counter of the block to emit
+ *     guest_vaddr base : base RISC-V program counter of the block to emit
  */
-bool dr_emit_block(emulator_t* emu, guest_paddr base);
+bool dr_emit_block(emulator_t* emu, guest_vaddr base);
 
 /* dr_free : free all the allocated pages still used by the instruction cache
  *     emulator_t* emu : pointer to the emulator
