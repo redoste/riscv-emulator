@@ -12,7 +12,8 @@ void cpu_throw_exception(emulator_t* emu, uint8_t exception_code, guest_reg tval
 	if (emu->cpu.priv_mode == UO_MODE) {
 		fprintf(stderr, "Uncaught exception %d (tval=%016" PRIx64 " PC=%016" PRIx64 ")\n",
 			exception_code, tval, emu->cpu.pc);
-		abort();
+		emu->running = false;
+		return;
 	}
 
 	assert(!emu->cpu.exception_pending);
@@ -107,7 +108,8 @@ static bool cpu_throw_interrupt(emulator_t* emu, size_t interrupt) {
 	if (emu->cpu.priv_mode == UO_MODE) {
 		fprintf(stderr, "Uncaught interrupt %zu (PC=%016" PRIx64 ")\n",
 			interrupt, emu->cpu.pc);
-		abort();
+		emu->running = false;
+		return true;
 	}
 
 	bool deleg = (emu->cpu.csrs.mideleg >> interrupt) & 1;

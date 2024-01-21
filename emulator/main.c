@@ -93,7 +93,7 @@ static int main_simple(const char* hex_input_filename, const char* emu_output_fi
 	fclose(input_file);
 
 	emu.cpu.regs[2] = SIMPLE_ROM_SIZE;  // sp
-	while (emu.cpu.pc >= SIMPLE_ROM_BASE && emu.cpu.pc < max_rom_code_addr) {
+	while (emu.cpu.pc < max_rom_code_addr && emu.running) {
 		cpu_execute(&emu);
 	}
 
