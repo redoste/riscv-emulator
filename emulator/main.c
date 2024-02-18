@@ -30,7 +30,7 @@ static int usage(const char* argv0) {
 		"    --rom-base 0x[ROM BASE]  : Base address of the ROM (default 0x%08x)\n"
 		"    --rom-size 0x[ROM SIZE]  : Size of the ROM (defaut 0x%08x)\n"
 		"    --ram-base 0x[RAM BASE]  : Base address of the RAM (default 0x%08x)\n"
-		"    --ram-size 0x[RAM SIZE]  : Size of the ROM (default 0x%08x)\n"
+		"    --ram-size 0x[RAM SIZE]  : Size of the RAM (default 0x%08x)\n"
 		"    --user-only              : Keep the emulated CPU in U-mode and expose emulator calls through ecall\n"
 		"                               (as used by the provided `DOOM` port)\n"
 		"    --virt [HDD IMAGE]       : Create a QEMU \"virt\" style machine following the device tree described\n"
