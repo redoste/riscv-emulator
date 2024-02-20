@@ -1,0 +1,248 @@
+diff --git a/doomgeneric/Makefile.rv64i b/doomgeneric/Makefile.rv64i
+new file mode 100644
+index 0000000..e09e631
+--- /dev/null
++++ b/doomgeneric/Makefile.rv64i
+@@ -0,0 +1,38 @@
++CC:=clang
++CFLAGS:=-target riscv64-elf -march=rv64i -mcmodel=medany -nostdlibinc -isystem $(SYSROOT)/include/ -O2
++LDFLAGS:=-target riscv64-elf -L $(SYSROOT)/lib -L $(SYSROOT)/lib/linux -nostdlib -static -T $(SYSROOT)/lib/picolibc.ld
++LIBS:=-lm -lc -lcrt0 -lclang_rt.builtins-riscv64
++
++OBJDIR:=build
++OUTPUT_BIN:=doomgeneric.bin
++OUTPUT_ELF:=doomgeneric.elf
++
++SRC_DOOM:=dummy.o am_map.o doomdef.o doomstat.o dstrings.o d_event.o d_items.o d_iwad.o d_loop.o d_main.o d_mode.o d_net.o f_finale.o f_wipe.o g_game.o hu_lib.o hu_stuff.o info.o i_cdmus.o i_endoom.o i_joystick.o i_scale.o i_sound.o i_system.o i_timer.o memio.o m_argv.o m_bbox.o m_cheat.o m_config.o m_controls.o m_fixed.o m_menu.o m_misc.o m_random.o p_ceilng.o p_doors.o p_enemy.o p_floor.o p_inter.o p_lights.o p_map.o p_maputl.o p_mobj.o p_plats.o p_pspr.o p_saveg.o p_setup.o p_sight.o p_spec.o p_switch.o p_telept.o p_tick.o p_user.o r_bsp.o r_data.o r_draw.o r_main.o r_plane.o r_segs.o r_sky.o r_things.o sha1.o sounds.o statdump.o st_lib.o st_stuff.o s_sound.o tables.o v_video.o wi_stuff.o w_checksum.o w_file.o w_main.o w_wad.o z_zone.o w_file_stdc.o i_input.o i_video.o doomgeneric.o doomgeneric_rv64i.o doomgeneric_wad.o
++OBJS:=$(addprefix $(OBJDIR)/, $(SRC_DOOM))
++
++.PHONY: all
++all: $(OUTPUT_BIN)
++
++.PHONY: clean
++clean:
++	rm -rf $(OBJDIR)
++	rm -f $(OUTPUT_BIN) $(OUTPUT_ELF)
++
++$(OBJDIR)/doomgeneric_wad.o: ../doom1.wad
++	llvm-objcopy -I binary $< -O elf64-littleriscv $@ \
++		--set-section-flags=.data=readonly,alloc \
++		--rename-section=.data=.rodata
++
++$(OUTPUT_BIN): $(OUTPUT_ELF)
++	llvm-objcopy $^ -O binary $@
++
++$(OUTPUT_ELF): $(OBJS)
++	$(CC) $(LDFLAGS) $^ -o $@ $(LIBS)
++
++$(OBJS): | $(OBJDIR)
++
++$(OBJDIR):
++	mkdir -p $(OBJDIR)
++
++$(OBJDIR)/%.o: %.c
++	$(CC) $(CFLAGS) -c $< -o $@
+diff --git a/doomgeneric/doomgeneric_rv64i.c b/doomgeneric/doomgeneric_rv64i.c
+new file mode 100644
+index 0000000..71a78dc
+--- /dev/null
++++ b/doomgeneric/doomgeneric_rv64i.c
+@@ -0,0 +1,198 @@
++#include <errno.h>
++#include <stdbool.h>
++#include <stdio.h>
++#include <string.h>
++
++#include "doomgeneric.h"
++
++// TODO : find a way to customize the wad name
++static const char* wad_name = "doom1.wad";
++static size_t wad_offset;
++#define WAD_FD 0x574144 // "WAD"
++extern char _binary____doom1_wad_start[];
++extern char _binary____doom1_wad_end[];
++
++/* === POSIX WRAPPERS === */
++
++static int serial_putc(char c, FILE* file) {
++	(void) file;
++	uint64_t a0 = 0x50555443; // "PUTC"
++	asm("mv a0, %0;"
++	    "mv a1, %1;"
++	    "ecall" ::
++	    "r"(a0), "r"(c) :
++	    "a0", "a1");
++	return c;
++}
++
++// Setup of stdio : https://github.com/picolibc/picolibc/blob/main/doc/os.md
++static FILE __stdio = FDEV_SETUP_STREAM(serial_putc,
++					NULL,
++					NULL,
++					_FDEV_SETUP_WRITE);
++FILE *const stdin = &__stdio;
++__strong_reference(stdin, stdout);
++__strong_reference(stdin, stderr);
++
++__attribute__((__noreturn__)) void _exit(int status) {
++	uint64_t a0 = 0x45584954; // "EXIT"
++	while (true) {
++		asm("mv a0, %0;"
++		    "mv a1, %1;"
++		    "ecall" ::
++		    "r"(a0), "r"(status) :
++		    "a0", "a1");
++	}
++}
++
++int open(const char* pathname, int flags) {
++	printf("DG posix wrapper : open %s %x\n", pathname, flags);
++	if (strcmp(pathname, wad_name) == 0) {
++		wad_offset = 0;
++		return WAD_FD;
++	} else {
++		return -ENOENT;
++	}
++}
++
++int close(int fd) {
++	printf("DG posix wrapper : close %x\n", fd);
++	return 0;
++}
++
++ssize_t read(int fd, void *buf, size_t nbyte) {
++	if (fd == WAD_FD) {
++		size_t max_to_read = _binary____doom1_wad_end - (_binary____doom1_wad_start + wad_offset);
++		size_t to_read = max_to_read < nbyte ? max_to_read : nbyte;
++
++		memcpy(buf, _binary____doom1_wad_start + wad_offset, to_read);
++		wad_offset += to_read;
++		return to_read;
++	} else {
++		return -EINVAL;
++	}
++}
++
++ssize_t write(int fd, const void *buf, size_t nbyte) {
++	(void) buf;
++	(void) nbyte;
++	printf("DG posix wrapper : write %x\n", fd);
++	return -EINVAL;
++}
++
++off_t lseek(int fd, off_t offset, int whence) {
++	if (fd == WAD_FD) {
++		size_t wad_size = _binary____doom1_wad_end - _binary____doom1_wad_start;
++		ssize_t new_wad_offset = whence == SEEK_SET ? offset :
++					 whence == SEEK_CUR ? wad_offset + offset :
++					 whence == SEEK_END ? wad_size + offset :
++					 -1;
++		if (new_wad_offset < 0) {
++			new_wad_offset = 0;
++		} else if (new_wad_offset > wad_size) {
++			new_wad_offset = wad_size;
++		}
++
++		wad_offset = new_wad_offset;
++		return wad_offset;
++	} else {
++		return -EINVAL;
++	}
++}
++
++int rename(const char *oldpath, const char *newpath) {
++	printf("DG posix wrapper : rename %s %s\n", oldpath, newpath);
++	return -ENOENT;
++}
++
++int mkdir(const char *pathname, mode_t mode) {
++	(void)mode;
++	printf("DG posix wrapper : mkdir %s\n", pathname);
++	return -ENOENT;
++}
++
++int unlink(const char *pathname) {
++	printf("DG posix wrapper : unlink %s\n", pathname);
++	return -ENOENT;
++}
++
++// NOTE : I have no idea why it's not in libc.a
++void __call_exitprocs(int code, void *param) {
++	(void)code;
++	(void)param;
++}
++
++/* === DOOM GENERIC === */
++
++void DG_Init(void) {
++	uint64_t a0 = 0x494e4954; // "INIT"
++	uint64_t a1 = DOOMGENERIC_RESX, a2 = DOOMGENERIC_RESY;
++	asm("mv a0, %0;"
++	    "mv a1, %1;"
++	    "mv a2, %2;"
++	    "ecall" ::
++	    "r"(a0), "r"(a1), "r"(a2) :
++	    "a0", "a1", "a2");
++}
++
++void DG_DrawFrame(void) {
++	uint64_t a0 = 0x44524157; // "DRAW"
++	asm("mv a0, %0;"
++	    "mv a1, %1;"
++	    "ecall" ::
++	    "r"(a0), "r"(DG_ScreenBuffer) :
++	    "a0", "a1");
++}
++
++void DG_SleepMs(uint32_t ms) {
++	uint64_t a0 = 0x534c4550; // "SLEP"
++	asm("mv a0, %0;"
++	    "mv a1, %1;"
++	    "ecall" ::
++	    "r"(a0), "r"(ms) :
++	    "a0", "a1");
++}
++
++uint32_t DG_GetTicksMs(void) {
++	uint64_t a0 = 0x4754494b; // "GTIK"
++	uint64_t ticks;
++	asm("mv a0, %1;"
++	    "ecall;"
++	    "mv %0, a0" :
++	    "=r"(ticks) :
++	    "r"(a0) :
++	    "a0");
++	return (uint32_t)ticks;
++}
++
++int DG_GetKey(int* pressed, unsigned char* doomKey) {
++	uint64_t a0 = 0x474b4559; // "GKEY"
++	uint64_t ret, ret_pressed, ret_key;
++	asm("mv a0, %3;"
++	    "ecall;"
++	    "mv %0, a0;"
++	    "mv %1, a1;"
++	    "mv %2, a2" :
++	    "=r"(ret), "=r"(ret_pressed), "=r"(ret_key) :
++	    "r"(a0) :
++	    "a0", "a1", "a2");
++	if (ret) {
++		*pressed = ret_pressed;
++		*doomKey = ret_key;
++	}
++	return ret;
++}
++
++void DG_SetWindowTitle(const char * title) {
++	printf("DG_SetWindowTitle : %s\n", title);
++}
++
++int main(void) {
++	int argc = 3;
++	char *argv[] = { "doomgeneric", "-iwad", (char*)wad_name, NULL };
++	doomgeneric_Create(argc, argv);
++
++	while (true) {
++		doomgeneric_Tick();
++	}
++}
